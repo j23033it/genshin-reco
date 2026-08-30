@@ -5,36 +5,56 @@ import { describe, expect, it, vi } from "vitest";
 import type {
   BuildVariant,
   CharacterBuildResolution,
-  EvidenceClaim,
   MainStatPackage,
   TeamBuildResolution,
 } from "../../domain/analysisTypes";
+import type { Catalog } from "../../domain/catalogTypes";
+import type { PartyDraft } from "../party";
 import { AnalysisProgressPanel } from "./AnalysisProgressPanel";
-import { TeamResultPanel } from "./TeamResultPanel";
+import { AnalysisNotesPanel, TeamResultPanel } from "./TeamResultPanel";
 
-const evidenceClaim: EvidenceClaim = {
-  claimType: "target_stat",
-  normalizedValue: {
-    kind: "target_stat",
-    value: {
-      stat: "元素チャージ効率",
-      minimum: 180,
-      maximum: null,
-      unit: "percent",
-      scope: "in_combat_conditional",
-      note: "爆発を毎回使う条件",
+const catalog: Catalog = {
+  schemaVersion: "catalog-v2",
+  gameVersion: "5.8",
+  catalogUpdatedAt: "2026-08-30",
+  characters: [1, 2, 3, 4].map((number) => ({
+    id: `character-${number}`,
+    name: `キャラクター${number}`,
+    element: "炎",
+    weaponType: "片手剣",
+    rarity: 5,
+    imageUrl: `/character-${number}.png`,
+  })),
+  weapons: [1, 2, 3, 4].map((number) => ({
+    id: `weapon-${number}`,
+    name: `武器${number}`,
+    weaponType: "片手剣",
+    rarity: 5,
+    imageUrl: `/weapon-${number}.png`,
+  })),
+  artifactSets: [
+    {
+      id: "set-crimson",
+      name: "燃え盛る炎の魔女",
+      teamBuffKey: null,
+      twoPieceEffectGroupId: "pyro",
+      twoPieceEffect: "炎元素ダメージ＋15％",
+      fourPieceEffect: "過負荷などのダメージ強化",
+      pieceImageUrls: { flower: "/crimson-flower.png", plume: "", sands: "", goblet: "", circlet: "" },
     },
-  },
-  conditions: [],
-  evidence: {
-    sourcePageId: "source-1",
-    evidenceExcerpt: "爆発を毎回使えるように調整する。",
-    evidenceSummary: "爆発の回転を優先する根拠です。",
-    locator: null,
-    verification: "host_exact_match",
-    contentHash: "hash-1",
-  },
-  evidenceGrade: "A",
+  ],
+};
+
+const party: PartyDraft = {
+  partyId: "party-1",
+  name: "テスト編成",
+  members: [0, 1, 2, 3].map((slotIndex) => ({
+    slotIndex: slotIndex as 0 | 1 | 2 | 3,
+    characterId: `character-${slotIndex + 1}`,
+    weaponId: `weapon-${slotIndex + 1}`,
+    constellation: slotIndex as 0 | 1 | 2 | 3 | 4 | 5 | 6,
+    refinement: (slotIndex + 1) as 1 | 2 | 3 | 4 | 5,
+  })) as PartyDraft["members"],
 };
 
 const mainStatPackage: MainStatPackage = {
@@ -67,7 +87,7 @@ function createVariant(id: string): BuildVariant {
     mainStatPackage,
     conditions: [],
     teamBuffKeys: [],
-    evidenceClaims: [evidenceClaim],
+    evidenceClaims: [],
     sourceFamilyCount: 1,
     conflictPenalty: 0,
   };
@@ -138,33 +158,36 @@ describe("AnalysisProgressPanel", () => {
 
 describe("TeamResultPanel", () => {
   it("空状態では次の操作を1つだけ案内する", () => {
-    render(<TeamResultPanel resolution={null} validity="current" />);
+    render(<TeamResultPanel catalog={catalog} party={null} resolution={null} validity="current" />);
 
-    expect(screen.getByTestId("team-result-empty")).toHaveTextContent("編成を分析して");
+    expect(screen.getByTestId("team-result-empty")).toHaveTextContent("保存済み編成を選択するか");
     expect(screen.queryByRole("button")).not.toBeInTheDocument();
   });
 
   it("確定結果で4人分のカード、選択候補、警告、根拠と目標値を表示する", () => {
-    render(<TeamResultPanel resolution={createResolution("resolved", "character-1-variant-a")} validity="current" />);
+    render(<TeamResultPanel catalog={catalog} party={party} resolution={createResolution("resolved", "character-1-variant-a")} validity="current" />);
 
     expect(screen.getByText("分析結果：確定")).toBeInTheDocument();
     expect(screen.getAllByTestId("character-result-card")).toHaveLength(4);
-    expect(screen.getByText("選択中の候補：character-1-variant-a")).toBeInTheDocument();
-    expect(screen.getAllByText("代替候補")).toHaveLength(4);
-    expect(screen.getAllByText("4セット：set-crimson").length).toBeGreaterThan(0);
-    expect(screen.getAllByText(/砂・杯・冠/).length).toBeGreaterThan(0);
-    expect(screen.getAllByText("元素チャージ効率", { selector: "th" }).length).toBeGreaterThan(0);
-    expect(screen.getAllByText(/in_combat_conditional/).length).toBeGreaterThan(0);
-    expect(screen.getAllByText("EvidenceGrade: A").length).toBeGreaterThan(0);
-    expect(screen.getAllByText(/verification: host_exact_match/).length).toBeGreaterThan(0);
-    expect(screen.getByText("条件付きの目標値を含みます。")).toBeInTheDocument();
+    expect(screen.getAllByText("キャラクター1").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("武器1").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("燃え盛る炎の魔女").length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/砂：元素チャージ効率/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/優先サブ：会心ダメージ > 会心率/).length).toBeGreaterThan(0);
+    expect(screen.queryByText(/set-crimson/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/4セット/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/EvidenceGrade|verification|根拠|推薦理由/)).not.toBeInTheDocument();
+    expect(screen.getAllByText("C0").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("R1").length).toBeGreaterThan(0);
   });
 
   it("候補未選択時は候補ボタンをキーボード操作し、選択を通知する", async () => {
     const user = userEvent.setup();
     const onChooseVariant = vi.fn();
     render(
-      <TeamResultPanel
+        <TeamResultPanel
+          catalog={catalog}
+          party={party}
         resolution={createResolution("needs_user_choice", null)}
         validity="current"
         onChooseVariant={onChooseVariant}
@@ -172,7 +195,7 @@ describe("TeamResultPanel", () => {
     );
 
     expect(screen.getByText("分析結果：候補を選択してください")).toBeInTheDocument();
-    const candidateButton = screen.getByRole("button", { name: "候補 character-1-variant-a を選択" });
+    const candidateButton = screen.getAllByRole("button", { name: "候補1を選択" })[0];
     candidateButton.focus();
     await user.keyboard("{Enter}");
 
@@ -180,10 +203,33 @@ describe("TeamResultPanel", () => {
   });
 
   it("未解決状態を日本語で表示し警告を残す", () => {
-    render(<TeamResultPanel resolution={createResolution("unresolved", null)} validity="hard_stale" />);
+    render(<TeamResultPanel catalog={catalog} party={party} resolution={createResolution("unresolved", null)} validity="hard_stale" />);
 
     expect(screen.getByText("分析結果：解決できませんでした")).toBeInTheDocument();
-    expect(screen.getByTestId("team-result-stale-banner")).toHaveTextContent("再分析が必要");
-    expect(screen.getByText("条件付きの目標値を含みます。")).toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent("補足事項を確認してください。");
+  });
+});
+
+describe("AnalysisNotesPanel", () => {
+  it("警告・候補の条件・目標注記・古い結果を重複なく表示する", () => {
+    const resolution = createResolution("resolved", "character-1-variant-a");
+    resolution.warnings = ["条件を確認してください。", "条件を確認してください。"];
+    resolution.members[0].alternatives[0].conditions = [
+      { field: "energy", operator: "gte", value: 180, description: "元素チャージ効率を満たす" },
+    ];
+    resolution.members[0].alternatives[0].mainStatPackage.targetStats[0].note = "爆発を毎回使う条件";
+
+    render(<AnalysisNotesPanel resolution={resolution} validity="hard_stale" />);
+
+    expect(screen.getByTestId("analysis-notes-panel")).toHaveTextContent("条件を確認してください。");
+    expect(screen.getByTestId("analysis-notes-panel")).toHaveTextContent("適用条件：元素チャージ効率を満たす");
+    expect(screen.getByTestId("analysis-notes-panel")).toHaveTextContent("目標値の注記（元素チャージ効率）：爆発を毎回使う条件");
+    expect(screen.getByTestId("analysis-notes-panel")).toHaveTextContent("古い分析結果です");
+    expect(screen.getAllByText("条件を確認してください。")).toHaveLength(1);
+  });
+
+  it("補足がない場合は既定文言を表示する", () => {
+    render(<AnalysisNotesPanel resolution={null} validity="current" />);
+    expect(screen.getByText("補足事項はありません")).toBeInTheDocument();
   });
 });

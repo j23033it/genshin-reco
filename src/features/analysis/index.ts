@@ -1,5 +1,5 @@
 export { AnalysisProgressPanel } from "./AnalysisProgressPanel";
-export { TeamResultPanel } from "./TeamResultPanel";
+export { AnalysisNotesPanel, TeamResultPanel } from "./TeamResultPanel";
 export {
   buildAnalysisInput,
   cancelAnalysis,
@@ -11,4 +11,4 @@ export {
   type AnalysisProgressEvent,
 } from "./analysisRepository";
 export type { AnalysisProgressPanelProps, AnalysisProgress, AnalysisCharacterStepStatus, CharacterAnalysisStep } from "./types";
-export type { TeamResultPanelProps } from "./TeamResultPanel";
+export type { AnalysisNotesPanelProps, TeamResultPanelProps } from "./TeamResultPanel";

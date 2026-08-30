@@ -1,22 +1,21 @@
-import { cn } from "../../lib/cn";
+import { useMemo } from "react";
+import type { ArtifactSet, Catalog, Character, Weapon } from "../../domain/catalogTypes";
 import type {
   ArtifactHalf,
   ArtifactPlan,
   BuildCondition,
   BuildVariant,
   CharacterBuildResolution,
-  EvidenceClaim,
-  EvidenceGrade,
-  EvidenceVerification,
-  MainStatPackage,
   ResultValidity,
   StatPriority,
-  TargetScope,
   TargetStatRange,
   TeamBuildResolution,
 } from "../../domain/analysisTypes";
+import type { PartyDraft, PartyMemberDraft } from "../party";
 
 export interface TeamResultPanelProps {
+  catalog: Catalog;
+  party: PartyDraft | null;
   resolution: TeamBuildResolution | null;
   validity: ResultValidity;
   onChooseVariant?: (characterId: string, variantId: string) => void;
@@ -28,67 +27,24 @@ const RESOLUTION_STATUS_LABELS: Record<TeamBuildResolution["status"], string> = 
   unresolved: "分析結果：解決できませんでした",
 };
 
-const VALIDITY_LABELS: Record<ResultValidity, string> = {
-  current: "最新の結果",
-  soft_stale: "以前の結果（要再確認）",
-  hard_stale: "古い結果（再分析が必要）",
-  invalid: "無効な結果",
+const OPERATOR_LABELS: Record<BuildCondition["operator"], string> = {
+  equals: "一致",
+  not_equals: "不一致",
+  includes: "含む",
+  gte: "以上",
+  lte: "以下",
 };
-
-const TARGET_SCOPE_LABELS: Record<TargetScope, string> = {
-  character_sheet_unbuffed: "キャラクター画面（無バフ）",
-  character_sheet_with_static_team_effects: "キャラクター画面（固定チーム効果あり）",
-  in_combat_conditional: "戦闘中（条件付き）",
-};
-
-const EVIDENCE_VERIFICATION_LABELS: Record<EvidenceVerification, string> = {
-  host_exact_match: "同一ホストで完全一致",
-  host_fuzzy_match: "同一ホストで候補一致",
-  url_event_only: "URLイベントのみ確認",
-  unverified: "未検証",
-};
-
-const EVIDENCE_CLAIM_LABELS: Record<EvidenceClaim["claimType"], string> = {
-  artifact_plan: "聖遺物セット",
-  main_stat_package: "メインステータス",
-  substat_priority: "サブステータス優先度",
-  target_stat: "目標ステータス",
-  role: "役割",
-  team_interaction: "チーム連携",
-};
-
-const EVIDENCE_GRADE_LABELS: Record<EvidenceGrade, string> = {
-  A: "強い根拠",
-  B: "標準的な根拠",
-  C: "補助的な根拠",
-};
-
-function formatArtifactHalf(half: ArtifactHalf) {
-  return half.kind === "exact_set" ? `セット：${half.setId}` : `効果グループ：${half.effectGroupId}`;
-}
-
-function formatArtifactPlan(plan: ArtifactPlan) {
-  return plan.type === "four_piece"
-    ? `4セット：${plan.setId}`
-    : `2セット＋2セット：${formatArtifactHalf(plan.first)} ／ ${formatArtifactHalf(plan.second)}`;
-}
 
 function formatNumber(value: number) {
   return new Intl.NumberFormat("ja-JP", { maximumFractionDigits: 2 }).format(value);
 }
 
-function formatTargetValue(value: number | null, unit: TargetStatRange["unit"]) {
-  if (value === null) return null;
-  return `${formatNumber(value)}${unit === "percent" ? "%" : ""}`;
-}
-
 function formatTargetRange(target: TargetStatRange) {
-  const minimum = formatTargetValue(target.minimum, target.unit);
-  const maximum = formatTargetValue(target.maximum, target.unit);
-
-  if (minimum && maximum) return minimum === maximum ? minimum : `${minimum} ～ ${maximum}`;
-  if (minimum) return `${minimum} 以上`;
-  if (maximum) return `${maximum} 以下`;
+  const minimum = target.minimum === null ? null : `${formatNumber(target.minimum)}${target.unit === "percent" ? "%" : ""}`;
+  const maximum = target.maximum === null ? null : `${formatNumber(target.maximum)}${target.unit === "percent" ? "%" : ""}`;
+  if (minimum && maximum) return minimum === maximum ? minimum : `${minimum}～${maximum}`;
+  if (minimum) return `${minimum}以上`;
+  if (maximum) return `${maximum}以下`;
   return "指定なし";
 }
 
@@ -98,214 +54,120 @@ function formatConditionValue(value: BuildCondition["value"]) {
 }
 
 function formatCondition(condition: BuildCondition) {
-  const operatorLabels: Record<BuildCondition["operator"], string> = {
-    equals: "＝",
-    not_equals: "≠",
-    includes: "を含む",
-    gte: "以上",
-    lte: "以下",
-  };
-  return condition.description || `${condition.field} ${operatorLabels[condition.operator]} ${formatConditionValue(condition.value)}`;
+  return condition.description || `${OPERATOR_LABELS[condition.operator]} ${formatConditionValue(condition.value)}`;
 }
 
-function ArtifactPlanDetails({ plan }: { plan: ArtifactPlan }) {
-  return (
-    <dl className="grid gap-2 rounded-lg border border-slate-700 bg-slate-950/40 p-3">
-      <div className="min-w-0">
-        <dt className="text-sm text-slate-400">聖遺物セット</dt>
-        <dd className="mt-1 break-words text-pretty font-semibold text-slate-100">{formatArtifactPlan(plan)}</dd>
-      </div>
-    </dl>
-  );
+function findArtifactSet(catalog: Catalog, setId: string) {
+  return catalog.artifactSets.find((artifactSet) => artifactSet.id === setId);
 }
 
-function MainStatDetails({ mainStatPackage, headingId }: { mainStatPackage: MainStatPackage; headingId: string }) {
-  return (
-    <section className="space-y-3" aria-labelledby={headingId}>
-      <h5 id={headingId} className="text-balance text-sm font-semibold text-slate-200">
-        メインステータス（砂・杯・冠）
-      </h5>
-      <dl className="grid gap-2 sm:grid-cols-3">
-        <div className="min-w-0 rounded-md border border-slate-700 bg-slate-950/40 p-3">
-          <dt className="text-xs text-slate-400">砂</dt>
-          <dd className="mt-1 break-words text-pretty text-sm font-semibold text-slate-100">{mainStatPackage.sands}</dd>
-        </div>
-        <div className="min-w-0 rounded-md border border-slate-700 bg-slate-950/40 p-3">
-          <dt className="text-xs text-slate-400">杯</dt>
-          <dd className="mt-1 break-words text-pretty text-sm font-semibold text-slate-100">{mainStatPackage.goblet}</dd>
-        </div>
-        <div className="min-w-0 rounded-md border border-slate-700 bg-slate-950/40 p-3">
-          <dt className="text-xs text-slate-400">冠</dt>
-          <dd className="mt-1 break-words text-pretty text-sm font-semibold text-slate-100">{mainStatPackage.circlet}</dd>
-        </div>
-      </dl>
-    </section>
-  );
+function effectGroupSets(catalog: Catalog, effectGroupId: string) {
+  return catalog.artifactSets.filter((artifactSet) => artifactSet.twoPieceEffectGroupId === effectGroupId);
 }
 
-function SubstatPriorityDetails({ priorities, headingId }: { priorities: StatPriority[]; headingId: string }) {
-  return (
-    <section className="space-y-2" aria-labelledby={headingId}>
-      <h5 id={headingId} className="text-balance text-sm font-semibold text-slate-200">
-        サブステータス優先度
-      </h5>
-      {priorities.length > 0 ? (
-        <ol className="grid gap-2 sm:grid-cols-2">
-          {priorities.map((priority) => (
-            <li
-              key={`${priority.rank}-${priority.stat}`}
-              className="min-w-0 rounded-md border border-slate-700 bg-slate-950/40 p-2 text-sm text-slate-200"
-            >
-              <span className="tabular-nums text-slate-400">{priority.rank}位：</span>
-              <span className="break-words">{priority.stat}</span>
-            </li>
-          ))}
-        </ol>
-      ) : (
-        <p className="text-pretty text-sm leading-6 text-slate-400">サブステータスの指定はありません。</p>
-      )}
-    </section>
-  );
+function artifactHalfLabel(half: ArtifactHalf, catalog: Catalog) {
+  if (half.kind === "exact_set") return findArtifactSet(catalog, half.setId)?.name ?? "聖遺物セット";
+  const names = effectGroupSets(catalog, half.effectGroupId).map((artifactSet) => artifactSet.name);
+  return names.length > 0 ? `同一効果：${names.join("・")}` : "同一効果の聖遺物セット";
 }
 
-function TargetStatDetails({ targets, headingId }: { targets: TargetStatRange[]; headingId: string }) {
-  return (
-    <section className="space-y-2" aria-labelledby={headingId}>
-      <h5 id={headingId} className="text-balance text-sm font-semibold text-slate-200">
-        目標ステータス
-      </h5>
-      {targets.length > 0 ? (
-        <div className="overflow-x-auto rounded-lg border border-slate-700">
-          <table className="min-w-full text-left text-sm">
-            <thead className="bg-slate-950/70 text-xs text-slate-400">
-              <tr>
-                <th className="whitespace-nowrap px-3 py-2 font-medium">ステータス</th>
-                <th className="whitespace-nowrap px-3 py-2 font-medium">目標</th>
-                <th className="whitespace-nowrap px-3 py-2 font-medium">範囲</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-700">
-              {targets.map((target) => (
-                <tr key={`${target.stat}-${target.scope}-${target.minimum}-${target.maximum}`}>
-                  <th className="min-w-0 break-words px-3 py-2 font-medium text-slate-200">{target.stat}</th>
-                  <td className="whitespace-nowrap px-3 py-2 tabular-nums text-slate-100">{formatTargetRange(target)}</td>
-                  <td className="min-w-0 break-words px-3 py-2 text-pretty text-slate-300">
-                    {TARGET_SCOPE_LABELS[target.scope]}（{target.scope}）
-                    {target.note ? <span className="block text-xs text-slate-400">{target.note}</span> : null}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      ) : (
-        <p className="text-pretty text-sm leading-6 text-slate-400">目標ステータスの指定はありません。</p>
-      )}
-    </section>
-  );
+function artifactPlanLabel(plan: ArtifactPlan, catalog: Catalog) {
+  if (plan.type === "four_piece") return findArtifactSet(catalog, plan.setId)?.name ?? "聖遺物セット";
+  return `${artifactHalfLabel(plan.first, catalog)} ＋ ${artifactHalfLabel(plan.second, catalog)}`;
 }
 
-function EvidenceDetails({ claims, headingId }: { claims: EvidenceClaim[]; headingId: string }) {
-  return (
-    <section className="space-y-2" aria-labelledby={headingId}>
-      <h5 id={headingId} className="text-balance text-sm font-semibold text-slate-200">
-        根拠
-      </h5>
-      {claims.length > 0 ? (
-        <ul className="space-y-3">
-          {claims.map((claim, index) => (
-            <li key={`${claim.claimType}-${claim.evidence.sourcePageId}-${index}`} className="min-w-0 rounded-lg border border-slate-700 bg-slate-950/40 p-3">
-              <div className="flex min-w-0 flex-wrap gap-x-3 gap-y-1 text-xs text-slate-300">
-                <span className="tabular-nums font-semibold text-amber-200">EvidenceGrade: {claim.evidenceGrade}</span>
-                <span>（{EVIDENCE_GRADE_LABELS[claim.evidenceGrade]}）</span>
-                <span className="break-words">claim: {EVIDENCE_CLAIM_LABELS[claim.claimType]}</span>
-              </div>
-              <p className="mt-1 break-words text-pretty text-xs text-slate-400">
-                verification: {claim.evidence.verification}（{EVIDENCE_VERIFICATION_LABELS[claim.evidence.verification]}）
-              </p>
-              <p className="mt-2 break-words text-pretty text-sm leading-6 text-slate-200">{claim.evidence.evidenceSummary}</p>
-              {claim.evidence.evidenceExcerpt ? (
-                <blockquote className="mt-2 break-words whitespace-pre-wrap border-l-2 border-slate-600 pl-3 text-pretty text-xs leading-5 text-slate-400">
-                  {claim.evidence.evidenceExcerpt}
-                </blockquote>
-              ) : null}
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <p className="text-pretty text-sm leading-6 text-slate-400">表示できる根拠がありません。</p>
-      )}
-    </section>
-  );
+function representativeArtifactSet(plan: ArtifactPlan, catalog: Catalog): ArtifactSet | undefined {
+  if (plan.type === "four_piece") return findArtifactSet(catalog, plan.setId);
+  if (plan.first.kind === "exact_set") return findArtifactSet(catalog, plan.first.setId);
+  if (plan.second.kind === "exact_set") return findArtifactSet(catalog, plan.second.setId);
+  return effectGroupSets(catalog, plan.first.effectGroupId)[0] ?? effectGroupSets(catalog, plan.second.effectGroupId)[0];
 }
 
-function ConditionsDetails({ conditions, headingId }: { conditions: BuildCondition[]; headingId: string }) {
-  if (conditions.length === 0) return null;
+function ArtifactSummary({ plan, catalog }: { plan: ArtifactPlan; catalog: Catalog }) {
+  const artifactSet = representativeArtifactSet(plan, catalog);
+  const imageUrl = artifactSet?.pieceImageUrls.flower;
+  const label = artifactPlanLabel(plan, catalog);
   return (
-    <section className="space-y-2" aria-labelledby={headingId}>
-      <h5 id={headingId} className="text-balance text-sm font-semibold text-slate-200">
-        適用条件
-      </h5>
-      <ul className="space-y-1 text-sm leading-6 text-slate-300">
-        {conditions.map((condition, index) => (
-          <li key={`${condition.field}-${condition.operator}-${index}`} className="break-words text-pretty">
-            {formatCondition(condition)}
-          </li>
-        ))}
-      </ul>
-    </section>
-  );
-}
-
-function VariantBreakdown({ variant, idPrefix }: { variant: BuildVariant; idPrefix: string }) {
-  return (
-    <div className="mt-3 space-y-4">
-      <ArtifactPlanDetails plan={variant.artifactPlan} />
-      <MainStatDetails mainStatPackage={variant.mainStatPackage} headingId={`${idPrefix}-main-stat`} />
-      <SubstatPriorityDetails priorities={variant.mainStatPackage.substatPriority} headingId={`${idPrefix}-substat`} />
-      <TargetStatDetails targets={variant.mainStatPackage.targetStats} headingId={`${idPrefix}-target`} />
-      <ConditionsDetails conditions={variant.conditions} headingId={`${idPrefix}-condition`} />
-      <EvidenceDetails claims={variant.evidenceClaims} headingId={`${idPrefix}-evidence`} />
+    <div className="flex min-w-0 items-center gap-3">
+      {imageUrl ? <img src={imageUrl} alt={`${label}の聖遺物画像`} className="size-12 shrink-0 rounded-lg border border-slate-700 object-cover" /> : null}
+      <p className="min-w-0 break-words text-pretty text-sm font-semibold text-slate-100">{label}</p>
     </div>
   );
 }
 
-function CandidateSummary({ variant }: { variant: BuildVariant }) {
+function MainStatSummary({ variant }: { variant: BuildVariant }) {
   return (
-    <span className="block min-w-0 text-left">
-      <span className="block break-words font-semibold">候補 {variant.id}</span>
-      <span className="mt-1 block break-words text-sm text-slate-300">{formatArtifactPlan(variant.artifactPlan)}</span>
-      <span className="mt-1 block break-words text-xs text-slate-400">
-        砂：{variant.mainStatPackage.sands} ／ 杯：{variant.mainStatPackage.goblet} ／ 冠：{variant.mainStatPackage.circlet}
-      </span>
-    </span>
+    <p className="min-w-0 break-words text-pretty text-sm text-slate-300">
+      砂：{variant.mainStatPackage.sands} ／ 杯：{variant.mainStatPackage.goblet} ／ 冠：{variant.mainStatPackage.circlet}
+    </p>
+  );
+}
+
+function SubstatSummary({ priorities }: { priorities: StatPriority[] }) {
+  const sorted = [...priorities].sort((left, right) => left.rank - right.rank);
+  return (
+    <p className="min-w-0 break-words text-pretty text-sm text-slate-300">
+      優先サブ：{sorted.length > 0 ? sorted.map((priority) => priority.stat).join(" > ") : "指定なし"}
+    </p>
+  );
+}
+
+function TargetSummary({ targets }: { targets: TargetStatRange[] }) {
+  return (
+    <div className="min-w-0">
+      <p className="text-sm font-semibold text-slate-200">目標ステータス</p>
+      {targets.length > 0 ? (
+        <ul className="mt-1 space-y-1 text-pretty text-sm text-slate-300">
+          {targets.map((target) => (
+            <li key={`${target.stat}-${target.minimum}-${target.maximum}`} className="break-words">
+              {target.stat}：<span className="tabular-nums">{formatTargetRange(target)}</span>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="mt-1 text-pretty text-sm text-slate-400">指定なし</p>
+      )}
+    </div>
+  );
+}
+
+function VariantSummary({ variant, catalog }: { variant: BuildVariant; catalog: Catalog }) {
+  return (
+    <div className="min-w-0 space-y-2">
+      <ArtifactSummary plan={variant.artifactPlan} catalog={catalog} />
+      <MainStatSummary variant={variant} />
+    </div>
   );
 }
 
 function ChoiceCandidate({
   characterId,
   variant,
+  candidateNumber,
+  catalog,
   onChooseVariant,
 }: {
   characterId: string;
   variant: BuildVariant;
+  candidateNumber: number;
+  catalog: Catalog;
   onChooseVariant?: (characterId: string, variantId: string) => void;
 }) {
   return (
     <li className="min-w-0 rounded-lg border border-amber-300/50 bg-amber-400/5 p-3">
       <button
         type="button"
-        className="min-h-11 w-full rounded-md border border-amber-300/60 px-3 py-2 text-amber-100 hover:bg-amber-300/10 focus-visible:outline-2 focus-visible:outline-amber-400 disabled:cursor-not-allowed disabled:opacity-60"
+        className="min-h-11 w-full rounded-md border border-amber-300/60 px-3 py-2 text-left text-amber-100 hover:bg-amber-300/10 focus-visible:outline-2 focus-visible:outline-amber-400 disabled:cursor-not-allowed disabled:opacity-60"
         onClick={() => onChooseVariant?.(characterId, variant.id)}
         disabled={!onChooseVariant}
-        aria-label={`候補 ${variant.id} を選択`}
+        aria-label={`候補${candidateNumber}を選択`}
         data-testid="variant-choice"
         data-character-id={characterId}
         data-variant-id={variant.id}
       >
-        <CandidateSummary variant={variant} />
+        <span className="mb-2 block font-semibold">候補{candidateNumber}</span>
+        <VariantSummary variant={variant} catalog={catalog} />
       </button>
-      <VariantBreakdown variant={variant} idPrefix={`choice-${characterId}-${variant.id}`} />
     </li>
   );
 }
@@ -313,68 +175,107 @@ function ChoiceCandidate({
 function AlternativesDetails({
   member,
   resolutionStatus,
+  catalog,
   onChooseVariant,
 }: {
   member: CharacterBuildResolution;
   resolutionStatus: TeamBuildResolution["status"];
+  catalog: Catalog;
   onChooseVariant?: (characterId: string, variantId: string) => void;
 }) {
   const isChoicePending = resolutionStatus === "needs_user_choice" && member.selectedVariantId === null;
+  const alternatives = member.alternatives
+    .map((variant, index) => ({ variant, candidateNumber: index + 1 }))
+    .filter(({ variant }) => isChoicePending || variant.id !== member.selectedVariantId);
 
-  if (member.alternatives.length === 0) {
-    return <p className="mt-3 text-pretty text-sm leading-6 text-slate-400">候補はありません。</p>;
-  }
+  if (alternatives.length === 0) return null;
 
-  return (
-    <section className="mt-4 space-y-2" aria-labelledby={`alternatives-${member.characterId}`}>
-      <h4 id={`alternatives-${member.characterId}`} className="text-balance text-sm font-semibold text-slate-200">
-        {isChoicePending ? "候補を選択" : "代替候補"}
-      </h4>
-      {isChoicePending ? (
+  if (isChoicePending) {
+    return (
+      <section className="mt-4 space-y-2" aria-labelledby={`alternatives-${member.characterId}`}>
+        <h4 id={`alternatives-${member.characterId}`} className="text-balance text-sm font-semibold text-slate-200">候補を選択</h4>
         <ul className="space-y-3">
-          {member.alternatives.map((variant) => (
+          {alternatives.map(({ variant, candidateNumber }) => (
             <ChoiceCandidate
               key={variant.id}
               characterId={member.characterId}
               variant={variant}
+              candidateNumber={candidateNumber}
+              catalog={catalog}
               onChooseVariant={onChooseVariant}
             />
           ))}
         </ul>
-      ) : (
-        <ul className="space-y-3">
-          {member.alternatives
-            .filter((variant) => variant.id !== member.selectedVariantId)
-            .map((variant) => (
-              <li key={variant.id} className="min-w-0 rounded-lg border border-slate-700 bg-slate-950/30 p-3">
-                <h5 className="break-words text-sm font-semibold text-slate-200">候補 {variant.id}</h5>
-                <VariantBreakdown variant={variant} idPrefix={`alternative-${member.characterId}-${variant.id}`} />
-              </li>
-            ))}
-        </ul>
-      )}
-    </section>
+      </section>
+    );
+  }
+
+  return (
+    <details className="mt-4 rounded-lg border border-slate-700 bg-slate-950/30 p-3">
+      <summary className="cursor-pointer text-balance text-sm font-semibold text-slate-200">別候補（{alternatives.length}件）</summary>
+      <ul className="mt-3 space-y-3">
+        {alternatives.map(({ variant, candidateNumber }) => (
+          <li key={variant.id} className="min-w-0 border-t border-slate-700 pt-3 first:border-t-0 first:pt-0">
+            <p className="mb-2 text-sm font-semibold text-slate-300">候補{candidateNumber}</p>
+            <VariantSummary variant={variant} catalog={catalog} />
+          </li>
+        ))}
+      </ul>
+    </details>
+  );
+}
+
+function CharacterIdentity({
+  character,
+  weapon,
+  partyMember,
+}: {
+  character: Character | undefined;
+  weapon: Weapon | undefined;
+  partyMember: PartyMemberDraft | undefined;
+}) {
+  const characterName = character?.name ?? "キャラクター未登録";
+  const weaponName = weapon?.name ?? "武器未登録";
+  return (
+    <div className="space-y-3">
+      <div className="flex min-w-0 items-center gap-3">
+        {character?.imageUrl ? <img src={character.imageUrl} alt={`${character.name}のキャラクター画像`} className="size-14 shrink-0 rounded-lg border border-slate-700 object-cover" /> : null}
+        <div className="min-w-0">
+          <h3 className="break-words text-balance text-lg font-bold text-slate-100">{characterName}</h3>
+          <p className="mt-1 tabular-nums text-sm text-slate-300">C{partyMember?.constellation ?? "—"}</p>
+        </div>
+      </div>
+      <div className="flex min-w-0 items-center gap-3">
+        {weapon?.imageUrl ? <img src={weapon.imageUrl} alt={`${weapon.name}の武器画像`} className="size-10 shrink-0 rounded-lg border border-slate-700 object-cover" /> : null}
+        <p className="min-w-0 break-words text-pretty text-sm text-slate-200">
+          {weaponName} <span className="tabular-nums text-slate-400">R{partyMember?.refinement ?? "—"}</span>
+        </p>
+      </div>
+    </div>
   );
 }
 
 function CharacterResultCard({
   member,
   index,
+  partyMember,
+  catalog,
   resolutionStatus,
   onChooseVariant,
 }: {
   member: CharacterBuildResolution | null;
   index: number;
+  partyMember: PartyMemberDraft | undefined;
+  catalog: Catalog;
   resolutionStatus: TeamBuildResolution["status"];
   onChooseVariant?: (characterId: string, variantId: string) => void;
 }) {
+  const character = member ? catalog.characters.find((candidate) => candidate.id === member.characterId) : undefined;
+  const weapon = partyMember?.weaponId ? catalog.weapons.find((candidate) => candidate.id === partyMember.weaponId) : undefined;
+
   if (!member) {
     return (
-      <article
-        className="min-w-72 rounded-xl border border-slate-700 bg-slate-900/60 p-4"
-        aria-label={`キャラクター${index + 1}`}
-        data-testid="character-result-card"
-      >
+      <article className="min-w-0 rounded-xl border border-slate-700 bg-slate-900/60 p-4" aria-label={`キャラクター${index + 1}`} data-testid="character-result-card">
         <h3 className="text-balance text-base font-semibold text-slate-200">キャラクター{index + 1}</h3>
         <p className="mt-3 text-pretty text-sm leading-6 text-slate-400">この枠の分析結果はありません。</p>
       </article>
@@ -384,141 +285,132 @@ function CharacterResultCard({
   const selectedVariant = member.selectedVariantId
     ? member.alternatives.find((variant) => variant.id === member.selectedVariantId) ?? null
     : null;
+  const displayedVariant = selectedVariant ?? member.alternatives[0] ?? null;
 
   return (
-    <article
-      className="min-w-72 rounded-xl border border-slate-700 bg-slate-900/80 p-4"
-      aria-labelledby={`member-heading-${index}`}
-      data-testid="character-result-card"
-    >
-      <div className="flex min-w-0 flex-wrap items-start justify-between gap-2">
-        <h3 id={`member-heading-${index}`} className="min-w-0 break-words text-balance text-lg font-bold text-slate-100">
-          {member.characterId}
-        </h3>
-        {member.selectedVariantId ? (
-          <span className="shrink-0 rounded-full border border-emerald-300/50 px-2 py-1 text-xs font-semibold text-emerald-200">
-            選択済み
-          </span>
-        ) : (
-          <span className="shrink-0 rounded-full border border-amber-300/50 px-2 py-1 text-xs font-semibold text-amber-200">
-            未選択
-          </span>
-        )}
-      </div>
-
-      <section className="mt-4" aria-labelledby={`reason-${index}`}>
-        <h4 id={`reason-${index}`} className="text-balance text-sm font-semibold text-slate-200">理由</h4>
-        <p className="mt-1 break-words text-pretty text-sm leading-6 text-slate-300">{member.reason}</p>
-      </section>
-
-      {selectedVariant ? (
-        <section className="mt-4" aria-labelledby={`selected-${index}`}>
-          <h4 id={`selected-${index}`} className="text-balance text-sm font-semibold text-slate-200">
-            選択中の候補：{selectedVariant.id}
-          </h4>
-          <VariantBreakdown variant={selectedVariant} idPrefix={`selected-${member.characterId}-${selectedVariant.id}`} />
-        </section>
+    <article className="min-w-0 rounded-xl border border-slate-700 bg-slate-900/80 p-4" aria-label={`${character?.name ?? "キャラクター未登録"}の分析結果`} data-testid="character-result-card">
+      <CharacterIdentity character={character} weapon={weapon} partyMember={partyMember} />
+      {displayedVariant ? (
+        <div className="mt-4 space-y-3 border-t border-slate-700 pt-4">
+          <VariantSummary variant={displayedVariant} catalog={catalog} />
+          <SubstatSummary priorities={displayedVariant.mainStatPackage.substatPriority} />
+          <TargetSummary targets={displayedVariant.mainStatPackage.targetStats} />
+        </div>
       ) : (
-        <p className="mt-4 rounded-md border border-amber-300/40 bg-amber-400/5 p-3 text-pretty text-sm leading-6 text-amber-100">
-          選択された候補はありません。
-        </p>
+        <p className="mt-4 text-pretty text-sm leading-6 text-slate-400">表示できるビルド候補はありません。</p>
       )}
-
       <AlternativesDetails
         member={member}
         resolutionStatus={resolutionStatus}
+        catalog={catalog}
         onChooseVariant={onChooseVariant}
       />
     </article>
   );
 }
 
-function ResultValidityBanner({ validity }: { validity: ResultValidity }) {
-  if (validity === "current") return null;
-  return (
-    <aside
-      className="rounded-lg border border-amber-300/60 bg-amber-400/10 p-4"
-      data-testid="team-result-stale-banner"
-      aria-label="分析結果の有効性"
-    >
-      <p className="font-semibold text-amber-100">{VALIDITY_LABELS[validity]}</p>
-      <p className="mt-1 break-words text-pretty text-sm leading-6 text-amber-200">
-        この結果は最新の入力や根拠と一致しない可能性があります。表示内容を確認してから利用してください。
-      </p>
-    </aside>
-  );
-}
-
-function WarningsDetails({ warnings }: { warnings: string[] }) {
-  if (warnings.length === 0) return null;
-  return (
-    <section className="rounded-lg border border-amber-300/50 bg-amber-400/5 p-4" aria-labelledby="result-warnings-heading">
-      <h3 id="result-warnings-heading" className="text-balance text-base font-semibold text-amber-100">注意</h3>
-      <ul className="mt-2 space-y-2 text-pretty text-sm leading-6 text-amber-200">
-        {warnings.map((warning, index) => (
-          <li key={`${warning}-${index}`} className="break-words">{warning}</li>
-        ))}
-      </ul>
-    </section>
-  );
-}
-
-function EmptyResultState() {
+function EmptyResultState({ party }: { party: PartyDraft | null }) {
+  const partyName = party?.name.trim();
   return (
     <div className="rounded-xl border border-dashed border-slate-600 bg-slate-900/60 p-6" data-testid="team-result-empty">
       <h3 className="text-balance text-lg font-semibold text-slate-100">分析結果はまだありません</h3>
       <p className="mt-2 break-words text-pretty text-sm leading-6 text-slate-300">
-        編成を分析して、キャラクターごとの候補と根拠を表示してください。
+        {party
+          ? `${partyName || "この編成"}はまだ分析されていません。編成を分析すると、キャラクターごとのビルド候補を表示できます。`
+          : "保存済み編成を選択するか、新しい編成を作成して分析すると結果を表示できます。"}
       </p>
     </div>
   );
 }
 
-export function TeamResultPanel({ resolution, validity, onChooseVariant }: TeamResultPanelProps) {
+export function TeamResultPanel({ catalog, party, resolution, onChooseVariant }: TeamResultPanelProps) {
+  const partyMembers = useMemo(() => party?.members ?? [], [party]);
   const members = resolution ? Array.from({ length: 4 }, (_, index) => resolution.members[index] ?? null) : [];
 
   return (
-    <section className="space-y-4" aria-labelledby="team-result-heading" data-testid="team-result-panel">
+    <section className="min-w-0 space-y-4" aria-labelledby="team-result-heading" data-testid="team-result-panel">
       <div>
         <h2 id="team-result-heading" className="text-balance text-xl font-bold text-slate-100">チーム分析結果</h2>
-        <p className="mt-1 text-pretty text-sm leading-6 text-slate-300">候補、目標値、根拠の検証状態をキャラクターごとに確認できます。</p>
+        <p className="mt-1 text-pretty text-sm leading-6 text-slate-300">4人分のキャラクター、武器、聖遺物、ステータス目標を確認できます。</p>
       </div>
 
-      <ResultValidityBanner validity={validity} />
-
       {resolution === null ? (
-        <EmptyResultState />
+        <EmptyResultState party={party} />
       ) : (
         <>
           <div className="rounded-lg border border-slate-700 bg-slate-900/70 p-4" role="status" aria-live="polite">
-            <p className={cn("text-pretty font-semibold", resolution.status === "unresolved" ? "text-rose-200" : "text-slate-100")}>
-              {RESOLUTION_STATUS_LABELS[resolution.status]}
-            </p>
-            {resolution.status === "needs_user_choice" ? (
-              <p className="mt-1 text-pretty text-sm leading-6 text-amber-200">未選択の候補ボタンから、各キャラクターの案を選んでください。</p>
-            ) : null}
-            {resolution.status === "unresolved" ? (
-              <p className="mt-1 text-pretty text-sm leading-6 text-rose-200">条件を満たす組み合わせを確定できませんでした。注意事項と理由を確認してください。</p>
-            ) : null}
+            <p className="text-pretty font-semibold text-slate-100">{RESOLUTION_STATUS_LABELS[resolution.status]}</p>
+            {resolution.status === "needs_user_choice" ? <p className="mt-1 text-pretty text-sm leading-6 text-amber-200">未選択の候補ボタンから、各キャラクターの案を選んでください。</p> : null}
+            {resolution.status === "unresolved" ? <p className="mt-1 text-pretty text-sm leading-6 text-rose-200">条件を満たす組み合わせを確定できませんでした。補足事項を確認してください。</p> : null}
           </div>
 
-          <div className="overflow-x-auto pb-2" aria-label="4人分の分析結果">
-            <div className="grid min-w-max grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-              {members.map((member, index) => (
-                <CharacterResultCard
-                  key={member?.characterId ?? `empty-${index}`}
-                  member={member}
-                  index={index}
-                  resolutionStatus={resolution.status}
-                  onChooseVariant={onChooseVariant}
-                />
-              ))}
-            </div>
+          <div className="grid min-w-0 grid-cols-1 gap-4 lg:grid-cols-2" aria-label="4人分の分析結果">
+            {members.map((member, index) => (
+              <CharacterResultCard
+                key={member?.characterId ?? `empty-${index}`}
+                member={member}
+                index={index}
+                partyMember={partyMembers[index]}
+                catalog={catalog}
+                resolutionStatus={resolution.status}
+                onChooseVariant={onChooseVariant}
+              />
+            ))}
           </div>
-
-          <WarningsDetails warnings={resolution.warnings} />
         </>
       )}
     </section>
+  );
+}
+
+export interface AnalysisNotesPanelProps {
+  resolution: TeamBuildResolution | null;
+  validity: ResultValidity;
+}
+
+const VALIDITY_NOTES: Partial<Record<ResultValidity, string>> = {
+  soft_stale: "以前の分析結果です。最新の入力と一致しない可能性があるため、利用前に再確認してください。",
+  hard_stale: "古い分析結果です。利用する前に再分析してください。",
+  invalid: "この分析結果は無効です。結果を利用せず、再分析してください。",
+};
+
+function selectedOrCandidate(member: CharacterBuildResolution) {
+  return member.selectedVariantId
+    ? member.alternatives.find((variant) => variant.id === member.selectedVariantId) ?? member.alternatives[0]
+    : member.alternatives[0];
+}
+
+export function AnalysisNotesPanel({ resolution, validity }: AnalysisNotesPanelProps) {
+  const notes = useMemo(() => {
+    const values: string[] = [];
+    const add = (value: string) => {
+      const normalized = value.trim();
+      if (normalized && !values.includes(normalized)) values.push(normalized);
+    };
+
+    resolution?.warnings.forEach(add);
+    resolution?.members.forEach((member) => {
+      const variant = selectedOrCandidate(member);
+      variant?.conditions.forEach((condition) => add(`適用条件：${formatCondition(condition)}`));
+      variant?.mainStatPackage.targetStats.forEach((target) => {
+        if (target.note) add(`目標値の注記（${target.stat}）：${target.note}`);
+      });
+    });
+    const validityNote = VALIDITY_NOTES[validity];
+    if (validityNote) add(validityNote);
+    return values;
+  }, [resolution, validity]);
+
+  return (
+    <aside className="min-w-0 space-y-3" aria-labelledby="analysis-notes-heading" data-testid="analysis-notes-panel">
+      <h2 id="analysis-notes-heading" className="text-balance text-lg font-semibold text-slate-100">補足事項</h2>
+      {notes.length > 0 ? (
+        <ul className="space-y-2 text-pretty text-sm leading-6 text-slate-300">
+          {notes.map((note) => <li key={note} className="break-words border-l-2 border-amber-400 pl-3">{note}</li>)}
+        </ul>
+      ) : (
+        <p className="text-pretty text-sm leading-6 text-slate-400">補足事項はありません</p>
+      )}
+    </aside>
   );
 }
