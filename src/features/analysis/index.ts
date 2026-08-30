@@ -4,6 +4,7 @@ export {
   buildAnalysisInput,
   cancelAnalysis,
   loadCurrentAnalysisResult,
+  saveAnalysisVariantSelection,
   startAnalysis,
   subscribeAnalysisProgress,
   type AnalysisCommandResult,

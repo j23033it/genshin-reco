@@ -101,3 +101,18 @@ export async function loadCurrentAnalysisResult(
   if (!isTauriRuntime()) return null;
   return invoke<TeamBuildResolution | null>("load_current_analysis_result", { partyId });
 }
+
+export async function saveAnalysisVariantSelection(
+  partyId: string,
+  characterId: string,
+  variantId: string,
+): Promise<TeamBuildResolution> {
+  if (!isTauriRuntime()) {
+    throw new Error("候補選択の保存はデスクトップアプリから実行してください。");
+  }
+  return invoke<TeamBuildResolution>("save_analysis_variant_selection", {
+    partyId,
+    characterId,
+    variantId,
+  });
+}

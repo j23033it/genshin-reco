@@ -31,6 +31,7 @@ pub fn run() {
             database_commands::load_party_draft,
             database_commands::list_party_drafts,
             database_commands::load_current_analysis_result,
+            database_commands::save_analysis_variant_selection,
             analysis::start_analysis,
             analysis::cancel_analysis
         ])

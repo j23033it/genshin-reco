@@ -8,6 +8,7 @@ import {
   buildAnalysisInput,
   cancelAnalysis,
   loadCurrentAnalysisResult,
+  saveAnalysisVariantSelection,
   startAnalysis,
   subscribeAnalysisProgress,
   type AnalysisCharacterStepStatus,
@@ -351,7 +352,23 @@ function Workspace({ catalog }: { catalog: Catalog }) {
                     : undefined
                 }
               />
-              <TeamResultPanel resolution={resolution} validity={resultValidity ?? "current"} />
+              <TeamResultPanel
+                resolution={resolution}
+                validity={resultValidity ?? "current"}
+                onChooseVariant={(characterId, variantId) => {
+                  const partyId = draft.partyId ?? draft.id;
+                  if (!partyId) return;
+                  void saveAnalysisVariantSelection(partyId, characterId, variantId)
+                    .then((selected) => {
+                      setResolution(selected);
+                      setResultValidity("current");
+                      setNotice("候補の選択を保存しました。");
+                    })
+                    .catch((error: unknown) => {
+                      setNotice(error instanceof Error ? error.message : String(error));
+                    });
+                }}
+              />
             </div>
           ) : null}
           {view === "settings" ? <Gate0Screen embedded /> : null}

@@ -35,6 +35,18 @@ pub fn load_current_analysis_result(
         .map_err(database_error_message)
 }
 
+#[tauri::command]
+pub fn save_analysis_variant_selection(
+    database: State<'_, Database>,
+    party_id: String,
+    character_id: String,
+    variant_id: String,
+) -> Result<TeamBuildResolution, String> {
+    database
+        .save_user_selection(&party_id, &character_id, &variant_id)
+        .map_err(database_error_message)
+}
+
 fn save_party_draft_impl(database: &Database, draft: PartyDraft) -> Result<(), String> {
     database.save_party(draft).map_err(database_error_message)
 }

@@ -1,5 +1,8 @@
 use crate::{
-    domain::{AnalysisStatus, CharacterBuildIntent, HostGeneratedIdentity, TeamBuildResolution},
+    domain::{
+        AnalysisStatus, CharacterBuildIntent, HostGeneratedIdentity, ResolutionStatus,
+        TeamBuildResolution,
+    },
     reconciler::VerifiedSourcePage,
     source_policy::normalize_source_url,
 };
@@ -663,19 +666,89 @@ impl Database {
         party_id: &str,
     ) -> Result<Option<TeamBuildResolution>, DatabaseError> {
         let connection = self.connection()?;
-        let result_json = connection
+        let current = connection
             .query_row(
-                "SELECT build_results.result_json
+                "SELECT build_results.result_id, build_results.result_json
                  FROM parties
                  JOIN build_results ON build_results.result_id = parties.current_result_id
                  WHERE parties.party_id = ?1",
                 params![party_id],
-                |row| row.get::<_, String>(0),
+                |row| Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?)),
             )
             .optional()?;
-        result_json
-            .map(|json| serde_json::from_str(&json).map_err(DatabaseError::from))
-            .transpose()
+        let Some((result_id, result_json)) = current else {
+            return Ok(None);
+        };
+        let mut resolution = serde_json::from_str(&result_json)?;
+        apply_user_selections(&connection, &result_id, &mut resolution)?;
+        Ok(Some(resolution))
+    }
+
+    pub fn save_user_selection(
+        &self,
+        party_id: &str,
+        character_id: &str,
+        variant_id: &str,
+    ) -> Result<TeamBuildResolution, DatabaseError> {
+        if party_id.trim().is_empty()
+            || character_id.trim().is_empty()
+            || variant_id.trim().is_empty()
+        {
+            return Err(invalid("編成ID・キャラクターID・候補IDは必須です"));
+        }
+        let connection = self.connection()?;
+        let (result_id, result_json): (String, String) = connection
+            .query_row(
+                "SELECT build_results.result_id, build_results.result_json
+                 FROM parties
+                 JOIN build_results ON build_results.result_id = parties.current_result_id
+                 WHERE parties.party_id = ?1",
+                params![party_id],
+                |row| Ok((row.get(0)?, row.get(1)?)),
+            )
+            .optional()?
+            .ok_or_else(|| DatabaseError::NotFound(format!("編成の現在結果: {party_id}")))?;
+        let mut resolution: TeamBuildResolution = serde_json::from_str(&result_json)?;
+        apply_user_selections(&connection, &result_id, &mut resolution)?;
+        let member = resolution
+            .members
+            .iter()
+            .find(|member| member.character_id == character_id)
+            .ok_or_else(|| invalid("選択対象キャラクターが現在結果にいません"))?;
+        if !member
+            .alternatives
+            .iter()
+            .any(|variant| variant.id == variant_id)
+        {
+            return Err(invalid("選択候補が現在結果の代替候補にありません"));
+        }
+
+        let now = timestamp();
+        connection.execute(
+            "INSERT INTO user_selections
+                (selection_id, result_id, character_id, variant_id, selection_json, created_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+            params![
+                new_id("selection"),
+                result_id,
+                character_id,
+                variant_id,
+                serde_json::to_string(&serde_json::json!({
+                    "characterId": character_id,
+                    "variantId": variant_id,
+                }))?,
+                now,
+            ],
+        )?;
+        apply_user_selection(&mut resolution, character_id, variant_id);
+        if resolution
+            .members
+            .iter()
+            .all(|member| member.selected_variant_id.is_some())
+        {
+            resolution.status = ResolutionStatus::Resolved;
+        }
+        Ok(resolution)
     }
 
     pub fn current_result_id(&self, party_id: &str) -> Result<Option<String>, DatabaseError> {
@@ -689,6 +762,51 @@ impl Database {
             .optional()
             .map_err(DatabaseError::from)
             .map(|value| value.flatten())
+    }
+}
+
+fn apply_user_selections(
+    connection: &Connection,
+    result_id: &str,
+    resolution: &mut TeamBuildResolution,
+) -> Result<(), DatabaseError> {
+    let mut statement = connection.prepare(
+        "SELECT character_id, variant_id
+         FROM user_selections
+         WHERE result_id = ?1
+         ORDER BY created_at ASC, selection_id ASC",
+    )?;
+    let rows = statement.query_map(params![result_id], |row| {
+        Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
+    })?;
+    for row in rows {
+        let (character_id, variant_id) = row?;
+        apply_user_selection(resolution, &character_id, &variant_id);
+    }
+    if resolution
+        .members
+        .iter()
+        .all(|member| member.selected_variant_id.is_some())
+    {
+        resolution.status = ResolutionStatus::Resolved;
+    }
+    Ok(())
+}
+
+fn apply_user_selection(
+    resolution: &mut TeamBuildResolution,
+    character_id: &str,
+    variant_id: &str,
+) {
+    if let Some(member) = resolution.members.iter_mut().find(|member| {
+        member.character_id == character_id
+            && member
+                .alternatives
+                .iter()
+                .any(|variant| variant.id == variant_id)
+    }) {
+        member.selected_variant_id = Some(variant_id.to_string());
+        member.reason = "ユーザーが同点候補から選択しました。".into();
     }
 }
 
@@ -953,6 +1071,38 @@ mod tests {
         }
     }
 
+    fn choice_result() -> TeamBuildResolution {
+        serde_json::from_value(serde_json::json!({
+            "status": "needs_user_choice",
+            "members": [{
+                "characterId": "char-a",
+                "selectedVariantId": null,
+                "alternatives": [{
+                    "id": "variant-a",
+                    "characterId": "char-a",
+                    "artifactPlan": { "type": "four_piece", "setId": "set-a" },
+                    "mainStatPackage": {
+                        "id": "main-a",
+                        "sands": "攻撃力%",
+                        "goblet": "元素ダメージ",
+                        "circlet": "会心率",
+                        "conditions": [],
+                        "substatPriority": [],
+                        "targetStats": []
+                    },
+                    "conditions": [],
+                    "teamBuffKeys": [],
+                    "evidenceClaims": [],
+                    "sourceFamilyCount": 1,
+                    "conflictPenalty": 0
+                }],
+                "reason": "同点"
+            }],
+            "warnings": []
+        }))
+        .unwrap()
+    }
+
     #[test]
     fn migrationでpragmaとschema_versionを設定する() {
         let database = Database::open_in_memory().unwrap();
@@ -1054,6 +1204,44 @@ mod tests {
         assert_eq!(
             database.current_result_id("party-result").unwrap(),
             Some(result_id)
+        );
+    }
+
+    #[test]
+    fn ユーザー選択を現在結果へ重ねて読み戻す() {
+        let database = Database::open_in_memory().unwrap();
+        database.save_party(draft("party-choice")).unwrap();
+        let run_id = database
+            .begin_analysis_run("party-choice", "composition", "input")
+            .unwrap();
+        database
+            .persist_successful_result(SuccessfulAnalysisRecord {
+                identity: identity(&run_id, "choice"),
+                evidence_snapshot: serde_json::json!({}),
+                result: choice_result(),
+            })
+            .unwrap();
+
+        let selected = database
+            .save_user_selection("party-choice", "char-a", "variant-a")
+            .unwrap();
+
+        assert_eq!(selected.status, ResolutionStatus::Resolved);
+        assert_eq!(
+            selected.members[0].selected_variant_id.as_deref(),
+            Some("variant-a")
+        );
+        assert_eq!(
+            database
+                .load_current_result("party-choice")
+                .unwrap()
+                .unwrap(),
+            selected
+        );
+        assert!(
+            database
+                .save_user_selection("party-choice", "char-a", "unknown")
+                .is_err()
         );
     }
 
