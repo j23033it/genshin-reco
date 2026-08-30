@@ -244,9 +244,15 @@ fn compare_selections(
     right: &EvaluatedSelection<'_>,
 ) -> std::cmp::Ordering {
     left.numeric_score
-        .evidence_grade_total
-        .cmp(&right.numeric_score.evidence_grade_total)
+        .source_family_count_total
+        .cmp(&right.numeric_score.source_family_count_total)
         .reverse()
+        .then_with(|| {
+            left.numeric_score
+                .evidence_grade_total
+                .cmp(&right.numeric_score.evidence_grade_total)
+                .reverse()
+        })
         .then_with(|| {
             left.numeric_score
                 .conflict_penalty_total
@@ -256,12 +262,6 @@ fn compare_selections(
             left.numeric_score
                 .duplicate_buff_count
                 .cmp(&right.numeric_score.duplicate_buff_count)
-        })
-        .then_with(|| {
-            left.numeric_score
-                .source_family_count_total
-                .cmp(&right.numeric_score.source_family_count_total)
-                .reverse()
         })
         .then_with(|| left.variant_id_key.cmp(&right.variant_id_key))
 }
@@ -505,6 +505,22 @@ mod tests {
         assert_eq!(
             result.warnings,
             vec!["teamBuffKey「atk」が2件重複しています。"]
+        );
+    }
+
+    #[test]
+    fn evidence_gradeより独立source_family支持数を優先する() {
+        let mut candidates = team();
+        candidates[0][0].id = "single-family-a".into();
+        let mut multiple_families = variant("char-0", "two-families-b", EvidenceGrade::B);
+        multiple_families.source_family_count = 2;
+        candidates[0].push(multiple_families);
+
+        let result = solve_team_builds(candidates).unwrap();
+
+        assert_eq!(
+            result.members[0].selected_variant_id.as_deref(),
+            Some("two-families-b")
         );
     }
 

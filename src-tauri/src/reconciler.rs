@@ -108,7 +108,8 @@ pub fn reconcile_character_research(
                 }
             }
             let mut evidence_claims = Vec::with_capacity(variant.claims.len());
-            let mut source_families = HashSet::new();
+            let mut required_source_families =
+                HashMap::<domain::EvidenceClaimType, HashSet<&str>>::new();
             let mut verified_required_claims = HashSet::new();
 
             for claim in &variant.claims {
@@ -130,11 +131,12 @@ pub fn reconcile_character_research(
                 if claim_conflicts_with_variant(claim, variant) || !conditions_hold {
                     return Err(ReconcilerError::ContradictoryVariant(variant.id.clone()));
                 }
-                if grade != domain::EvidenceGrade::C {
-                    source_families.insert(page.source_family.as_str());
-                    if is_required {
-                        verified_required_claims.insert(claim.claim_type);
-                    }
+                if grade != domain::EvidenceGrade::C && is_required {
+                    verified_required_claims.insert(claim.claim_type);
+                    required_source_families
+                        .entry(claim.claim_type)
+                        .or_default()
+                        .insert(page.source_family.as_str());
                 }
 
                 evidence_claims.push(domain::EvidenceClaim {
@@ -159,18 +161,27 @@ pub fn reconcile_character_research(
                 });
             }
 
-            if [
+            let required_claim_types = [
                 domain::EvidenceClaimType::ArtifactPlan,
                 domain::EvidenceClaimType::MainStatPackage,
                 domain::EvidenceClaimType::SubstatPriority,
-            ]
-            .iter()
-            .any(|claim_type| !verified_required_claims.contains(claim_type))
+            ];
+            if required_claim_types
+                .iter()
+                .any(|claim_type| !verified_required_claims.contains(claim_type))
             {
                 return Err(ReconcilerError::InsufficientVerifiedEvidence(
                     variant.id.clone(),
                 ));
             }
+            // 必須3項目のうち最も独立情報源が少ない項目を候補全体のfamily支持数とする。
+            // 任意claimを増やして支持数を水増しすることはできない。
+            let source_family_count = required_claim_types
+                .iter()
+                .filter_map(|claim_type| required_source_families.get(claim_type))
+                .map(HashSet::len)
+                .min()
+                .unwrap_or_default();
 
             Ok(domain::BuildVariant {
                 id: variant.id.clone(),
@@ -180,7 +191,7 @@ pub fn reconcile_character_research(
                 conditions: variant.conditions.clone(),
                 team_buff_keys: variant.team_buff_keys.clone(),
                 evidence_claims,
-                source_family_count: source_families.len(),
+                source_family_count,
                 conflict_penalty: 0,
             })
         })
@@ -509,7 +520,7 @@ mod tests {
     }
 
     #[test]
-    fn 同じsource_familyは一つとして数える() {
+    fn 任意または一部claimだけのfamilyで支持数を水増ししない() {
         let mut claims = required_claims(URL_ONE);
         claims.push(claim(
             domain::EvidenceClaimType::ArtifactPlan,
@@ -539,6 +550,34 @@ mod tests {
                     URL_TWO,
                     "page-2",
                     domain::EvidenceVerification::HostFuzzyMatch,
+                    "wiki",
+                ),
+                page(
+                    URL_THREE,
+                    "page-3",
+                    domain::EvidenceVerification::HostExactMatch,
+                    "guide",
+                ),
+            ],
+            &analysis_input(),
+        )
+        .unwrap();
+
+        assert_eq!(result[0].source_family_count, 1);
+    }
+
+    #[test]
+    fn 必須三項目を支える独立familyを数える() {
+        let mut claims = required_claims(URL_ONE);
+        claims.extend(required_claims(URL_THREE));
+        let output = output_with_claims(claims);
+        let result = reconcile_character_research(
+            &output,
+            &[
+                page(
+                    URL_ONE,
+                    "page-1",
+                    domain::EvidenceVerification::HostExactMatch,
                     "wiki",
                 ),
                 page(
