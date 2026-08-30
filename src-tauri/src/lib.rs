@@ -2,6 +2,7 @@ mod app_server;
 pub mod candidate_validation;
 pub mod catalog;
 pub mod database;
+mod database_commands;
 pub mod domain;
 pub mod hashing;
 pub mod reconciler;
@@ -12,6 +13,10 @@ pub mod source_policy;
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .setup(|app| {
+            database_commands::initialize_database(app.handle()).map_err(std::io::Error::other)?;
+            Ok(())
+        })
         .manage(app_server::AppServerSupervisor::default())
         .invoke_handler(tauri::generate_handler![
             app_server::probe_codex_environment,
@@ -19,7 +24,10 @@ pub fn run() {
             app_server::read_codex_login_status,
             app_server::cancel_codex_device_login,
             app_server::run_codex_gate0_smoke,
-            catalog::load_catalog
+            catalog::load_catalog,
+            database_commands::save_party_draft,
+            database_commands::load_party_draft,
+            database_commands::list_party_drafts
         ])
         .run(tauri::generate_context!())
         .expect("Tauriアプリケーションを起動できませんでした");
