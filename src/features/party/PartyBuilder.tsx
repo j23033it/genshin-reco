@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import type { ChangeEvent } from "react";
+import type { AnalysisMode } from "../../domain/analysisTypes";
 import type { Catalog, Character, Weapon } from "../../domain/catalogTypes";
 import { cn } from "../../lib/cn";
 import {
@@ -17,6 +18,8 @@ export interface PartyBuilderProps {
   draft: PartyDraft;
   onChange: (draft: PartyDraft) => void;
   onAnalyze: (draft: PartyDraft) => void;
+  analysisMode?: AnalysisMode;
+  onAnalysisModeChange?: (mode: AnalysisMode) => void;
   mode?: "create" | "edit";
   actionError?: string | null;
   disabled?: boolean;
@@ -324,11 +327,15 @@ export function PartyBuilder({
   draft,
   onChange,
   onAnalyze,
+  analysisMode,
+  onAnalysisModeChange,
   mode = "create",
   actionError = null,
   disabled = false,
 }: PartyBuilderProps) {
   const draftIdentity = draft.partyId ?? draft.id ?? "new-party";
+  const [uncontrolledAnalysisMode, setUncontrolledAnalysisMode] = useState<AnalysisMode>("normal");
+  const selectedAnalysisMode = analysisMode ?? uncontrolledAnalysisMode;
   const characterById = useMemo(
     () => new Map(catalog.characters.map((character) => [character.id, character])),
     [catalog.characters],
@@ -360,6 +367,11 @@ export function PartyBuilder({
 
   const handleNameChange = (event: ChangeEvent<HTMLInputElement>) => {
     onChange({ ...draft, name: event.target.value });
+  };
+
+  const handleAnalysisModeChange = (nextMode: AnalysisMode) => {
+    setUncontrolledAnalysisMode(nextMode);
+    onAnalysisModeChange?.(nextMode);
   };
 
   return (
@@ -425,6 +437,82 @@ export function PartyBuilder({
 
       <div className="max-w-xl border-t border-slate-800 pt-6">
         <div>
+          <fieldset
+            className="mb-4 rounded-lg border border-slate-800 bg-slate-900/40 p-4"
+            disabled={disabled}
+            aria-describedby={`analysis-mode-help-${draftIdentity}`}
+          >
+            <legend className="px-1 text-sm font-semibold text-slate-200">分析モード</legend>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <label
+                htmlFor={`analysis-mode-normal-${draftIdentity}`}
+                className={cn(
+                  "flex min-h-11 min-w-0 cursor-pointer items-center gap-3 rounded-lg border px-3 py-2 focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-amber-400",
+                  selectedAnalysisMode === "normal"
+                    ? "border-amber-400/70 bg-amber-400/10"
+                    : "border-slate-700 hover:border-slate-500",
+                  disabled && "cursor-not-allowed opacity-60",
+                )}
+              >
+                <input
+                  id={`analysis-mode-normal-${draftIdentity}`}
+                  type="radio"
+                  name={`analysis-mode-${draftIdentity}`}
+                  value="normal"
+                  checked={selectedAnalysisMode === "normal"}
+                  onChange={() => handleAnalysisModeChange("normal")}
+                  disabled={disabled}
+                  aria-label="通常"
+                  aria-describedby={`analysis-mode-normal-help-${draftIdentity}`}
+                  className="size-4 accent-amber-400"
+                />
+                <span className="min-w-0">
+                  <span className="block font-semibold text-slate-100">通常</span>
+                  <span
+                    id={`analysis-mode-normal-help-${draftIdentity}`}
+                    className="mt-1 block text-xs text-slate-400"
+                  >
+                    精度優先
+                  </span>
+                </span>
+              </label>
+              <label
+                htmlFor={`analysis-mode-fast-${draftIdentity}`}
+                className={cn(
+                  "flex min-h-11 min-w-0 cursor-pointer items-center gap-3 rounded-lg border px-3 py-2 focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-amber-400",
+                  selectedAnalysisMode === "fast"
+                    ? "border-amber-400/70 bg-amber-400/10"
+                    : "border-slate-700 hover:border-slate-500",
+                  disabled && "cursor-not-allowed opacity-60",
+                )}
+              >
+                <input
+                  id={`analysis-mode-fast-${draftIdentity}`}
+                  type="radio"
+                  name={`analysis-mode-${draftIdentity}`}
+                  value="fast"
+                  checked={selectedAnalysisMode === "fast"}
+                  onChange={() => handleAnalysisModeChange("fast")}
+                  disabled={disabled}
+                  aria-label="高速"
+                  aria-describedby={`analysis-mode-fast-help-${draftIdentity}`}
+                  className="size-4 accent-amber-400"
+                />
+                <span className="min-w-0">
+                  <span className="block font-semibold text-slate-100">高速</span>
+                  <span
+                    id={`analysis-mode-fast-help-${draftIdentity}`}
+                    className="mt-1 block text-xs text-slate-400"
+                  >
+                    待ち時間優先
+                  </span>
+                </span>
+              </label>
+            </div>
+            <p id={`analysis-mode-help-${draftIdentity}`} className="mt-3 text-xs leading-5 text-slate-400">
+              分析モードは保存編成には記録されません。
+            </p>
+          </fieldset>
           <button
             type="button"
             className={cn(

@@ -6,8 +6,8 @@ use crate::{
     catalog::load_embedded_catalog,
     database::{CharacterResearchCacheRecord, Database, SuccessfulAnalysisRecord},
     domain::{
-        AnalysisInput, AnalysisStatus, BuildVariant, EvidenceClaim, HostGeneratedIdentity,
-        TeamBuildResolution,
+        AnalysisInput, AnalysisMode, AnalysisStatus, BuildVariant, EvidenceClaim,
+        HostGeneratedIdentity, TeamBuildResolution,
     },
     hashing::{
         analysis_input_hash, evidence_snapshot_hash, party_composition_hash, result_hash,
@@ -27,9 +27,9 @@ use tauri::{Emitter, State};
 use tokio::sync::Mutex;
 
 const SOURCE_POLICY_VERSION: &str = "source-policy-v1";
-const PROMPT_VERSION: &str = "prompt-v5";
+const PROMPT_VERSION: &str = "prompt-v6";
 const RESEARCH_SCHEMA_VERSION: &str = "character-research-v2";
-const RECONCILER_VERSION: &str = "reconciler-v4";
+const RECONCILER_VERSION: &str = "reconciler-v5";
 const SOLVER_VERSION: &str = "solver-v2";
 const ANALYSIS_PROGRESS_EVENT: &str = "analysis-progress";
 
@@ -77,6 +77,7 @@ struct AnalysisProgressEvent {
 #[serde(rename_all = "camelCase")]
 struct EvidenceSnapshot<'a> {
     analysis_input: &'a AnalysisInput,
+    research_mode: AnalysisMode,
     source_pages: Vec<VerifiedSourcePage>,
     evidence_claims: Vec<EvidenceClaim>,
     research_outputs: Vec<Value>,
@@ -88,6 +89,7 @@ pub async fn start_analysis(
     database: State<'_, Database>,
     coordinator: State<'_, AnalysisCoordinator>,
     input: AnalysisInput,
+    mode: AnalysisMode,
 ) -> Result<AnalysisCommandResult, String> {
     let _gate = coordinator.gate.lock().await;
     let catalog = load_embedded_catalog().map_err(|error| error.to_string())?;
@@ -117,15 +119,16 @@ pub async fn start_analysis(
         });
     }
 
-    let result = execute_analysis(
-        &app,
-        &database,
-        &catalog,
-        &run_id,
-        &input,
-        &cancellation,
-        &job_ids,
-    )
+    let result = execute_analysis(AnalysisExecution {
+        app: &app,
+        database: &database,
+        catalog: &catalog,
+        run_id: &run_id,
+        input: &input,
+        mode,
+        cancellation: &cancellation,
+        job_ids: &job_ids,
+    })
     .await;
     if let Ok(mut active) = coordinator.active.lock()
         && active
@@ -172,15 +175,28 @@ pub fn cancel_analysis(coordinator: State<'_, AnalysisCoordinator>) -> Result<()
     Ok(())
 }
 
-async fn execute_analysis(
-    app: &tauri::AppHandle,
-    database: &Database,
-    catalog: &crate::catalog::Catalog,
-    run_id: &str,
-    input: &AnalysisInput,
-    cancellation: &ResearchCancellation,
-    job_ids: &[String],
-) -> Result<AnalysisCommandResult, String> {
+struct AnalysisExecution<'a> {
+    app: &'a tauri::AppHandle,
+    database: &'a Database,
+    catalog: &'a crate::catalog::Catalog,
+    run_id: &'a str,
+    input: &'a AnalysisInput,
+    mode: AnalysisMode,
+    cancellation: &'a ResearchCancellation,
+    job_ids: &'a [String],
+}
+
+async fn execute_analysis(context: AnalysisExecution<'_>) -> Result<AnalysisCommandResult, String> {
+    let AnalysisExecution {
+        app,
+        database,
+        catalog,
+        run_id,
+        input,
+        mode,
+        cancellation,
+        job_ids,
+    } = context;
     ensure_not_cancelled(cancellation)?;
     set_status(
         app,
@@ -189,7 +205,7 @@ async fn execute_analysis(
         AnalysisStatus::StartingCodex,
         "Codex調査環境を開始しています。",
     )?;
-    let provider = CodexResearchProvider::new(app.clone());
+    let provider = CodexResearchProvider::new(app.clone(), mode);
     let mut candidate_groups = Vec::with_capacity(4);
     let mut source_pages = BTreeMap::<String, VerifiedSourcePage>::new();
     let mut evidence_claims = Vec::new();
@@ -203,6 +219,7 @@ async fn execute_analysis(
             catalog,
             run_id,
             input,
+            mode,
             cancellation,
             &provider,
             0,
@@ -214,6 +231,7 @@ async fn execute_analysis(
             catalog,
             run_id,
             input,
+            mode,
             cancellation,
             &provider,
             1,
@@ -225,6 +243,7 @@ async fn execute_analysis(
             catalog,
             run_id,
             input,
+            mode,
             cancellation,
             &provider,
             2,
@@ -236,6 +255,7 @@ async fn execute_analysis(
             catalog,
             run_id,
             input,
+            mode,
             cancellation,
             &provider,
             3,
@@ -284,6 +304,7 @@ async fn execute_analysis(
     let source_pages = source_pages.into_values().collect::<Vec<_>>();
     let snapshot = EvidenceSnapshot {
         analysis_input: input,
+        research_mode: mode,
         source_pages,
         evidence_claims,
         research_outputs,
@@ -351,6 +372,7 @@ async fn research_member(
     catalog: &crate::catalog::Catalog,
     run_id: &str,
     input: &AnalysisInput,
+    mode: AnalysisMode,
     cancellation: &ResearchCancellation,
     provider: &CodexResearchProvider,
     member_index: usize,
@@ -375,7 +397,7 @@ async fn research_member(
         "個別本文ページを調査しています。",
     )?;
     let input_hash = analysis_input_hash(input).map_err(|error| error.to_string())?;
-    let version_key = sha256_canonical(&input.versions).map_err(|error| error.to_string())?;
+    let version_key = research_cache_version_key(input, mode)?;
     let cached = database
         .load_character_research_cache(
             &member.character_id,
@@ -426,6 +448,7 @@ async fn research_member(
         )?;
     }
     let mut last_validation_error = None;
+    let mut previous_invalid_output = None;
     for attempt in 0..=1 {
         let research_result = provider
             .research_verified_cancellable(
@@ -433,6 +456,8 @@ async fn research_member(
                     analysis_input: input.clone(),
                     character_id: member.character_id.clone(),
                     prior_research: prior_research.clone(),
+                    previous_invalid_output: previous_invalid_output.clone(),
+                    correction_feedback: last_validation_error.clone(),
                 },
                 Some(cancellation.clone()),
             )
@@ -510,6 +535,7 @@ async fn research_member(
                 return Ok(MemberResearchResult { research, variants });
             }
             Err(error) if attempt == 0 => {
+                previous_invalid_output = Some(research.output.clone());
                 last_validation_error = Some(error);
                 database
                     .update_member_research_job(job_id, AnalysisStatus::Researching, 0, None)
@@ -552,8 +578,18 @@ fn can_reuse_cache_without_web(cached: &AnalysisInput, current: &AnalysisInput) 
                 cached_member.slot_index == current_member.slot_index
                     && cached_member.character_id == current_member.character_id
                     && cached_member.weapon_id == current_member.weapon_id
+                    && cached_member.constellation == current_member.constellation
+                    && cached_member.refinement == current_member.refinement
             },
         )
+}
+
+fn research_cache_version_key(input: &AnalysisInput, mode: AnalysisMode) -> Result<String, String> {
+    sha256_canonical(&serde_json::json!({
+        "versions": input.versions,
+        "researchMode": mode,
+    }))
+    .map_err(|error| error.to_string())
 }
 
 fn validate_analysis_contract(
@@ -751,14 +787,24 @@ mod tests {
     }
 
     #[test]
-    fn 凸と精錬だけの変更は検証済み調査を再利用できる() {
+    fn 凸と精錬の変更では検証済み出力をそのまま再利用しない() {
         let cached = valid_input();
         let mut changed = cached.clone();
         changed.members[0].constellation = 2;
         changed.members[1].refinement = 5;
-        assert!(can_reuse_cache_without_web(&cached, &changed));
+        assert!(!can_reuse_cache_without_web(&cached, &changed));
 
+        changed = cached.clone();
         changed.members[2].character_id = "different-character".into();
         assert!(!can_reuse_cache_without_web(&cached, &changed));
+    }
+
+    #[test]
+    fn 通常と高速の調査キャッシュを混在させない() {
+        let input = valid_input();
+        let normal = research_cache_version_key(&input, AnalysisMode::Normal).unwrap();
+        let fast = research_cache_version_key(&input, AnalysisMode::Fast).unwrap();
+
+        assert_ne!(normal, fast);
     }
 }

@@ -10,7 +10,7 @@ import {
   Trash2,
   Users,
 } from "lucide-react";
-import type { AnalysisStatus, ResultValidity, TeamBuildResolution } from "./domain/analysisTypes";
+import type { AnalysisMode, AnalysisStatus, ResultValidity, TeamBuildResolution } from "./domain/analysisTypes";
 import type { Catalog } from "./domain/catalogTypes";
 import {
   AnalysisNotesPanel,
@@ -189,6 +189,7 @@ function Workspace({ catalog }: { catalog: Catalog }) {
   const [savedParties, setSavedParties] = useState<PartyDraft[]>([]);
   const [search, setSearch] = useState("");
   const [notice, setNotice] = useState("");
+  const [analysisMode, setAnalysisMode] = useState<AnalysisMode>("normal");
   const [analysisStatus, setAnalysisStatus] = useState<AnalysisStatus>("queued");
   const [analysisPartyId, setAnalysisPartyId] = useState<string | null>(null);
   const [analysisError, setAnalysisError] = useState<string | null>(null);
@@ -397,7 +398,7 @@ function Workspace({ catalog }: { catalog: Catalog }) {
         }
       });
 
-      const completed = await startAnalysis(input);
+      const completed = await startAnalysis(input, analysisMode);
       setSavedParties((current) => [saved, ...current.filter((party) => getPartyId(party) !== partyId)]);
       setAnalysisStatus("succeeded");
       analysisOperationPartyId.current = null;
@@ -682,6 +683,8 @@ function Workspace({ catalog }: { catalog: Catalog }) {
                   setDraft(nextDraft);
                 }}
                 onAnalyze={(next) => void handleAnalyze(next)}
+                analysisMode={analysisMode}
+                onAnalysisModeChange={setAnalysisMode}
                 mode={selectedIsSaved ? "edit" : "create"}
                 actionError={analysisErrorPartyId === currentDraftId ? analysisError : null}
                 disabled={isAnalysisActive}

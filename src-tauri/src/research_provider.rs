@@ -1,7 +1,7 @@
 use crate::app_server;
 use crate::domain::{
-    AnalysisInput, CharacterResearchOutput, DomainValidationError, EvidenceVerification,
-    validate_analysis_input, validate_character_research_output,
+    AnalysisInput, AnalysisMode, CharacterResearchOutput, DomainValidationError,
+    EvidenceVerification, validate_analysis_input, validate_character_research_output,
 };
 use crate::hashing::sha256_canonical;
 use crate::reconciler::VerifiedSourcePage;
@@ -17,6 +17,8 @@ pub struct CharacterResearchRequest {
     pub analysis_input: AnalysisInput,
     pub character_id: String,
     pub prior_research: Option<CharacterResearchOutput>,
+    pub previous_invalid_output: Option<CharacterResearchOutput>,
+    pub correction_feedback: Option<String>,
 }
 
 /// 調査プロバイダが返す非同期処理の型。
@@ -107,11 +109,12 @@ pub struct VerifiedCharacterResearch {
 #[derive(Clone)]
 pub struct CodexResearchProvider {
     app: tauri::AppHandle,
+    mode: AnalysisMode,
 }
 
 impl CodexResearchProvider {
-    pub fn new(app: tauri::AppHandle) -> Self {
-        Self { app }
+    pub fn new(app: tauri::AppHandle, mode: AnalysisMode) -> Self {
+        Self { app, mode }
     }
 
     pub fn research_verified(&self, request: CharacterResearchRequest) -> VerifiedResearchFuture {
@@ -124,6 +127,7 @@ impl CodexResearchProvider {
         cancellation: Option<app_server::ResearchCancellation>,
     ) -> VerifiedResearchFuture {
         let app = self.app.clone();
+        let mode = self.mode;
         Box::pin(async move {
             validate_analysis_input(&request.analysis_input)
                 .map_err(ResearchProviderError::InvalidAnalysisInput)?;
@@ -131,10 +135,15 @@ impl CodexResearchProvider {
             let observed = app_server::research_character_with_codex(
                 &app,
                 supervisor.inner(),
-                &request.analysis_input,
-                &request.character_id,
-                cancellation.as_ref(),
-                request.prior_research.as_ref(),
+                app_server::CodexCharacterResearchRequest {
+                    analysis_input: &request.analysis_input,
+                    character_id: &request.character_id,
+                    cancellation: cancellation.as_ref(),
+                    prior_research: request.prior_research.as_ref(),
+                    previous_invalid_output: request.previous_invalid_output.as_ref(),
+                    correction_feedback: request.correction_feedback.as_deref(),
+                    mode,
+                },
             )
             .await
             .map_err(ResearchProviderError::AppServer)?;
@@ -450,6 +459,8 @@ mod tests {
             analysis_input: valid_input(),
             character_id: character_id.to_string(),
             prior_research: None,
+            previous_invalid_output: None,
+            correction_feedback: None,
         }
     }
 
@@ -482,6 +493,8 @@ mod tests {
             analysis_input: input,
             character_id: "char-a".to_string(),
             prior_research: None,
+            previous_invalid_output: None,
+            correction_feedback: None,
         }))
         .unwrap_err();
         assert!(matches!(

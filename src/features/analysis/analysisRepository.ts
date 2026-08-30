@@ -2,6 +2,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import type {
   AnalysisInput,
+  AnalysisMode,
   AnalysisStatus,
   HostGeneratedIdentity,
   TeamBuildResolution,
@@ -62,9 +63,9 @@ export function buildAnalysisInput(draft: PartyDraft, catalog: Catalog): Analysi
     versions: {
       catalogVersion: catalog.schemaVersion,
       sourcePolicyVersion: "source-policy-v1",
-      promptVersion: "prompt-v5",
+      promptVersion: "prompt-v6",
       schemaVersion: "character-research-v2",
-      reconcilerVersion: "reconciler-v4",
+      reconcilerVersion: "reconciler-v5",
       solverVersion: "solver-v2",
     },
   };
@@ -77,11 +78,11 @@ export async function subscribeAnalysisProgress(
   return listen<AnalysisProgressEvent>("analysis-progress", ({ payload }) => onProgress(payload));
 }
 
-export async function startAnalysis(input: AnalysisInput): Promise<AnalysisCommandResult> {
+export async function startAnalysis(input: AnalysisInput, mode: AnalysisMode): Promise<AnalysisCommandResult> {
   if (!isTauriRuntime()) {
     throw new Error("実Web調査はデスクトップアプリから実行してください。");
   }
-  return invoke<AnalysisCommandResult>("start_analysis", { input });
+  return invoke<AnalysisCommandResult>("start_analysis", { input, mode });
 }
 
 export async function cancelAnalysis(): Promise<void> {

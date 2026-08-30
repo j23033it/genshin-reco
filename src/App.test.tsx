@@ -180,6 +180,23 @@ describe("アプリワークスペース", () => {
     expect(screen.getByRole("textbox", { name: "編成名" })).toHaveValue("");
     expect(savePartyDraftMock).toHaveBeenCalledOnce();
     expect(startAnalysisMock).toHaveBeenCalledOnce();
+    expect(startAnalysisMock).toHaveBeenCalledWith(expect.any(Object), "normal");
+    expect(savePartyDraftMock.mock.calls[0]?.[0]).not.toHaveProperty("analysisMode");
+  });
+
+  it("高速モードを選ぶと分析呼び出しへ高速を渡す", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await screen.findByRole("textbox", { name: "編成名" });
+    await fillValidParty(user, "高速チーム");
+
+    expect(screen.getByRole("radio", { name: "通常" })).toBeChecked();
+    await user.click(screen.getByRole("radio", { name: "高速" }));
+    expect(screen.getByRole("radio", { name: "高速" })).toBeChecked();
+    await user.click(screen.getByRole("button", { name: "分析を開始" }));
+
+    expect(await screen.findByText("「高速チーム」の分析結果を保存しました。")).toBeInTheDocument();
+    expect(startAnalysisMock).toHaveBeenCalledWith(expect.any(Object), "fast");
   });
 
   it("分析失敗時は新規編成を一覧へ加えず入力を保持する", async () => {

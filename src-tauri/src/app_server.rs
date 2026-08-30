@@ -1,5 +1,5 @@
 use crate::domain::{
-    AnalysisInput, CharacterResearchOutput, character_research_output_schema,
+    AnalysisInput, AnalysisMode, CharacterResearchOutput, character_research_output_schema,
     validate_analysis_input, validate_character_research_output,
 };
 use crate::source_policy::{is_direct_content_url, normalize_source_url};
@@ -29,6 +29,7 @@ const MINIMUM_CODEX_MAJOR: u64 = 0;
 const MINIMUM_CODEX_MINOR: u64 = 143;
 const DEFAULT_CODEX_MODEL: &str = "gpt-5.6-luna";
 const DEFAULT_REASONING_EFFORT: &str = "medium";
+const FAST_REASONING_EFFORT: &str = "low";
 const RPC_TIMEOUT: Duration = Duration::from_secs(15);
 const TURN_TIMEOUT: Duration = Duration::from_secs(600);
 const MAX_DIAGNOSTIC_LINES: usize = 100;
@@ -66,6 +67,15 @@ const APP_AGENTS_INSTRUCTIONS: &str = r#"# 原神ビルド調査エージェン�
 - 指定されたJSON Schemaに厳密に従い、確認できない情報を推測で補わないこと。
 - 引用候補には実際に確認したURLと、主張を直接支える短い抜粋または要約を含めること。
 "#;
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct ResearchArtifactCatalogEntry<'a> {
+    id: &'a str,
+    name: &'a str,
+    team_buff_key: Option<&'a str>,
+    two_piece_effect_group_id: &'a str,
+}
 
 #[derive(Debug, Error)]
 enum AppServerError {
@@ -861,14 +871,30 @@ pub async fn run_codex_gate0_smoke(
 /// キャラクター1件を実Web調査し、構造化出力と本文閲覧イベントを突き合わせる。
 ///
 /// 認証・設定用の常駐セッションとは分けた専用プロセスを使うため、複数キャラクターを並列調査できる。
+pub(crate) struct CodexCharacterResearchRequest<'a> {
+    pub analysis_input: &'a AnalysisInput,
+    pub character_id: &'a str,
+    pub cancellation: Option<&'a ResearchCancellation>,
+    pub prior_research: Option<&'a CharacterResearchOutput>,
+    pub previous_invalid_output: Option<&'a CharacterResearchOutput>,
+    pub correction_feedback: Option<&'a str>,
+    pub mode: AnalysisMode,
+}
+
 pub(crate) async fn research_character_with_codex(
     app: &tauri::AppHandle,
     supervisor: &AppServerSupervisor,
-    analysis_input: &AnalysisInput,
-    character_id: &str,
-    cancellation: Option<&ResearchCancellation>,
-    prior_research: Option<&CharacterResearchOutput>,
+    request: CodexCharacterResearchRequest<'_>,
 ) -> Result<ObservedCharacterResearch, String> {
+    let CodexCharacterResearchRequest {
+        analysis_input,
+        character_id,
+        cancellation,
+        prior_research,
+        previous_invalid_output,
+        correction_feedback: initial_correction_feedback,
+        mode,
+    } = request;
     validate_analysis_input(analysis_input).map_err(|error| error.to_string())?;
     if !analysis_input
         .members
@@ -887,17 +913,22 @@ pub(crate) async fn research_character_with_codex(
         )
     };
     let result = async {
-        let mut last_error = None::<String>;
+        let mut last_error = initial_correction_feedback.map(str::to_owned);
+        let mut previous_invalid_output = previous_invalid_output.cloned();
         for attempt in 0..=2 {
             let correction_feedback = last_error.as_deref();
             match run_character_research_attempt(
                 app,
                 &mut slot,
-                analysis_input,
-                character_id,
-                cancellation,
-                correction_feedback,
-                prior_research,
+                CharacterResearchAttempt {
+                    analysis_input,
+                    character_id,
+                    cancellation,
+                    correction_feedback,
+                    prior_research,
+                    previous_invalid_output: previous_invalid_output.as_ref(),
+                    mode,
+                },
             )
             .await
             {
@@ -915,6 +946,7 @@ pub(crate) async fn research_character_with_codex(
                     match validation {
                         Ok(()) => return Ok(observed),
                         Err(error) if attempt < 2 => {
+                            previous_invalid_output = Some(observed.output);
                             last_error = Some(error);
                         }
                         Err(error) => return Err(error),
@@ -935,15 +967,30 @@ pub(crate) async fn research_character_with_codex(
     result
 }
 
+struct CharacterResearchAttempt<'a> {
+    analysis_input: &'a AnalysisInput,
+    character_id: &'a str,
+    cancellation: Option<&'a ResearchCancellation>,
+    correction_feedback: Option<&'a str>,
+    prior_research: Option<&'a CharacterResearchOutput>,
+    previous_invalid_output: Option<&'a CharacterResearchOutput>,
+    mode: AnalysisMode,
+}
+
 async fn run_character_research_attempt(
     app: &tauri::AppHandle,
     slot: &mut Option<ManagedAppServer>,
-    analysis_input: &AnalysisInput,
-    character_id: &str,
-    cancellation: Option<&ResearchCancellation>,
-    correction_feedback: Option<&str>,
-    prior_research: Option<&CharacterResearchOutput>,
+    attempt: CharacterResearchAttempt<'_>,
 ) -> Result<ObservedCharacterResearch, AppServerError> {
+    let CharacterResearchAttempt {
+        analysis_input,
+        character_id,
+        cancellation,
+        correction_feedback,
+        prior_research,
+        previous_invalid_output,
+        mode,
+    } = attempt;
     if cancellation.is_some_and(ResearchCancellation::is_cancelled) {
         return Err(AppServerError::Cancelled);
     }
@@ -971,11 +1018,15 @@ async fn run_character_research_attempt(
 
     let result = async {
         validate_instruction_sources(&thread_result, &workspace)?;
-        let mut prompt =
-            build_character_research_prompt(analysis_input, character_id, prior_research)?;
+        let mut prompt = build_character_research_prompt(
+            analysis_input,
+            character_id,
+            prior_research,
+            previous_invalid_output,
+        )?;
         if let Some(feedback) = correction_feedback {
             prompt.push_str(&format!(
-                "\n\n前回の出力はホスト検証で次の理由により不合格でした: {feedback}\n同じ不整合を繰り返さず、調査結果をJSON Schemaに沿って修正してください。sourcesと全claimのevidence.sourceUrlを相互に完全対応させ、未使用sourceを除外してください。normalizedValueへ候補本体の値を複製せず、artifact_plan・main_stat_package・substat_priorityはkindだけ、target_statは参照先のstatとscopeだけを記録してください。"
+                "\n\n前回の出力はホスト検証で次の理由により不合格でした: {feedback}\npreviousInvalidOutputを修正元として使い、指摘と関係のない調査や計算を最初からやり直さないでください。採用する根拠ページだけは今回も開き、JSON Schemaに沿った完全な出力を返してください。sourcesと全claimのevidence.sourceUrlを相互に完全対応させ、未使用sourceを除外してください。normalizedValueへ候補本体の値を複製せず、artifact_plan・main_stat_package・substat_priorityはkindだけ、target_statは参照先のstatとscopeだけを記録してください。"
             ));
         }
         let output_schema = character_research_output_schema();
@@ -986,7 +1037,7 @@ async fn run_character_research_attempt(
             Some(json!({
                 "threadId": thread_id,
                 "model": DEFAULT_CODEX_MODEL,
-                "effort": DEFAULT_REASONING_EFFORT,
+                "effort": research_reasoning_effort(mode, correction_feedback.is_some()),
                 "input": [{
                     "type": "text",
                     "text": prompt,
@@ -1065,6 +1116,7 @@ fn build_character_research_prompt(
     analysis_input: &AnalysisInput,
     character_id: &str,
     prior_research: Option<&CharacterResearchOutput>,
+    previous_invalid_output: Option<&CharacterResearchOutput>,
 ) -> Result<String, AppServerError> {
     let catalog = crate::catalog::load_embedded_catalog()
         .map_err(|error| AppServerError::Protocol(error.to_string()))?;
@@ -1083,17 +1135,47 @@ fn build_character_research_prompt(
         .iter()
         .find(|weapon| weapon.id == member.weapon_id)
         .ok_or_else(|| AppServerError::Protocol("対象武器がカタログにありません".into()))?;
+    let artifact_catalog = catalog
+        .artifact_sets
+        .iter()
+        .map(|artifact| ResearchArtifactCatalogEntry {
+            id: &artifact.id,
+            name: &artifact.name,
+            team_buff_key: artifact.team_buff_key.as_deref(),
+            two_piece_effect_group_id: &artifact.two_piece_effect_group_id,
+        })
+        .collect::<Vec<_>>();
     let context = json!({
         "analysisInput": analysis_input,
-        "targetCharacter": character,
-        "targetWeapon": weapon,
-        "artifactCatalog": catalog.artifact_sets,
+        "targetCharacter": {
+            "id": character.id,
+            "name": character.name,
+            "element": character.element,
+            "weaponType": character.weapon_type,
+            "rarity": character.rarity,
+        },
+        "targetWeapon": {
+            "id": weapon.id,
+            "name": weapon.name,
+            "weaponType": weapon.weapon_type,
+            "rarity": weapon.rarity,
+        },
+        "artifactCatalog": artifact_catalog,
         "cachedVerifiedResearch": prior_research,
+        "previousInvalidOutput": previous_invalid_output,
     });
     let input = serde_json::to_string(&context)?;
     Ok(format!(
-        "調査コンテキストJSONに含まれるtargetCharacterの聖遺物ビルドと目標ステータスを調査・算出してください。cachedVerifiedResearchがある場合は前回の検証済みURL・抜粋・claimを調査の出発点として利用できますが、現在の編成・武器・凸・精錬に合うか再評価し、採用する個別本文ページは今回も実際に開いてください。wiki.hoyolab.com、game8.jp、wikiwiki.jp/genshinwikiの3サイトだけを検索・閲覧し、その個別本文ページを実際に開いて、聖遺物構成、メインステータス一式、サブステータス優先度、目標値の計算に使うキャラクター・武器・天賦・命ノ星座・聖遺物・元素共鳴・チーム効果の数値を確認してください。各variantのtargetStatsは2件以上8件以下とし、役割に応じた主要参照ステータス、会心、元素熟知、元素チャージ効率などから期待火力と安定性に有効なものを偏りなく選んでください。各目標にはminimumまたはmaximumの数値を必ず設定し、noteへ計算に含めた効果、成立条件、逆算を短く記載してください。会心率を利用するビルドではscopeをcharacter_sheet_unbuffed、maximumを戦闘前上限にしてください。氷共鳴、聖遺物セット、武器、天賦、命ノ星座など実戦で適用可能な会心率加算をincludedBonusesへsource・amount・conditionで漏れなく列挙し、maximumとamount合計が100%以下になるよう逆算してください。会心を利用しない反応主体ビルドでは、その理由をnoteへ記載して別の有効ステータスを提示してください。元素チャージ効率は爆発を安定使用できる下限として算出し、過剰に盛って火力配分を崩さないようにしてください。全claimのevidence.sourceUrlはsourcesに同じ文字列で必ず1件登録してください。sourcesの全項目は少なくとも1件のclaimから参照し、閲覧しただけの未使用ページはsourcesへ含めないでください。normalizedValueには候補本体の複雑な値を複製しないでください。artifact_planは{{\"kind\":\"artifact_plan\"}}、main_stat_packageは{{\"kind\":\"main_stat_package\"}}、substat_priorityは{{\"kind\":\"substat_priority\"}}とします。targetStatsの各項目には、そのstatとscopeだけを参照する{{\"kind\":\"target_stat\",\"stat\":対象のstat,\"scope\":対象のscope}}のclaimを最低1件作成し、evidenceSummaryに根拠数値と計算内容を記載してください。conditionsにも矛盾を作らないでください。役割、反応担当、元素エネルギー方針、耐久方針はユーザー指定ではありません。4人編成、武器、命ノ星座、精錬と検証済み根拠から判断し、推測で固定しないでください。artifactPlanのIDとteamBuffKeysはartifactCatalogの値だけをそのまま使ってください。各sourceのgameVersionはanalysisInput.gameVersionと完全一致させてください。条件付き推奨はconditionsへ型付きで記録し、fieldにはconstellation、refinement、characterLevel、weaponLevel、artifactLevel、artifactRarity、gameVersion、finalAscension、allTalentsAvailable、witchTeachingWhenApplicableだけを使用してください。URLやIDを推測せず、確認できなければ候補を作らないでください。調査コンテキストJSON: {input}"
+        "調査コンテキストJSONに含まれるtargetCharacterの聖遺物ビルドと目標ステータスを調査・算出してください。cachedVerifiedResearchがある場合は前回の検証済みURL・抜粋・claimを調査の出発点として利用できますが、現在の編成・武器・凸・精錬に合うか再評価し、採用する個別本文ページは今回も実際に開いてください。wiki.hoyolab.com、game8.jp、wikiwiki.jp/genshinwikiの3サイトだけを検索・閲覧し、その個別本文ページを実際に開いて、聖遺物構成、メインステータス一式、サブステータス優先度、目標値の計算に使うキャラクター・武器・天賦・命ノ星座・聖遺物・元素共鳴・チーム効果の数値を確認してください。必要な検索と本文閲覧は可能な限りまとめて並列に行ってください。各variantのtargetStatsは2件以上8件以下とし、役割に応じた主要参照ステータス、会心、元素熟知、元素チャージ効率などから期待火力と安定性に有効なものを偏りなく選んでください。各目標にはminimumまたはmaximumの数値を必ず設定し、noteへ計算に含めた効果、成立条件、逆算を短く記載してください。会心率を利用するビルドではscopeをcharacter_sheet_unbuffed、maximumを戦闘前上限にしてください。氷共鳴、聖遺物セット、武器、天賦、命ノ星座など実戦で適用可能な会心率加算をincludedBonusesへsource・amount・conditionで漏れなく列挙し、maximumとamount合計が100%以下になるよう逆算してください。会心を利用しない反応主体ビルドでは、その理由をnoteへ記載して別の有効ステータスを提示してください。元素チャージ効率は爆発を安定使用できる下限として算出し、過剰に盛って火力配分を崩さないようにしてください。全claimのevidence.sourceUrlはsourcesに同じ文字列で必ず1件登録してください。sourcesの全項目は少なくとも1件のclaimから参照し、閲覧しただけの未使用ページはsourcesへ含めないでください。normalizedValueには候補本体の複雑な値を複製しないでください。artifact_planは{{\"kind\":\"artifact_plan\"}}、main_stat_packageは{{\"kind\":\"main_stat_package\"}}、substat_priorityは{{\"kind\":\"substat_priority\"}}とします。targetStatsの各項目には、そのstatとscopeだけを参照する{{\"kind\":\"target_stat\",\"stat\":対象のstat,\"scope\":対象のscope}}のclaimを最低1件作成し、evidenceSummaryに根拠数値と計算内容を記載してください。現在のanalysisInputで成立しないvariantを出力しないでください。個別claimのconditionsは、そのclaimだけに適用される条件として記録し、候補全体の成立条件と混同しないでください。役割、反応担当、元素エネルギー方針、耐久方針はユーザー指定ではありません。4人編成、武器、命ノ星座、精錬と検証済み根拠から判断し、推測で固定しないでください。artifactPlanのIDとteamBuffKeysはartifactCatalogの値だけをそのまま使ってください。各sourceのgameVersionはanalysisInput.gameVersionと完全一致させてください。条件付き推奨はconditionsへ型付きで記録し、fieldにはconstellation、refinement、characterLevel、weaponLevel、artifactLevel、artifactRarity、gameVersion、finalAscension、allTalentsAvailable、witchTeachingWhenApplicableだけを使用してください。URLやIDを推測せず、確認できなければ候補を作らないでください。調査コンテキストJSON: {input}"
     ))
+}
+
+fn research_reasoning_effort(mode: AnalysisMode, is_correction: bool) -> &'static str {
+    if mode == AnalysisMode::Fast || is_correction {
+        FAST_REASONING_EFFORT
+    } else {
+        DEFAULT_REASONING_EFFORT
+    }
 }
 
 fn validate_research_turn_completion(completion: &Value) -> Result<(), AppServerError> {
@@ -1814,6 +1896,37 @@ mod tests {
         assert!(is_supported_version(
             &Version::parse("0.151.0-alpha.7.2").expect("プレリリース版を解析できること")
         ));
+    }
+
+    #[test]
+    fn 通常と高速と再修正で推論量を切り替える() {
+        assert_eq!(
+            research_reasoning_effort(AnalysisMode::Normal, false),
+            "medium"
+        );
+        assert_eq!(research_reasoning_effort(AnalysisMode::Fast, false), "low");
+        assert_eq!(research_reasoning_effort(AnalysisMode::Normal, true), "low");
+    }
+
+    #[test]
+    fn 調査用聖遺物カタログから画像と効果本文を除外する() {
+        let catalog = crate::catalog::load_embedded_catalog().expect("カタログを読めること");
+        let entries = catalog
+            .artifact_sets
+            .iter()
+            .map(|artifact| ResearchArtifactCatalogEntry {
+                id: &artifact.id,
+                name: &artifact.name,
+                team_buff_key: artifact.team_buff_key.as_deref(),
+                two_piece_effect_group_id: &artifact.two_piece_effect_group_id,
+            })
+            .collect::<Vec<_>>();
+        let serialized = serde_json::to_string(&entries).expect("調査用カタログを直列化できること");
+
+        assert!(serialized.len() < 15_000);
+        assert!(!serialized.contains("pieceImageUrls"));
+        assert!(!serialized.contains("fourPieceEffect"));
+        assert!(!serialized.contains("twoPieceEffect\""));
     }
 
     #[test]

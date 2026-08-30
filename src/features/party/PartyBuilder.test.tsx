@@ -206,8 +206,58 @@ describe("PartyBuilder", () => {
 
     expect(screen.queryByRole("button", { name: "保存" })).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "分析を開始" })).toBeEnabled();
+    expect(screen.getByRole("radio", { name: "通常" })).toBeChecked();
+    expect(screen.getByRole("radio", { name: "高速" })).not.toBeChecked();
     await user.click(screen.getByRole("button", { name: "分析を開始" }));
     expect(onAnalyze).toHaveBeenCalledWith(draft);
+  });
+
+  it("分析モードは通常を既定にし、高速へ変更しても下書きへ保存しない", async () => {
+    const user = userEvent.setup();
+    const onAnalyze = vi.fn();
+    const draft = fullDraft();
+
+    function ControlledBuilder() {
+      const [analysisMode, setAnalysisMode] = useState<"normal" | "fast">("normal");
+      return (
+        <PartyBuilder
+          catalog={catalog}
+          draft={draft}
+          onChange={vi.fn()}
+          onAnalyze={onAnalyze}
+          analysisMode={analysisMode}
+          onAnalysisModeChange={setAnalysisMode}
+        />
+      );
+    }
+
+    render(<ControlledBuilder />);
+
+    const normalMode = screen.getByRole("radio", { name: "通常" });
+    const fastMode = screen.getByRole("radio", { name: "高速" });
+    normalMode.focus();
+    await user.keyboard("{ArrowRight}");
+
+    expect(fastMode).toBeChecked();
+    expect(normalMode).not.toBeChecked();
+    await user.click(screen.getByRole("button", { name: "分析を開始" }));
+    expect(onAnalyze).toHaveBeenCalledWith(draft);
+    expect(onAnalyze.mock.calls[0]?.[0]).not.toHaveProperty("analysisMode");
+  });
+
+  it("分析中は分析モードを変更できない", () => {
+    render(
+      <PartyBuilder
+        catalog={catalog}
+        draft={fullDraft()}
+        onChange={vi.fn()}
+        onAnalyze={vi.fn()}
+        disabled
+      />,
+    );
+
+    expect(screen.getByRole("radio", { name: "通常" })).toBeDisabled();
+    expect(screen.getByRole("radio", { name: "高速" })).toBeDisabled();
   });
 
   it("保存編成の編集時は分析更新ボタンを表示する", () => {

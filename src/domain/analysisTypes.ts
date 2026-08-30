@@ -29,6 +29,7 @@ export type AnalysisStatus =
   | "cancelled"
   | "superseded"
   | "abandoned";
+export type AnalysisMode = "normal" | "fast";
 export type ResultValidity = "current" | "soft_stale" | "hard_stale" | "invalid";
 
 export interface CharacterBuildIntent {

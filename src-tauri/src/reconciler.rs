@@ -33,6 +33,8 @@ pub enum ReconcilerError {
     DirectContentRequired(String),
     #[error("候補「{0}」の本体・根拠・成立条件が矛盾しています")]
     ContradictoryVariant(String),
+    #[error("「{0}」には現在の編成条件で成立する候補がありません")]
+    NoApplicableVariant(String),
     #[error("候補「{0}」に本文確認済みの必須根拠が揃っていません")]
     InsufficientVerifiedEvidence(String),
     #[error("候補条件を評価できません: {0}")]
@@ -94,112 +96,121 @@ pub fn reconcile_character_research(
         }
     }
 
-    output
+    let reconciled = output
         .variants
         .iter()
-        .map(|variant| {
-            for condition in variant
-                .conditions
-                .iter()
-                .chain(variant.main_stat_package.conditions.iter())
-            {
-                if !condition_matches(condition, analysis_input, member)? {
-                    return Err(ReconcilerError::ContradictoryVariant(variant.id.clone()));
-                }
+        .filter_map(|variant| {
+            let applicable = all_conditions_match(
+                variant
+                    .conditions
+                    .iter()
+                    .chain(variant.main_stat_package.conditions.iter()),
+                analysis_input,
+                member,
+            );
+            match applicable {
+                Ok(true) => {}
+                Ok(false) => return None,
+                Err(error) => return Some(Err(error)),
             }
-            let mut evidence_claims = Vec::with_capacity(variant.claims.len());
-            let mut required_source_families =
-                HashMap::<domain::EvidenceClaimType, HashSet<&str>>::new();
-            let mut verified_required_claims = HashSet::new();
+            Some((|| {
+                let mut evidence_claims = Vec::with_capacity(variant.claims.len());
+                let mut required_source_families =
+                    HashMap::<domain::EvidenceClaimType, HashSet<&str>>::new();
+                let mut verified_required_claims = HashSet::new();
 
-            for claim in &variant.claims {
-                let normalized_value = resolve_claim_value(claim, variant)
-                    .ok_or_else(|| ReconcilerError::ContradictoryVariant(variant.id.clone()))?;
-                let normalized_url = normalize_source_url(&claim.evidence.source_url)?;
-                let page = verified_by_url.get(&normalized_url).ok_or_else(|| {
-                    ReconcilerError::UnverifiedUrl(claim.evidence.source_url.clone())
-                })?;
-                let grade = evidence_grade(page.verification);
-                let is_required = matches!(
-                    claim.claim_type,
-                    domain::EvidenceClaimType::ArtifactPlan
-                        | domain::EvidenceClaimType::MainStatPackage
-                        | domain::EvidenceClaimType::SubstatPriority
-                        | domain::EvidenceClaimType::TargetStat
-                );
-                let mut conditions_hold = true;
-                for condition in &claim.conditions {
-                    conditions_hold &= condition_matches(condition, analysis_input, member)?;
+                for claim in &variant.claims {
+                    if !all_conditions_match(&claim.conditions, analysis_input, member)? {
+                        continue;
+                    }
+                    let normalized_value = resolve_claim_value(claim, variant)
+                        .ok_or_else(|| ReconcilerError::ContradictoryVariant(variant.id.clone()))?;
+                    let normalized_url = normalize_source_url(&claim.evidence.source_url)?;
+                    let page = verified_by_url.get(&normalized_url).ok_or_else(|| {
+                        ReconcilerError::UnverifiedUrl(claim.evidence.source_url.clone())
+                    })?;
+                    let grade = evidence_grade(page.verification);
+                    let is_required = matches!(
+                        claim.claim_type,
+                        domain::EvidenceClaimType::ArtifactPlan
+                            | domain::EvidenceClaimType::MainStatPackage
+                            | domain::EvidenceClaimType::SubstatPriority
+                            | domain::EvidenceClaimType::TargetStat
+                    );
+                    if grade != domain::EvidenceGrade::C && is_required {
+                        verified_required_claims.insert(claim.claim_type);
+                        required_source_families
+                            .entry(claim.claim_type)
+                            .or_default()
+                            .insert(page.source_family.as_str());
+                    }
+
+                    evidence_claims.push(domain::EvidenceClaim {
+                        claim_type: claim.claim_type,
+                        normalized_value,
+                        conditions: claim.conditions.clone(),
+                        evidence: domain::SourceEvidence {
+                            source_page_id: page.source_page_id.clone(),
+                            evidence_excerpt: claim.evidence.evidence_excerpt.clone(),
+                            evidence_summary: claim.evidence.evidence_summary.clone(),
+                            locator: claim.evidence.locator.as_ref().map(|locator| {
+                                domain::EvidenceLocator {
+                                    heading: locator.heading.clone(),
+                                    section: locator.section.clone(),
+                                    text_fragment: locator.text_fragment.clone(),
+                                }
+                            }),
+                            verification: page.verification,
+                            content_hash: page.content_hash.clone(),
+                        },
+                        evidence_grade: grade,
+                    });
                 }
-                if !conditions_hold {
-                    return Err(ReconcilerError::ContradictoryVariant(variant.id.clone()));
+
+                let required_claim_types = [
+                    domain::EvidenceClaimType::ArtifactPlan,
+                    domain::EvidenceClaimType::MainStatPackage,
+                    domain::EvidenceClaimType::SubstatPriority,
+                    domain::EvidenceClaimType::TargetStat,
+                ];
+                if required_claim_types
+                    .iter()
+                    .any(|claim_type| !verified_required_claims.contains(claim_type))
+                {
+                    return Err(ReconcilerError::InsufficientVerifiedEvidence(
+                        variant.id.clone(),
+                    ));
                 }
-                if grade != domain::EvidenceGrade::C && is_required {
-                    verified_required_claims.insert(claim.claim_type);
-                    required_source_families
-                        .entry(claim.claim_type)
-                        .or_default()
-                        .insert(page.source_family.as_str());
-                }
+                // 必須3項目のうち最も独立情報源が少ない項目を候補全体のfamily支持数とする。
+                // 任意claimを増やして支持数を水増しすることはできない。
+                let source_family_count = required_claim_types
+                    .iter()
+                    .filter_map(|claim_type| required_source_families.get(claim_type))
+                    .map(HashSet::len)
+                    .min()
+                    .unwrap_or_default();
 
-                evidence_claims.push(domain::EvidenceClaim {
-                    claim_type: claim.claim_type,
-                    normalized_value,
-                    conditions: claim.conditions.clone(),
-                    evidence: domain::SourceEvidence {
-                        source_page_id: page.source_page_id.clone(),
-                        evidence_excerpt: claim.evidence.evidence_excerpt.clone(),
-                        evidence_summary: claim.evidence.evidence_summary.clone(),
-                        locator: claim.evidence.locator.as_ref().map(|locator| {
-                            domain::EvidenceLocator {
-                                heading: locator.heading.clone(),
-                                section: locator.section.clone(),
-                                text_fragment: locator.text_fragment.clone(),
-                            }
-                        }),
-                        verification: page.verification,
-                        content_hash: page.content_hash.clone(),
-                    },
-                    evidence_grade: grade,
-                });
-            }
-
-            let required_claim_types = [
-                domain::EvidenceClaimType::ArtifactPlan,
-                domain::EvidenceClaimType::MainStatPackage,
-                domain::EvidenceClaimType::SubstatPriority,
-                domain::EvidenceClaimType::TargetStat,
-            ];
-            if required_claim_types
-                .iter()
-                .any(|claim_type| !verified_required_claims.contains(claim_type))
-            {
-                return Err(ReconcilerError::InsufficientVerifiedEvidence(
-                    variant.id.clone(),
-                ));
-            }
-            // 必須3項目のうち最も独立情報源が少ない項目を候補全体のfamily支持数とする。
-            // 任意claimを増やして支持数を水増しすることはできない。
-            let source_family_count = required_claim_types
-                .iter()
-                .filter_map(|claim_type| required_source_families.get(claim_type))
-                .map(HashSet::len)
-                .min()
-                .unwrap_or_default();
-
-            Ok(domain::BuildVariant {
-                id: variant.id.clone(),
-                character_id: output.character_id.clone(),
-                artifact_plan: variant.artifact_plan.clone(),
-                main_stat_package: variant.main_stat_package.clone(),
-                conditions: variant.conditions.clone(),
-                team_buff_keys: variant.team_buff_keys.clone(),
-                evidence_claims,
-                source_family_count,
-                conflict_penalty: 0,
-            })
+                Ok(domain::BuildVariant {
+                    id: variant.id.clone(),
+                    character_id: output.character_id.clone(),
+                    artifact_plan: variant.artifact_plan.clone(),
+                    main_stat_package: variant.main_stat_package.clone(),
+                    conditions: variant.conditions.clone(),
+                    team_buff_keys: variant.team_buff_keys.clone(),
+                    evidence_claims,
+                    source_family_count,
+                    conflict_penalty: 0,
+                })
+            })())
         })
-        .collect()
+        .collect::<Result<Vec<_>, _>>()?;
+    if reconciled.is_empty() {
+        Err(ReconcilerError::NoApplicableVariant(
+            output.character_id.clone(),
+        ))
+    } else {
+        Ok(reconciled)
+    }
 }
 
 fn evidence_grade(verification: domain::EvidenceVerification) -> domain::EvidenceGrade {
@@ -265,6 +276,19 @@ fn condition_matches(
         domain::ConditionOperator::Gte => compare_numbers(&actual, &condition.value, |a, b| a >= b),
         domain::ConditionOperator::Lte => compare_numbers(&actual, &condition.value, |a, b| a <= b),
     })
+}
+
+fn all_conditions_match<'a>(
+    conditions: impl IntoIterator<Item = &'a domain::BuildCondition>,
+    input: &domain::AnalysisInput,
+    member: &domain::PartyMemberInput,
+) -> Result<bool, ReconcilerError> {
+    for condition in conditions {
+        if !condition_matches(condition, input, member)? {
+            return Ok(false);
+        }
+    }
+    Ok(true)
 }
 
 fn compare_numbers(
@@ -761,7 +785,7 @@ mod tests {
     }
 
     #[test]
-    fn claim条件が固定入力と矛盾する候補を拒否する() {
+    fn 条件不一致claimを除外すると必須根拠不足を返す() {
         let output = output_with_claims(required_claims(URL_ONE));
         let mut input = analysis_input();
         input.members[0].constellation = 0;
@@ -779,8 +803,78 @@ mod tests {
 
         assert!(matches!(
             result,
-            Err(ReconcilerError::ContradictoryVariant(_))
+            Err(ReconcilerError::InsufficientVerifiedEvidence(_))
         ));
+    }
+
+    #[test]
+    fn 条件不一致の補足claimだけを除外して候補を採用する() {
+        let mut claims = required_claims(URL_ONE);
+        let mut conditional = claim(
+            domain::EvidenceClaimType::TeamInteraction,
+            domain::ResearchClaimValue::TeamInteraction {
+                value: "6凸時だけの補足効果".into(),
+            },
+            URL_ONE,
+        );
+        conditional.conditions[0].value = domain::ConditionValue::Number(6.0);
+        claims.push(conditional);
+        let output = output_with_claims(claims);
+
+        let reconciled = reconcile_character_research(
+            &output,
+            &[page(
+                URL_ONE,
+                "page-1",
+                domain::EvidenceVerification::HostExactMatch,
+                "wiki",
+            )],
+            &analysis_input(),
+        )
+        .expect("現在条件で成立する必須根拠だけを採用できること");
+
+        assert_eq!(reconciled.len(), 1);
+        assert!(
+            reconciled[0]
+                .evidence_claims
+                .iter()
+                .all(|claim| claim.claim_type != domain::EvidenceClaimType::TeamInteraction)
+        );
+    }
+
+    #[test]
+    fn 条件不一致の補足claimは未検証urlでも候補へ影響しない() {
+        let mut claims = required_claims(URL_ONE);
+        let mut conditional = claim(
+            domain::EvidenceClaimType::TeamInteraction,
+            domain::ResearchClaimValue::TeamInteraction {
+                value: "6凸時だけの補足効果".into(),
+            },
+            "https://game8.jp/genshin/999999",
+        );
+        conditional.conditions[0].value = domain::ConditionValue::Number(6.0);
+        claims.push(conditional);
+        let output = output_with_claims(claims);
+
+        let reconciled = reconcile_character_research(
+            &output,
+            &[page(
+                URL_ONE,
+                "page-1",
+                domain::EvidenceVerification::HostExactMatch,
+                "wiki",
+            )],
+            &analysis_input(),
+        )
+        .expect("現在条件で不成立の補足claimは根拠検証の対象外になること");
+
+        assert_eq!(reconciled.len(), 1);
+        assert!(
+            reconciled[0]
+                .evidence_claims
+                .iter()
+                .all(|claim| claim.claim_type != domain::EvidenceClaimType::TeamInteraction)
+        );
     }
 
     #[test]
@@ -809,7 +903,7 @@ mod tests {
 
         assert!(matches!(
             result,
-            Err(ReconcilerError::ContradictoryVariant(_))
+            Err(ReconcilerError::NoApplicableVariant(_))
         ));
     }
 
@@ -836,7 +930,7 @@ mod tests {
 
         assert!(matches!(
             result,
-            Err(ReconcilerError::ContradictoryVariant(_))
+            Err(ReconcilerError::NoApplicableVariant(_))
         ));
     }
 

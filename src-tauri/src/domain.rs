@@ -71,6 +71,7 @@ string_enum!(AnalysisStatus {
     Superseded,
     Abandoned,
 });
+string_enum!(AnalysisMode { Normal, Fast });
 string_enum!(ResultValidity {
     Current,
     SoftStale,
