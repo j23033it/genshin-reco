@@ -1,1 +1,2 @@
 public/data/*.json text eol=lf
+public/data/sources/*.md text eol=lf
