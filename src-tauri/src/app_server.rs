@@ -21,6 +21,36 @@ const SUPPORTED_CODEX_MAJOR: u64 = 0;
 const SUPPORTED_CODEX_MINOR: u64 = 118;
 const RPC_TIMEOUT: Duration = Duration::from_secs(15);
 const MAX_DIAGNOSTIC_LINES: usize = 100;
+const APP_CODEX_CONFIG: &str = r#"forced_login_method = "chatgpt"
+cli_auth_credentials_store = "keyring"
+web_search = "live"
+file_opener = "none"
+hide_agent_reasoning = true
+check_for_update_on_startup = false
+approval_policy = "never"
+sandbox_mode = "read-only"
+
+[history]
+persistence = "none"
+
+[features]
+shell_tool = false
+skill_mcp_dependency_install = false
+
+[tools]
+view_image = false
+
+[tools.web_search]
+context_size = "medium"
+allowed_domains = ["wikiwiki.jp", "game8.jp", "wiki.hoyolab.com"]
+"#;
+const APP_AGENTS_INSTRUCTIONS: &str = r#"# 原神ビルド調査エージェント
+
+- ホストアプリから渡された編成と調査対象だけを扱うこと。
+- ゲーム情報の調査にはWeb検索だけを使い、ローカルコマンドやファイル操作を行わないこと。
+- 指定されたJSON Schemaに厳密に従い、確認できない情報を推測で補わないこと。
+- 引用候補には実際に確認したURLと、主張を直接支える短い抜粋または要約を含めること。
+"#;
 
 #[derive(Debug, Error)]
 enum AppServerError {
@@ -218,9 +248,7 @@ async fn probe(app: &tauri::AppHandle) -> Result<Gate0ProbeReport, AppServerErro
         .app_data_dir()
         .map_err(|error| AppServerError::IsolatedHome(error.to_string()))?
         .join("codex-home");
-    tokio::fs::create_dir_all(&isolated_home)
-        .await
-        .map_err(|error| AppServerError::IsolatedHome(error.to_string()))?;
+    prepare_isolated_home(&isolated_home).await?;
 
     let mut report = Gate0ProbeReport {
         codex_path: codex.path.display().to_string(),
@@ -250,6 +278,24 @@ async fn probe(app: &tauri::AppHandle) -> Result<Gate0ProbeReport, AppServerErro
     }
     session.shutdown().await;
     probe_result.map(|_| report)
+}
+
+async fn prepare_isolated_home(codex_home: &Path) -> Result<(), AppServerError> {
+    for relative_path in ["logs", "plugins", "skills", "workspace"] {
+        tokio::fs::create_dir_all(codex_home.join(relative_path))
+            .await
+            .map_err(|error| AppServerError::IsolatedHome(error.to_string()))?;
+    }
+    tokio::fs::write(codex_home.join("config.toml"), APP_CODEX_CONFIG)
+        .await
+        .map_err(|error| AppServerError::IsolatedHome(error.to_string()))?;
+    tokio::fs::write(
+        codex_home.join("workspace").join("AGENTS.md"),
+        APP_AGENTS_INSTRUCTIONS,
+    )
+    .await
+    .map_err(|error| AppServerError::IsolatedHome(error.to_string()))?;
+    Ok(())
 }
 
 async fn probe_session(
@@ -460,6 +506,34 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn アプリ専用codexホームを準備できる() {
+        let unique = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .expect("現在時刻を取得できること")
+            .as_nanos();
+        let codex_home = std::env::temp_dir().join(format!(
+            "genshin-reco-home-test-{}-{unique}",
+            std::process::id()
+        ));
+
+        prepare_isolated_home(&codex_home)
+            .await
+            .expect("専用ホームを準備できること");
+
+        let config = tokio::fs::read_to_string(codex_home.join("config.toml"))
+            .await
+            .expect("設定を読めること");
+        assert!(config.contains("forced_login_method = \"chatgpt\""));
+        assert!(config.contains("persistence = \"none\""));
+        assert!(config.contains("shell_tool = false"));
+        assert!(codex_home.join("workspace").join("AGENTS.md").is_file());
+
+        tokio::fs::remove_dir_all(codex_home)
+            .await
+            .expect("一時ホームを削除できること");
+    }
+
+    #[tokio::test]
     async fn 分割されたjsonlを一行へ復元できる() {
         let (mut writer, reader) = duplex(64);
         let writer_task = tokio::spawn(async move {
@@ -502,6 +576,9 @@ mod tests {
         tokio::fs::create_dir_all(&codex_home)
             .await
             .expect("一時Codexホームを作成できること");
+        prepare_isolated_home(&codex_home)
+            .await
+            .expect("専用ホームを準備できること");
 
         let mut session = JsonlRpcSession::start(&codex, &codex_home)
             .await
