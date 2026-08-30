@@ -34,7 +34,7 @@ const MAX_NOTIFICATION_MESSAGES: usize = 256;
 const MAX_TURN_COMPLETIONS: usize = 64;
 const RESPONSE_CHANNEL_CAPACITY: usize = 16;
 const APP_CODEX_CONFIG: &str = r#"forced_login_method = "chatgpt"
-cli_auth_credentials_store = "keyring"
+cli_auth_credentials_store = "file"
 web_search = "live"
 file_opener = "none"
 hide_agent_reasoning = true
@@ -2203,6 +2203,7 @@ mod tests {
             .await
             .expect("設定を読めること");
         assert!(config.contains("forced_login_method = \"chatgpt\""));
+        assert!(config.contains("cli_auth_credentials_store = \"file\""));
         assert!(config.contains("persistence = \"none\""));
         assert!(config.contains("shell_tool = false"));
         assert!(codex_home.join("workspace").join("AGENTS.md").is_file());
