@@ -73,6 +73,14 @@ enum AppServerError {
     CodexNotFound,
     #[error("Codex CLIの出力からバージョンを解析できませんでした: {0}")]
     VersionInvalid(String),
+    #[error(
+        "Codex CLIのバージョンが古すぎます（検出: {detected}、使用先: {path}、必要: {required}以上）"
+    )]
+    UnsupportedVersion {
+        detected: String,
+        path: String,
+        required: String,
+    },
     #[error("Codex App Serverを起動できませんでした: {0}")]
     StartFailed(String),
     #[error("Codex App Serverとの通信に失敗しました: {0}")]
@@ -1374,9 +1382,9 @@ async fn probe(
     };
 
     if !version_supported {
-        report.diagnostics.push(format!(
-            "Codex CLI {MINIMUM_CODEX_MAJOR}.{MINIMUM_CODEX_MINOR}.0以上が必要です"
-        ));
+        report
+            .diagnostics
+            .push(unsupported_version_error(&codex).to_string());
         return Ok(report);
     }
 
@@ -1552,9 +1560,7 @@ fn validate_gate0_structured_output(message: Option<&str>) -> Result<bool, AppSe
 async fn start_managed_session(app: &tauri::AppHandle) -> Result<ManagedAppServer, AppServerError> {
     let codex = detect_codex().await?;
     if !is_supported_version(&codex.version) {
-        return Err(AppServerError::Protocol(format!(
-            "Codex CLI {MINIMUM_CODEX_MAJOR}.{MINIMUM_CODEX_MINOR}.0以上が必要です"
-        )));
+        return Err(unsupported_version_error(&codex));
     }
     let codex_home = app
         .path()
@@ -1601,18 +1607,24 @@ async fn start_managed_session(app: &tauri::AppHandle) -> Result<ManagedAppServe
 }
 
 async fn detect_codex() -> Result<CodexBinary, AppServerError> {
-    let where_output = Command::new("where.exe")
-        .arg("codex")
-        .output()
-        .await
-        .map_err(|_| AppServerError::CodexNotFound)?;
-    if !where_output.status.success() {
-        return Err(AppServerError::CodexNotFound);
+    let mut candidate_paths = Vec::new();
+    if let Ok(where_output) = Command::new("where.exe").arg("codex").output().await
+        && where_output.status.success()
+    {
+        candidate_paths.extend(
+            String::from_utf8_lossy(&where_output.stdout)
+                .lines()
+                .map(str::trim)
+                .map(PathBuf::from),
+        );
+    }
+    if let Some(local_app_data) = std::env::var_os("LOCALAPPDATA") {
+        candidate_paths.extend(find_desktop_codex_binaries(Path::new(&local_app_data)));
     }
 
-    let candidates = String::from_utf8_lossy(&where_output.stdout);
-    let mut fallback = None;
-    for path in candidates.lines().map(str::trim).map(PathBuf::from) {
+    let mut seen_paths = HashSet::new();
+    let mut newest = None;
+    for path in candidate_paths {
         let Some(extension) = path.extension().and_then(|extension| extension.to_str()) else {
             continue;
         };
@@ -1628,6 +1640,10 @@ async fn detect_codex() -> Result<CodexBinary, AppServerError> {
         } else {
             path
         };
+        let path_key = path.to_string_lossy().to_lowercase();
+        if !seen_paths.insert(path_key) {
+            continue;
+        }
         let mut command = Command::new(&path);
         let Ok(version_output) = command.arg("--version").output().await else {
             continue;
@@ -1641,14 +1657,38 @@ async fn detect_codex() -> Result<CodexBinary, AppServerError> {
         let Ok(version) = parse_codex_version(&raw_version) else {
             continue;
         };
-        let candidate = CodexBinary { path, version };
-        if is_supported_version(&candidate.version) {
-            return Ok(candidate);
-        }
-        fallback.get_or_insert(candidate);
+        keep_newest_codex(&mut newest, CodexBinary { path, version });
     }
 
-    fallback.ok_or(AppServerError::CodexNotFound)
+    newest.ok_or(AppServerError::CodexNotFound)
+}
+
+fn find_desktop_codex_binaries(local_app_data: &Path) -> Vec<PathBuf> {
+    let bin_root = local_app_data.join("OpenAI").join("Codex").join("bin");
+    let mut candidates = Vec::new();
+    let direct = bin_root.join("codex.exe");
+    if direct.is_file() {
+        candidates.push(direct);
+    }
+    if let Ok(entries) = std::fs::read_dir(bin_root) {
+        for entry in entries.flatten() {
+            let candidate = entry.path().join("codex.exe");
+            if candidate.is_file() {
+                candidates.push(candidate);
+            }
+        }
+    }
+    candidates.sort();
+    candidates
+}
+
+fn keep_newest_codex(newest: &mut Option<CodexBinary>, candidate: CodexBinary) {
+    if newest
+        .as_ref()
+        .is_none_or(|current| candidate.version > current.version)
+    {
+        *newest = Some(candidate);
+    }
 }
 
 fn resolve_npm_native_binary(shim_path: &Path) -> Option<PathBuf> {
@@ -1681,6 +1721,14 @@ fn parse_codex_version(output: &str) -> Result<Version, AppServerError> {
 
 fn is_supported_version(version: &Version) -> bool {
     version >= &Version::new(MINIMUM_CODEX_MAJOR, MINIMUM_CODEX_MINOR, 0)
+}
+
+fn unsupported_version_error(codex: &CodexBinary) -> AppServerError {
+    AppServerError::UnsupportedVersion {
+        detected: codex.version.to_string(),
+        path: codex.path.display().to_string(),
+        required: format!("{MINIMUM_CODEX_MAJOR}.{MINIMUM_CODEX_MINOR}.0"),
+    }
 }
 
 fn validate_codex_home(response: &Value, expected: &Path) -> Result<(), AppServerError> {
@@ -1766,6 +1814,54 @@ mod tests {
         assert!(is_supported_version(
             &Version::parse("0.151.0-alpha.7.2").expect("プレリリース版を解析できること")
         ));
+    }
+
+    #[test]
+    fn pathの旧版より新しいdesktop版を選ぶ() {
+        let mut newest = None;
+        keep_newest_codex(
+            &mut newest,
+            CodexBinary {
+                path: PathBuf::from("npm/codex.exe"),
+                version: Version::new(0, 118, 0),
+            },
+        );
+        keep_newest_codex(
+            &mut newest,
+            CodexBinary {
+                path: PathBuf::from("desktop/codex.exe"),
+                version: Version::parse("0.151.0-alpha.7.2").expect("解析できること"),
+            },
+        );
+
+        let selected = newest.expect("Codexを選択できること");
+        assert_eq!(selected.path, PathBuf::from("desktop/codex.exe"));
+        assert_eq!(selected.version.to_string(), "0.151.0-alpha.7.2");
+    }
+
+    #[test]
+    fn desktopの固定版と世代別実体を両方検出する() {
+        let unique = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .expect("現在時刻を取得できること")
+            .as_nanos();
+        let local_app_data = std::env::temp_dir().join(format!(
+            "genshin-reco-codex-detection-{}-{unique}",
+            std::process::id()
+        ));
+        let bin_root = local_app_data.join("OpenAI").join("Codex").join("bin");
+        let direct = bin_root.join("codex.exe");
+        let versioned = bin_root.join("release-id").join("codex.exe");
+        std::fs::create_dir_all(versioned.parent().expect("親ディレクトリがあること"))
+            .expect("テスト用ディレクトリを作成できること");
+        std::fs::write(&direct, []).expect("固定版を作成できること");
+        std::fs::write(&versioned, []).expect("世代別実体を作成できること");
+
+        let detected = find_desktop_codex_binaries(&local_app_data);
+
+        assert!(detected.contains(&direct));
+        assert!(detected.contains(&versioned));
+        std::fs::remove_dir_all(local_app_data).expect("テスト用ディレクトリを削除できること");
     }
 
     #[test]
