@@ -225,15 +225,16 @@ fn normalize(value: &str) -> String {
 }
 
 fn image(cell: &str) -> Result<String, String> {
-    let start = cell
-        .find("](")
-        .ok_or_else(|| format!("画像リンクが不正です: {cell}"))?
-        + 2;
-    let end = cell[start..]
-        .find(')')
-        .map(|index| start + index)
+    let body = cell
+        .strip_prefix('!')
+        .unwrap_or(cell)
+        .strip_prefix('[')
+        .and_then(|value| value.strip_suffix(')'))
         .ok_or_else(|| format!("画像リンクが不正です: {cell}"))?;
-    let url = &cell[start..end];
+    let separator = body
+        .rfind("](")
+        .ok_or_else(|| format!("画像リンクが不正です: {cell}"))?;
+    let url = &body[separator + 2..];
     validate_image_url(url).map_err(|error| error.to_string())?;
     Ok(url.into())
 }
@@ -353,5 +354,13 @@ mod tests {
     fn 列数不正の表行を黙って破棄しない() {
         let malformed = "| ID | 名前 | 元素 | 武器種 | レアリティ | 画像 |\n| --- | --- | --- | --- | ---: | --- |\n| traveler-anemo | 旅人（風） | 風 | 片手剣 | 5 | 余分な|区切り |\n";
         assert!(parse_characters(malformed).is_err());
+    }
+
+    #[test]
+    fn 括弧を含む画像urlを途中で切らない() {
+        let url = "https://gi.yatta.moe/assets/a_(b).png";
+        assert_eq!(image(&format!("![画像]({url})")).unwrap(), url);
+        assert_eq!(image(&format!("[画像]({url})")).unwrap(), url);
+        assert!(image("![画像](https://gi.yatta.moe/assets/a_(b).png)余分").is_err());
     }
 }
