@@ -1,0 +1,1 @@
+export { loadCatalog } from "./loadCatalog";

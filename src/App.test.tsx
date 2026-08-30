@@ -3,112 +3,87 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import App from "./App";
-import { probeCodexEnvironment } from "./features/gate0/probeCodexEnvironment";
-import type { Gate0ProbeReport } from "./features/gate0/types";
+import type { Catalog } from "./domain/catalogTypes";
+import { loadCatalog } from "./features/catalog";
 
-vi.mock("./features/gate0/probeCodexEnvironment", () => ({
-  probeCodexEnvironment: vi.fn(),
+vi.mock("./features/catalog", () => ({
+  loadCatalog: vi.fn(),
 }));
 
-const probeMock = vi.mocked(probeCodexEnvironment);
-const successfulReport = {
-  codexPath: "C:\\Tools\\codex.exe",
-  codexVersion: "1.2.3",
-  versionSupported: true,
-  appServerInitialized: true,
-  isolatedHome: "C:\\Temp\\codex-home",
-  platformFamily: "windows",
-  platformOs: "Windows 11",
-  account: {
-    authMode: "chatgpt",
-    planType: "pro",
-    requiresOpenaiAuth: false,
-  },
-  rateLimitsAvailable: true,
-  diagnostics: ["接続確認済み"],
+const loadCatalogMock = vi.mocked(loadCatalog);
+const catalog: Catalog = {
+  schemaVersion: "catalog-v2",
+  gameVersion: "7.0",
+  catalogUpdatedAt: "2026-08-30",
+  characters: [
+    {
+      id: "char-a",
+      name: "キャラA",
+      element: "炎",
+      weaponType: "片手剣",
+      rarity: 5,
+      imageUrl: "https://example.com/a.png",
+    },
+  ],
+  weapons: [
+    {
+      id: "weapon-a",
+      name: "武器A",
+      weaponType: "片手剣",
+      rarity: 5,
+      imageUrl: "https://example.com/w.png",
+    },
+  ],
+  artifactSets: [],
 };
 
-describe("Gate 0", () => {
+describe("アプリワークスペース", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    loadCatalogMock.mockResolvedValue(catalog);
   });
 
-  it("初期状態では環境を確認する操作を表示する", () => {
+  it("凍結カタログ読み込み後に編成ビルダーを表示する", async () => {
     render(<App />);
 
-    expect(screen.getByRole("heading", { name: "根拠付き・編成連動ビルド推薦" })).toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent("凍結カタログ");
+    expect(await screen.findByRole("heading", { name: "4人編成を作成" })).toBeInTheDocument();
+    expect(screen.getByText("Ver.7.0 / 1キャラ")).toBeInTheDocument();
+    expect(screen.getByRole("navigation", { name: "主要画面" })).toBeInTheDocument();
+  });
+
+  it("途中の編成を保存してサイドバーから開ける", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    const name = await screen.findByRole("textbox", { name: "編成名" });
+
+    await user.type(name, "蒸発チーム");
+    await user.click(screen.getByRole("button", { name: "保存" }));
+
+    expect(screen.getByText("「蒸発チーム」を保存しました。")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "蒸発チーム" })).toBeInTheDocument();
+    expect(screen.getByText("1件")).toBeInTheDocument();
+  });
+
+  it("Codex設定からGate0を開ける", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(await screen.findByRole("button", { name: "Codex設定" }));
+
     expect(screen.getByRole("heading", { name: "Codexの環境を確認" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "環境を確認" })).toBeEnabled();
-    expect(screen.getByRole("status")).toHaveTextContent("Gate 0");
   });
 
-  it("確認中はボタンを無効化し、二重実行を防ぐ", async () => {
-    let resolveProbe: ((value: Gate0ProbeReport) => void) | undefined;
-    probeMock.mockReturnValue(
-      new Promise<Gate0ProbeReport>((resolve) => {
-        resolveProbe = resolve;
-      }),
-    );
+  it("カタログ読み込み失敗を表示して再実行できる", async () => {
+    loadCatalogMock.mockRejectedValueOnce(new Error("カタログが壊れています"));
     const user = userEvent.setup();
     render(<App />);
 
-    const button = screen.getByRole("button", { name: "環境を確認" });
-    await user.click(button);
-    expect(screen.getByRole("button", { name: "確認中…" })).toBeDisabled();
-    expect(screen.getByTestId("gate0-loading")).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "確認中…" }));
-    expect(probeMock).toHaveBeenCalledTimes(1);
+    expect(await screen.findByRole("alert")).toHaveTextContent("カタログが壊れています");
+    await user.click(screen.getByRole("button", { name: "再読み込み" }));
 
-    resolveProbe?.(successfulReport);
-  });
-
-  it("成功時は確認結果を項目別に表示する", async () => {
-    probeMock.mockResolvedValue(successfulReport);
-    const user = userEvent.setup();
-    render(<App />);
-
-    await user.click(screen.getByRole("button", { name: "環境を確認" }));
-
-    expect(await screen.findByTestId("gate0-report")).toBeInTheDocument();
-    expect(screen.getByText("C:\\Tools\\codex.exe")).toBeInTheDocument();
-    expect(screen.getByText("1.2.3")).toBeInTheDocument();
-    expect(screen.getByText("Windows 11")).toBeInTheDocument();
-    expect(screen.getByText("接続確認済み")).toBeInTheDocument();
-    expect(screen.getByRole("status")).toHaveTextContent("完了");
-  });
-
-  it("失敗時は操作の近くにエラーを表示し、再実行できる", async () => {
-    probeMock.mockRejectedValue(new Error("App Serverに接続できません"));
-    const user = userEvent.setup();
-    render(<App />);
-
-    await user.click(screen.getByRole("button", { name: "環境を確認" }));
-
-    expect(await screen.findByRole("alert")).toHaveTextContent("App Serverに接続できません");
-    expect(screen.getByRole("button", { name: "環境を確認" })).toBeEnabled();
-  });
-
-  it("未認証の場合はログイン案内を表示する", async () => {
-    probeMock.mockResolvedValue({ ...successfulReport, account: null });
-    const user = userEvent.setup();
-    render(<App />);
-
-    await user.click(screen.getByRole("button", { name: "環境を確認" }));
-
-    expect(await screen.findByText("Codexへログインしてください")).toBeInTheDocument();
-  });
-
-  it("ChatGPT以外の認証方式では実ターンスモークを表示しない", async () => {
-    probeMock.mockResolvedValue({
-      ...successfulReport,
-      account: { authMode: "apiKey", planType: null, requiresOpenaiAuth: false },
-    });
-    const user = userEvent.setup();
-    render(<App />);
-
-    await user.click(screen.getByRole("button", { name: "環境を確認" }));
-
-    expect(await screen.findByText(/実ターンのスモークテストにはChatGPT認証が必要/)).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Gate 0スモークを実行" })).not.toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "4人編成を作成" })).toBeInTheDocument();
+    expect(loadCatalogMock).toHaveBeenCalledTimes(2);
   });
 });

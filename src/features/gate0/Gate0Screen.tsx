@@ -128,7 +128,7 @@ function LoadingReport() {
   );
 }
 
-export function Gate0Screen() {
+export function Gate0Screen({ embedded = false }: { embedded?: boolean }) {
   const [probeState, setProbeState] = useState<ProbeState>({ status: "idle" });
   const probingRef = useRef(false);
 
@@ -155,8 +155,16 @@ export function Gate0Screen() {
 
   const isLoading = probeState.status === "loading";
 
+  const Root = embedded ? "div" : "main";
+
   return (
-    <main className="min-h-dvh bg-slate-950 px-6 py-10 text-slate-100 sm:px-10 sm:py-14">
+    <Root
+      className={cn(
+        embedded
+          ? "text-slate-100"
+          : "min-h-dvh bg-slate-950 px-6 py-10 text-slate-100 sm:px-10 sm:py-14",
+      )}
+    >
       <section className="mx-auto max-w-4xl">
         <header>
           <p className="text-sm font-semibold text-amber-400">原神 Ver.7.0 対応</p>
@@ -208,6 +216,6 @@ export function Gate0Screen() {
           {probeState.status === "success" && <ReportDetails report={probeState.report} onRecheck={handleProbe} />}
         </section>
       </section>
-    </main>
+    </Root>
   );
 }
