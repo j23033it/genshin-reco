@@ -117,7 +117,7 @@ function createResolution(status: TeamBuildResolution["status"], selectedVariant
 }
 
 describe("AnalysisProgressPanel", () => {
-  it("ライブリージョン、工程別状態、キャンセル、以前の結果を表示する", async () => {
+  it("アイコン付きの小型工程表示とキャンセルを提供する", async () => {
     const user = userEvent.setup();
     const onCancel = vi.fn();
 
@@ -125,35 +125,32 @@ describe("AnalysisProgressPanel", () => {
       <AnalysisProgressPanel
         status="researching"
         characterSteps={[
-          { characterId: "character-1", characterName: "キャラクター1", status: "researching" },
+          { characterId: "character-1", characterName: "キャラクター1", characterImageUrl: "character-1.png", status: "researching" },
           { characterId: "character-2", characterName: "キャラクター2", status: "queued" },
         ]}
-        lastResultValidity="soft_stale"
         onCancel={onCancel}
       />,
     );
 
-    expect(screen.getByRole("status")).toHaveTextContent("根拠を調査しています");
-    expect(screen.getByTestId("analysis-stale-banner")).toHaveTextContent("以前の分析結果を表示中");
-    expect(screen.getByText("調査中")).toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent("調査中");
+    expect(screen.getByRole("img")).toHaveAttribute("src", "character-1.png");
+    expect(screen.getAllByText("調査中")).toHaveLength(2);
     expect(screen.getByText("待機中")).toBeInTheDocument();
 
-    await user.click(screen.getByRole("button", { name: "分析をキャンセル" }));
+    await user.click(screen.getByRole("button", { name: "キャンセル" }));
     expect(onCancel).toHaveBeenCalledOnce();
   });
 
-  it("失敗時はエラーの近くに再実行の説明を表示する", () => {
+  it("キャラクターごとの失敗状態を短く表示する", () => {
     render(
       <AnalysisProgressPanel
         status="failed"
         characterSteps={[{ characterId: "character-1", status: "failed", error: "根拠を取得できませんでした。" }]}
-        lastResultValidity={null}
-        error="分析サーバーに接続できませんでした。"
       />,
     );
 
-    expect(screen.getByRole("alert")).toHaveTextContent("分析サーバーに接続できませんでした");
-    expect(screen.getByRole("alert")).toHaveTextContent("もう一度分析を実行してください");
+    expect(screen.getByText("失敗")).toBeInTheDocument();
+    expect(screen.queryByText("根拠を取得できませんでした。")).not.toBeInTheDocument();
   });
 });
 
@@ -204,6 +201,23 @@ describe("TeamResultPanel", () => {
     expect(onChooseVariant).toHaveBeenCalledWith("character-1", "character-1-variant-a");
   });
 
+  it("候補の保存中は多重選択を無効にして処理中を通知する", () => {
+    render(
+      <TeamResultPanel
+        catalog={catalog}
+        party={party}
+        resolution={createResolution("needs_user_choice", null)}
+        validity="current"
+        onChooseVariant={vi.fn()}
+        choosingVariantKey="character-1:character-1-variant-a"
+      />,
+    );
+
+    expect(screen.getByRole("button", { name: "候補1を保存中" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "候補1を保存中" })).toHaveAttribute("aria-busy", "true");
+    expect(screen.getAllByTestId("variant-choice").every((button) => button.hasAttribute("disabled"))).toBe(true);
+  });
+
   it("結果の並び順が変わってもキャラクターに対応する武器を表示する", () => {
     const reversedParty = { ...party, members: [...party.members].reverse() as PartyDraft["members"] };
     render(
@@ -236,6 +250,29 @@ describe("TeamResultPanel", () => {
     expect(within(characterOneCard).getByText(/優先サブ：会心率/)).toBeInTheDocument();
     expect(within(characterOneCard).getByText(/攻撃力%/)).toBeInTheDocument();
     expect(within(characterOneCard).queryByText(/energy_recharge|crit_rate|attack_percent/)).not.toBeInTheDocument();
+  });
+
+  it("未対応の生IDは画面へ露出しない", () => {
+    const resolution = structuredClone(createResolution("resolved", "character-1-variant-a"));
+    const packageWithUnknownIds = resolution.members[0].alternatives[0].mainStatPackage;
+    packageWithUnknownIds.sands = "future_stat_id";
+    packageWithUnknownIds.targetStats[0].stat = "future_target_id";
+    packageWithUnknownIds.targetStats[0].includedBonuses = [
+      { source: "unknown_bonus_1", amount: 10, condition: "condition_id_2" },
+    ];
+    resolution.warnings = ["unknown_character_1: 条件を確認してください。"];
+
+    render(
+      <>
+        <TeamResultPanel catalog={catalog} party={party} resolution={resolution} validity="current" />
+        <AnalysisNotesPanel catalog={catalog} resolution={resolution} validity="current" />
+      </>,
+    );
+
+    expect(screen.getAllByText(/未対応ステータス/).length).toBeGreaterThan(0);
+    expect(screen.getByText(/キャラクター：条件を確認してください/)).toBeInTheDocument();
+    expect(screen.getByText(/編成効果 \+10%（適用条件あり）/)).toBeInTheDocument();
+    expect(screen.queryByText(/future_stat_id|future_target_id|unknown_bonus_1|condition_id_2|unknown_character_1/)).not.toBeInTheDocument();
   });
 
   it("旧結果に目標値がない場合は再分析が必要だと表示する", () => {

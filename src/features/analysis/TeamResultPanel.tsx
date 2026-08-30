@@ -19,6 +19,7 @@ export interface TeamResultPanelProps {
   resolution: TeamBuildResolution | null;
   validity: ResultValidity;
   onChooseVariant?: (characterId: string, variantId: string) => void;
+  choosingVariantKey?: string | null;
 }
 
 const RESOLUTION_STATUS_LABELS: Record<TeamBuildResolution["status"], string> = {
@@ -73,7 +74,17 @@ const STAT_LABELS: Record<string, string> = {
 
 function localizeStatLabel(stat: string) {
   const normalized = stat.trim().toLocaleLowerCase("en").replace(/[\s-]+/g, "_").replace(/%$/, "_percent");
-  return STAT_LABELS[normalized] ?? stat;
+  return STAT_LABELS[normalized] ?? (looksLikeRawIdentifier(stat) ? "未対応ステータス" : stat);
+}
+
+function looksLikeRawIdentifier(value: string) {
+  const normalized = value.trim();
+  return normalized.length > 0 && /^[a-z0-9_-]+$/i.test(normalized) && /[_\d-]/.test(normalized);
+}
+
+function displayTextOrFallback(value: string, fallback: string) {
+  const normalized = value.trim();
+  return !normalized || looksLikeRawIdentifier(normalized) ? fallback : normalized;
 }
 
 function formatNumber(value: number) {
@@ -91,12 +102,17 @@ function formatTargetRange(target: TargetStatRange) {
 
 function formatIncludedBonus(target: TargetStatRange) {
   return target.includedBonuses
-    .map((bonus) => `${bonus.source} +${formatNumber(bonus.amount)}%${bonus.condition ? `（${bonus.condition}）` : ""}`)
+    .map((bonus) => {
+      const source = displayTextOrFallback(bonus.source, "編成効果");
+      const condition = bonus.condition ? displayTextOrFallback(bonus.condition, "適用条件あり") : null;
+      return `${source} +${formatNumber(bonus.amount)}%${condition ? `（${condition}）` : ""}`;
+    })
     .join(" ／ ");
 }
 
 function formatConditionValue(value: BuildCondition["value"]) {
   if (typeof value === "boolean") return value ? "はい" : "いいえ";
+  if (typeof value === "string") return displayTextOrFallback(value, "指定値");
   return String(value);
 }
 
@@ -201,21 +217,27 @@ function ChoiceCandidate({
   candidateNumber,
   catalog,
   onChooseVariant,
+  choosingVariantKey,
 }: {
   characterId: string;
   variant: BuildVariant;
   candidateNumber: number;
   catalog: Catalog;
   onChooseVariant?: (characterId: string, variantId: string) => void;
+  choosingVariantKey?: string | null;
 }) {
+  const selectionKey = `${characterId}:${variant.id}`;
+  const isChoosing = choosingVariantKey === selectionKey;
+  const choicePending = choosingVariantKey !== null && choosingVariantKey !== undefined;
   return (
     <li className="min-w-0 rounded-lg border border-amber-300/50 bg-amber-400/5 p-3">
       <button
         type="button"
         className="min-h-11 w-full rounded-md border border-amber-300/60 px-3 py-2 text-left text-amber-100 hover:bg-amber-300/10 focus-visible:outline-2 focus-visible:outline-amber-400 disabled:cursor-not-allowed disabled:opacity-60"
         onClick={() => onChooseVariant?.(characterId, variant.id)}
-        disabled={!onChooseVariant}
-        aria-label={`候補${candidateNumber}を選択`}
+        disabled={!onChooseVariant || choicePending}
+        aria-label={isChoosing ? `候補${candidateNumber}を保存中` : `候補${candidateNumber}を選択`}
+        aria-busy={isChoosing || undefined}
         data-testid="variant-choice"
         data-character-id={characterId}
         data-variant-id={variant.id}
@@ -232,11 +254,13 @@ function AlternativesDetails({
   resolutionStatus,
   catalog,
   onChooseVariant,
+  choosingVariantKey,
 }: {
   member: CharacterBuildResolution;
   resolutionStatus: TeamBuildResolution["status"];
   catalog: Catalog;
   onChooseVariant?: (characterId: string, variantId: string) => void;
+  choosingVariantKey?: string | null;
 }) {
   const isChoicePending = resolutionStatus === "needs_user_choice" && member.selectedVariantId === null;
   const alternatives = member.alternatives
@@ -258,6 +282,7 @@ function AlternativesDetails({
               candidateNumber={candidateNumber}
               catalog={catalog}
               onChooseVariant={onChooseVariant}
+              choosingVariantKey={choosingVariantKey}
             />
           ))}
         </ul>
@@ -317,6 +342,7 @@ function CharacterResultCard({
   catalog,
   resolutionStatus,
   onChooseVariant,
+  choosingVariantKey,
 }: {
   member: CharacterBuildResolution | null;
   index: number;
@@ -324,6 +350,7 @@ function CharacterResultCard({
   catalog: Catalog;
   resolutionStatus: TeamBuildResolution["status"];
   onChooseVariant?: (characterId: string, variantId: string) => void;
+  choosingVariantKey?: string | null;
 }) {
   const character = member ? catalog.characters.find((candidate) => candidate.id === member.characterId) : undefined;
   const weapon = partyMember?.weaponId ? catalog.weapons.find((candidate) => candidate.id === partyMember.weaponId) : undefined;
@@ -364,6 +391,7 @@ function CharacterResultCard({
         resolutionStatus={resolutionStatus}
         catalog={catalog}
         onChooseVariant={onChooseVariant}
+        choosingVariantKey={choosingVariantKey}
       />
     </article>
   );
@@ -383,7 +411,7 @@ function EmptyResultState({ party }: { party: PartyDraft | null }) {
   );
 }
 
-export function TeamResultPanel({ catalog, party, resolution, onChooseVariant }: TeamResultPanelProps) {
+export function TeamResultPanel({ catalog, party, resolution, onChooseVariant, choosingVariantKey = null }: TeamResultPanelProps) {
   const partyMembers = useMemo(() => party?.members ?? [], [party]);
   const members = resolution ? Array.from({ length: 4 }, (_, index) => resolution.members[index] ?? null) : [];
 
@@ -419,6 +447,7 @@ export function TeamResultPanel({ catalog, party, resolution, onChooseVariant }:
                 catalog={catalog}
                 resolutionStatus={resolution.status}
                 onChooseVariant={onChooseVariant}
+                choosingVariantKey={choosingVariantKey}
               />
             ))}
           </div>
@@ -451,7 +480,8 @@ function localizeWarning(warning: string, catalog: Catalog) {
   if (separatorIndex < 0) return warning;
   const characterId = warning.slice(0, separatorIndex);
   const character = catalog.characters.find((candidate) => candidate.id === characterId);
-  return character ? `${character.name}：${warning.slice(separatorIndex + 2)}` : warning;
+  if (character) return `${character.name}：${warning.slice(separatorIndex + 2)}`;
+  return looksLikeRawIdentifier(characterId) ? `キャラクター：${warning.slice(separatorIndex + 2)}` : warning;
 }
 
 export function AnalysisNotesPanel({ catalog, resolution, validity }: AnalysisNotesPanelProps) {

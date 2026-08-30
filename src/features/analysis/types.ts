@@ -1,4 +1,4 @@
-import type { AnalysisStatus, ResultValidity } from "../../domain/analysisTypes";
+import type { AnalysisStatus } from "../../domain/analysisTypes";
 
 /** キャラクターごとの分析工程。割合ではなく、現在の工程を表す。 */
 export type AnalysisCharacterStepStatus =
@@ -19,6 +19,7 @@ export type CharacterAnalysisStep =
   | {
       characterId: string;
       characterName?: string;
+      characterImageUrl?: string;
       name?: string;
       status: AnalysisCharacterStepStatus;
       detail?: string;
@@ -27,6 +28,7 @@ export type CharacterAnalysisStep =
   | {
       characterId: string;
       characterName?: string;
+      characterImageUrl?: string;
       name?: string;
       stage: AnalysisCharacterStepStatus;
       detail?: string;
@@ -39,7 +41,5 @@ export type AnalysisProgress = readonly CharacterAnalysisStep[];
 export interface AnalysisProgressPanelProps {
   status: AnalysisStatus;
   characterSteps: AnalysisProgress;
-  lastResultValidity: ResultValidity | null;
   onCancel?: () => void;
-  error?: string | null;
 }

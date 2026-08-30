@@ -61,32 +61,31 @@ function renderBuilder(draft: PartyDraft, onChange = vi.fn()) {
       catalog={catalog}
       draft={draft}
       onChange={onChange}
-      onSave={vi.fn()}
       onAnalyze={vi.fn()}
     />,
   );
 }
 
 describe("PartyBuilder", () => {
-  it("空の下書きは保存も分析もできない", () => {
+  it("空の下書きは分析できず、保存ボタンを表示しない", () => {
     const draft = createEmptyParty("empty-party");
     renderBuilder(draft);
 
     expect(screen.getByLabelText("編成名")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "保存" })).toBeDisabled();
+    expect(screen.queryByRole("button", { name: "保存" })).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "分析を開始" })).toBeDisabled();
     expect(screen.queryByLabelText("役割")).not.toBeInTheDocument();
     expect(screen.queryByLabelText("反応担当")).not.toBeInTheDocument();
     expect(screen.getByText(/ビルド方針は、編成と検証済みの根拠から分析時に判断します/)).toBeInTheDocument();
   });
 
-  it("名前付きの途中下書きは保存できるが分析できない", () => {
+  it("名前付きの途中下書きも、4人が揃うまで分析できない", () => {
     const draft = createEmptyParty("partial-party");
     draft.name = "途中の編成";
     draft.members[0] = { ...draft.members[0], characterId: "one-hand" };
     renderBuilder(draft);
 
-    expect(screen.getByRole("button", { name: "保存" })).toBeEnabled();
+    expect(screen.queryByRole("button", { name: "保存" })).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "分析を開始" })).toBeDisabled();
     expect(screen.getAllByText(/キャラクターを選択してください/).length).toBeGreaterThan(0);
   });
@@ -95,7 +94,7 @@ describe("PartyBuilder", () => {
     const user = userEvent.setup();
     function ControlledBuilder() {
       const [draft, setDraft] = useState(createEmptyParty("filter-party"));
-      return <PartyBuilder catalog={catalog} draft={draft} onChange={setDraft} onSave={vi.fn()} onAnalyze={vi.fn()} />;
+      return <PartyBuilder catalog={catalog} draft={draft} onChange={setDraft} onAnalyze={vi.fn()} />;
     }
     render(<ControlledBuilder />);
     const characterSelect = screen.getAllByLabelText("キャラクター")[0];
@@ -111,7 +110,7 @@ describe("PartyBuilder", () => {
     const user = userEvent.setup();
     function ControlledBuilder() {
       const [draft, setDraft] = useState(createEmptyParty("search-party"));
-      return <PartyBuilder catalog={catalog} draft={draft} onChange={setDraft} onSave={vi.fn()} onAnalyze={vi.fn()} />;
+      return <PartyBuilder catalog={catalog} draft={draft} onChange={setDraft} onAnalyze={vi.fn()} />;
     }
     render(<ControlledBuilder />);
 
@@ -142,7 +141,7 @@ describe("PartyBuilder", () => {
           <button type="button" onClick={() => setDraft(createEmptyParty("second-party"))}>
             新しい下書き
           </button>
-          <PartyBuilder catalog={catalog} draft={draft} onChange={setDraft} onSave={vi.fn()} onAnalyze={vi.fn()} />
+          <PartyBuilder catalog={catalog} draft={draft} onChange={setDraft} onAnalyze={vi.fn()} />
         </>
       );
     }
@@ -156,7 +155,7 @@ describe("PartyBuilder", () => {
     expect(screen.getAllByLabelText("キャラクターを検索")[0]).toHaveValue("");
   });
 
-  it("重複キャラクターと旅人variantの同居を保存エラーにする", () => {
+  it("重複キャラクターと旅人variantの同居を分析エラーにする", () => {
     const empty = createEmptyParty("duplicate-party");
     const draft = draftWithMembers([
       { ...empty.members[0], characterId: "one-hand" },
@@ -168,7 +167,7 @@ describe("PartyBuilder", () => {
 
     expect(screen.getAllByText(/同じキャラクターが選択されています/).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/旅人のvariantは同じ編成に複数入れられません/).length).toBeGreaterThan(0);
-    expect(screen.getByRole("button", { name: "保存" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "分析を開始" })).toBeDisabled();
   });
 
   it("同じ武器種のキャラクター変更では武器と精錬を保持し、異なる武器種では解除してR1に戻す", () => {
@@ -192,9 +191,8 @@ describe("PartyBuilder", () => {
     expect(reset.members[0]).toMatchObject({ characterId: "claymore", weaponId: null, refinement: 1 });
   });
 
-  it("分析可能な編成では保存と分析を別々に呼び出せる", async () => {
+  it("分析可能な編成では分析だけを呼び出せる", async () => {
     const user = userEvent.setup();
-    const onSave = vi.fn();
     const onAnalyze = vi.fn();
     const draft = fullDraft();
     render(
@@ -202,17 +200,29 @@ describe("PartyBuilder", () => {
         catalog={catalog}
         draft={draft}
         onChange={vi.fn()}
-        onSave={onSave}
         onAnalyze={onAnalyze}
       />,
     );
 
-    expect(screen.getByRole("button", { name: "保存" })).toBeEnabled();
+    expect(screen.queryByRole("button", { name: "保存" })).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "分析を開始" })).toBeEnabled();
-    await user.click(screen.getByRole("button", { name: "保存" }));
     await user.click(screen.getByRole("button", { name: "分析を開始" }));
-    expect(onSave).toHaveBeenCalledWith(draft);
     expect(onAnalyze).toHaveBeenCalledWith(draft);
+  });
+
+  it("保存編成の編集時は分析更新ボタンを表示する", () => {
+    render(
+      <PartyBuilder
+        catalog={catalog}
+        draft={fullDraft()}
+        onChange={vi.fn()}
+        onAnalyze={vi.fn()}
+        mode="edit"
+      />,
+    );
+
+    expect(screen.getByRole("button", { name: "分析を更新" })).toBeEnabled();
+    expect(screen.getByRole("heading", { name: "保存編成を編集" })).toBeInTheDocument();
   });
 
   it("可視ラベルの付いたネイティブ要素をキーボードで順に操作できる", async () => {

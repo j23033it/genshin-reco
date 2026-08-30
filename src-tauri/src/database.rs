@@ -18,7 +18,7 @@ use std::{
 };
 use thiserror::Error;
 
-pub const CURRENT_SCHEMA_VERSION: i64 = 2;
+pub const CURRENT_SCHEMA_VERSION: i64 = 3;
 pub const BUSY_TIMEOUT_MS: u64 = 5_000;
 
 const SCHEMA_SQL: &str = r#"
@@ -43,6 +43,12 @@ CREATE TABLE IF NOT EXISTS parties (
     draft_json TEXT NOT NULL CHECK (json_valid(draft_json)),
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS deleted_parties (
+    party_id TEXT PRIMARY KEY NOT NULL,
+    deleted_at TEXT NOT NULL,
+    FOREIGN KEY (party_id) REFERENCES parties(party_id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS party_members (
@@ -500,6 +506,10 @@ impl Database {
             params![draft.party_id, draft.name, draft_json, now],
         )?;
         transaction.execute(
+            "DELETE FROM deleted_parties WHERE party_id = ?1",
+            params![draft.party_id],
+        )?;
+        transaction.execute(
             "DELETE FROM party_members WHERE party_id = ?1",
             params![draft.party_id],
         )?;
@@ -535,7 +545,12 @@ impl Database {
         let transaction = connection.transaction()?;
         let draft = transaction
             .query_row(
-                "SELECT draft_json FROM parties WHERE party_id = ?1",
+                "SELECT draft_json FROM parties
+                 WHERE party_id = ?1
+                   AND NOT EXISTS (
+                       SELECT 1 FROM deleted_parties
+                       WHERE deleted_parties.party_id = parties.party_id
+                   )",
                 params![party_id],
                 |row| row.get::<_, String>(0),
             )
@@ -552,7 +567,12 @@ impl Database {
         let transaction = connection.transaction()?;
         let mut statement = transaction.prepare(
             "SELECT party_id, name, current_result_id, updated_at
-             FROM parties ORDER BY updated_at DESC, party_id ASC",
+             FROM parties
+             WHERE NOT EXISTS (
+                 SELECT 1 FROM deleted_parties
+                 WHERE deleted_parties.party_id = parties.party_id
+             )
+             ORDER BY updated_at DESC, party_id ASC",
         )?;
         let rows = statement.query_map([], |row| {
             Ok(PartySummary {
@@ -570,8 +590,14 @@ impl Database {
 
     pub fn list_party_drafts(&self) -> Result<Vec<PartyDraft>, DatabaseError> {
         let connection = self.connection()?;
-        let mut statement = connection
-            .prepare("SELECT draft_json FROM parties ORDER BY updated_at DESC, party_id ASC")?;
+        let mut statement = connection.prepare(
+            "SELECT draft_json FROM parties
+                 WHERE NOT EXISTS (
+                     SELECT 1 FROM deleted_parties
+                     WHERE deleted_parties.party_id = parties.party_id
+                 )
+                 ORDER BY updated_at DESC, party_id ASC",
+        )?;
         let rows = statement.query_map([], |row| row.get::<_, String>(0))?;
         rows.map(|row| {
             let json = row?;
@@ -580,6 +606,31 @@ impl Database {
         })
         .collect::<Result<Vec<_>, _>>()
         .map_err(DatabaseError::from)
+    }
+
+    pub fn delete_party(&self, party_id: &str) -> Result<(), DatabaseError> {
+        if party_id.trim().is_empty() {
+            return Err(invalid("編成IDは必須です"));
+        }
+        let connection = self.connection()?;
+        let exists = connection
+            .query_row(
+                "SELECT 1 FROM parties WHERE party_id = ?1",
+                params![party_id],
+                |_| Ok(()),
+            )
+            .optional()?
+            .is_some();
+        if !exists {
+            return Err(DatabaseError::NotFound(format!("編成: {party_id}")));
+        }
+        connection.execute(
+            "INSERT INTO deleted_parties (party_id, deleted_at)
+             VALUES (?1, ?2)
+             ON CONFLICT(party_id) DO UPDATE SET deleted_at = excluded.deleted_at",
+            params![party_id, timestamp()],
+        )?;
+        Ok(())
     }
 
     pub fn begin_analysis_run(
@@ -865,7 +916,11 @@ impl Database {
                 "SELECT build_results.result_id, build_results.result_json
                  FROM parties
                  JOIN build_results ON build_results.result_id = parties.current_result_id
-                 WHERE parties.party_id = ?1",
+                 WHERE parties.party_id = ?1
+                   AND NOT EXISTS (
+                       SELECT 1 FROM deleted_parties
+                       WHERE deleted_parties.party_id = parties.party_id
+                   )",
                 params![party_id],
                 |row| Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?)),
             )
@@ -896,7 +951,11 @@ impl Database {
                 "SELECT build_results.result_id, build_results.result_json
                  FROM parties
                  JOIN build_results ON build_results.result_id = parties.current_result_id
-                 WHERE parties.party_id = ?1",
+                 WHERE parties.party_id = ?1
+                   AND NOT EXISTS (
+                       SELECT 1 FROM deleted_parties
+                       WHERE deleted_parties.party_id = parties.party_id
+                   )",
                 params![party_id],
                 |row| Ok((row.get(0)?, row.get(1)?)),
             )
@@ -949,7 +1008,12 @@ impl Database {
         let connection = self.connection()?;
         connection
             .query_row(
-                "SELECT current_result_id FROM parties WHERE party_id = ?1",
+                "SELECT current_result_id FROM parties
+                 WHERE party_id = ?1
+                   AND NOT EXISTS (
+                       SELECT 1 FROM deleted_parties
+                       WHERE deleted_parties.party_id = parties.party_id
+                   )",
                 params![party_id],
                 |row| row.get(0),
             )

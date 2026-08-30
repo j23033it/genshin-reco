@@ -16,8 +16,9 @@ export interface PartyBuilderProps {
   catalog: Catalog;
   draft: PartyDraft;
   onChange: (draft: PartyDraft) => void;
-  onSave: (draft: PartyDraft) => void;
   onAnalyze: (draft: PartyDraft) => void;
+  mode?: "create" | "edit";
+  actionError?: string | null;
   disabled?: boolean;
 }
 
@@ -318,7 +319,15 @@ function PartySlot({
   );
 }
 
-export function PartyBuilder({ catalog, draft, onChange, onSave, onAnalyze, disabled = false }: PartyBuilderProps) {
+export function PartyBuilder({
+  catalog,
+  draft,
+  onChange,
+  onAnalyze,
+  mode = "create",
+  actionError = null,
+  disabled = false,
+}: PartyBuilderProps) {
   const draftIdentity = draft.partyId ?? draft.id ?? "new-party";
   const characterById = useMemo(
     () => new Map(catalog.characters.map((character) => [character.id, character])),
@@ -356,8 +365,10 @@ export function PartyBuilder({ catalog, draft, onChange, onSave, onAnalyze, disa
   return (
     <section className="min-w-0 space-y-8 text-slate-100" data-testid="party-builder" aria-labelledby="party-builder-heading">
       <header className="space-y-3">
-        <p className="text-sm font-semibold text-amber-400">編成エディター</p>
-        <h2 id="party-builder-heading" className="text-balance text-3xl font-bold">4人編成を作成</h2>
+        <p className="text-sm font-semibold text-amber-400">{mode === "edit" ? "保存編成" : "新規編成"}</p>
+        <h2 id="party-builder-heading" className="text-balance text-3xl font-bold">
+          {mode === "edit" ? "保存編成を編集" : "4人編成を作成"}
+        </h2>
         <p className="max-w-3xl text-pretty leading-7 text-slate-300">
           キャラクターと武器を選ぶと、同じ武器種の候補だけが表示されます。役割や反応担当などのビルド方針は、編成と検証済みの根拠から分析時に判断します。
         </p>
@@ -374,12 +385,14 @@ export function PartyBuilder({ catalog, draft, onChange, onSave, onAnalyze, disa
           onChange={handleNameChange}
           maxLength={40}
           disabled={disabled}
-          aria-invalid={validation.saveErrors.some((validationError) => validationError.field === "name")}
+          aria-invalid={validation.analyzeErrors.some((validationError) => validationError.field === "name")}
           aria-describedby="party-name-help"
           className="mt-2 min-h-11 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 placeholder:text-slate-500 hover:border-slate-500 disabled:cursor-not-allowed disabled:opacity-60"
           placeholder="例: 蒸発パーティー"
         />
-        <p id="party-name-help" className="mt-2 text-sm text-slate-400">1〜40文字。途中の編成は名前を付けて保存できます。</p>
+        <p id="party-name-help" className="mt-2 text-pretty text-sm text-slate-400">
+          1〜40文字。{mode === "edit" ? "変更内容は分析更新時に保存されます。" : "分析が完了すると保存編成へ追加されます。"}
+        </p>
       </div>
 
       <div className="min-w-0 overflow-x-auto pb-3" aria-label="編成4スロット">
@@ -410,24 +423,7 @@ export function PartyBuilder({ catalog, draft, onChange, onSave, onAnalyze, disa
         </div>
       </div>
 
-      <div className="grid gap-4 border-t border-slate-800 pt-6 sm:grid-cols-2">
-        <div>
-          <button
-            type="button"
-            className={cn(
-              "inline-flex min-h-11 w-full items-center justify-center rounded-lg px-5 py-3 font-semibold shadow-sm",
-              validation.canSave && !disabled
-                ? "bg-amber-400 text-slate-950 hover:bg-amber-300"
-                : "cursor-not-allowed bg-slate-700 text-slate-400",
-            )}
-            onClick={() => onSave(draft)}
-            disabled={disabled || !validation.canSave}
-            aria-describedby={validation.saveErrors.length > 0 ? "party-save-errors" : undefined}
-          >
-            保存
-          </button>
-          <ErrorMessages errors={validation.saveErrors} id="party-save-errors" title="保存できません" />
-        </div>
+      <div className="max-w-xl border-t border-slate-800 pt-6">
         <div>
           <button
             type="button"
@@ -441,9 +437,14 @@ export function PartyBuilder({ catalog, draft, onChange, onSave, onAnalyze, disa
             disabled={disabled || !validation.canAnalyze}
             aria-describedby={validation.analyzeErrors.length > 0 ? "party-analyze-errors" : undefined}
           >
-            分析を開始
+            {mode === "edit" ? "分析を更新" : "分析を開始"}
           </button>
           <ErrorMessages errors={validation.analyzeErrors} id="party-analyze-errors" title="分析できません" />
+          {actionError ? (
+            <p className="mt-3 border-l-2 border-rose-400 pl-3 text-pretty text-sm leading-6 text-rose-200" role="alert">
+              {actionError}
+            </p>
+          ) : null}
         </div>
       </div>
 

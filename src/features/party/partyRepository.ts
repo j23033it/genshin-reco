@@ -87,3 +87,11 @@ export async function listPartyDrafts(): Promise<PartySummary[]> {
     updatedAt: "",
   }));
 }
+
+export async function deletePartyDraft(partyId: string): Promise<void> {
+  if (isTauriRuntime()) {
+    await invoke("delete_party_draft", { partyId });
+    return;
+  }
+  browserDrafts.delete(partyId);
+}

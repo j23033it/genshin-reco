@@ -26,6 +26,11 @@ pub fn list_party_drafts(database: State<'_, Database>) -> Result<Vec<PartySumma
 }
 
 #[tauri::command]
+pub fn delete_party_draft(database: State<'_, Database>, party_id: String) -> Result<(), String> {
+    delete_party_draft_impl(&database, &party_id)
+}
+
+#[tauri::command]
 pub fn load_current_analysis_result(
     database: State<'_, Database>,
     party_id: String,
@@ -62,6 +67,12 @@ fn load_party_draft_impl(
 
 fn list_party_drafts_impl(database: &Database) -> Result<Vec<PartySummary>, String> {
     database.list_parties().map_err(database_error_message)
+}
+
+fn delete_party_draft_impl(database: &Database, party_id: &str) -> Result<(), String> {
+    database
+        .delete_party(party_id)
+        .map_err(database_error_message)
 }
 
 /// アプリデータディレクトリ内のDBを開き、Tauriのmanaged stateへ登録する。
@@ -133,6 +144,21 @@ mod tests {
 
         assert_eq!(
             database.load_current_result("party-command-test").unwrap(),
+            None
+        );
+    }
+
+    #[test]
+    fn 編成削除commandで一覧と読込から除外する() {
+        let database = Database::open_in_memory().unwrap();
+        let expected = draft();
+        save_party_draft_impl(&database, expected.clone()).unwrap();
+
+        delete_party_draft_impl(&database, &expected.party_id).unwrap();
+
+        assert!(list_party_drafts_impl(&database).unwrap().is_empty());
+        assert_eq!(
+            load_party_draft_impl(&database, &expected.party_id).unwrap(),
             None
         );
     }

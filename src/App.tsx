@@ -1,10 +1,20 @@
+import { AlertDialog } from "@base-ui/react/alert-dialog";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { BarChart3, Database, Plus, Search, Settings2, Users } from "lucide-react";
+import {
+  Database,
+  PanelLeftClose,
+  PanelLeftOpen,
+  Plus,
+  Search,
+  Settings2,
+  Trash2,
+  Users,
+} from "lucide-react";
 import type { AnalysisStatus, ResultValidity, TeamBuildResolution } from "./domain/analysisTypes";
 import type { Catalog } from "./domain/catalogTypes";
 import {
-  AnalysisProgressPanel,
   AnalysisNotesPanel,
+  AnalysisProgressPanel,
   TeamResultPanel,
   buildAnalysisInput,
   cancelAnalysis,
@@ -20,6 +30,7 @@ import { Gate0Screen } from "./features/gate0/Gate0Screen";
 import {
   PartyBuilder,
   createEmptyParty,
+  deletePartyDraft,
   listPartyDrafts,
   loadPartyDraft,
   savePartyDraft,
@@ -27,11 +38,10 @@ import {
 } from "./features/party";
 import { cn } from "./lib/cn";
 
-type WorkspaceView = "party" | "analysis" | "settings";
+type WorkspaceView = "party" | "settings";
 
 const NAVIGATION = [
   { id: "party" as const, label: "編成を作る", icon: Users },
-  { id: "analysis" as const, label: "分析結果", icon: BarChart3 },
   { id: "settings" as const, label: "Codex設定", icon: Settings2 },
 ];
 
@@ -94,26 +104,122 @@ function CatalogError({ message, onRetry }: { message: string; onRetry: () => vo
   );
 }
 
+function DeletePartyButton({
+  party,
+  onDelete,
+  disabled,
+}: {
+  party: PartyDraft;
+  onDelete: (party: PartyDraft) => Promise<void>;
+  disabled: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleDelete = async () => {
+    setDeleting(true);
+    setError(null);
+    try {
+      await onDelete(party);
+      setOpen(false);
+    } catch (deleteError) {
+      setError(deleteError instanceof Error ? deleteError.message : "編成を削除できませんでした。");
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  return (
+    <AlertDialog.Root
+      open={open}
+      onOpenChange={(nextOpen) => {
+        setOpen(nextOpen);
+        if (!nextOpen) setError(null);
+      }}
+    >
+      <AlertDialog.Trigger
+        className="grid min-h-11 min-w-11 shrink-0 place-items-center rounded-lg text-slate-400 hover:bg-rose-400/10 hover:text-rose-300 disabled:cursor-not-allowed disabled:opacity-40"
+        aria-label={`「${party.name}」を削除`}
+        title={`「${party.name}」を削除`}
+        disabled={disabled}
+      >
+        <Trash2 aria-hidden="true" size={18} />
+      </AlertDialog.Trigger>
+      <AlertDialog.Portal>
+        <AlertDialog.Backdrop className="fixed inset-0 z-40 min-h-dvh bg-slate-950/80" />
+        <AlertDialog.Popup className="fixed left-1/2 top-1/2 z-50 flex w-[28rem] max-w-[calc(100vw-2rem)] -translate-x-1/2 -translate-y-1/2 flex-col gap-5 rounded-xl border border-slate-700 bg-slate-900 p-6 text-slate-100 shadow-2xl">
+          <div>
+            <AlertDialog.Title className="text-balance text-xl font-bold">この編成を削除しますか？</AlertDialog.Title>
+            <AlertDialog.Description className="mt-2 text-pretty text-sm leading-6 text-slate-300">
+              「{party.name}」を保存編成の一覧から削除します。検証済みの分析履歴は監査用に保持されます。
+            </AlertDialog.Description>
+          </div>
+          {error ? (
+            <p className="border-l-2 border-rose-400 pl-3 text-pretty text-sm text-rose-200" role="alert">
+              {error}
+            </p>
+          ) : null}
+          <div className="flex flex-wrap justify-end gap-3">
+            <AlertDialog.Close
+              className="inline-flex min-h-11 items-center justify-center rounded-lg border border-slate-600 px-4 py-2 font-semibold text-slate-200 hover:bg-slate-800 disabled:opacity-50"
+              disabled={deleting}
+            >
+              キャンセル
+            </AlertDialog.Close>
+            <button
+              type="button"
+              className="inline-flex min-h-11 items-center justify-center rounded-lg bg-rose-500 px-4 py-2 font-semibold text-white hover:bg-rose-400 disabled:cursor-wait disabled:opacity-60"
+              onClick={() => void handleDelete()}
+              disabled={deleting}
+            >
+              {deleting ? "削除中" : "削除する"}
+            </button>
+          </div>
+        </AlertDialog.Popup>
+      </AlertDialog.Portal>
+    </AlertDialog.Root>
+  );
+}
+
 function Workspace({ catalog }: { catalog: Catalog }) {
   const [view, setView] = useState<WorkspaceView>("party");
+  const [sidebarOpen, setSidebarOpen] = useState(true);
   const [draft, setDraft] = useState<PartyDraft>(() => createEmptyParty(createPartyId()));
   const [savedParties, setSavedParties] = useState<PartyDraft[]>([]);
   const [search, setSearch] = useState("");
   const [notice, setNotice] = useState("");
   const [analysisStatus, setAnalysisStatus] = useState<AnalysisStatus>("queued");
+  const [analysisPartyId, setAnalysisPartyId] = useState<string | null>(null);
+  const [analysisError, setAnalysisError] = useState<string | null>(null);
+  const [analysisErrorPartyId, setAnalysisErrorPartyId] = useState<string | null>(null);
   const [steps, setSteps] = useState<CharacterAnalysisStep[]>([]);
   const [resolution, setResolution] = useState<TeamBuildResolution | null>(null);
   const [resultValidity, setResultValidity] = useState<ResultValidity | null>(null);
-  const [analysisError, setAnalysisError] = useState<string | null>(null);
   const [resultParty, setResultParty] = useState<PartyDraft | null>(null);
   const [selectedPartyId, setSelectedPartyId] = useState<string | null>(null);
   const [resultLoading, setResultLoading] = useState(false);
   const [resultError, setResultError] = useState<string | null>(null);
+  const [choosingVariantKey, setChoosingVariantKey] = useState<string | null>(null);
   const resultLoadGeneration = useRef(0);
+  const visiblePartyId = useRef<string | null>(null);
+  const draftInteractionVersion = useRef(0);
+  const analysisOperationPartyId = useRef<string | null>(null);
+  const activeAnalysisRunId = useRef<string | null>(null);
+  const variantSelectionPending = useRef<string | null>(null);
+
+  const isAnalysisActive =
+    analysisPartyId !== null && steps.length > 0 && ACTIVE_ANALYSIS_STATUSES.has(analysisStatus);
+  const currentDraftId = getPartyId(draft) ?? null;
+  const selectedIsSaved =
+    selectedPartyId !== null && savedParties.some((party) => getPartyId(party) === selectedPartyId);
+  const showAnalysisProgress =
+    view === "party" && isAnalysisActive && currentDraftId === analysisPartyId;
 
   useEffect(() => {
     let active = true;
     const generation = ++resultLoadGeneration.current;
+    const initialDraftVersion = draftInteractionVersion.current;
     const isCurrent = () => active && resultLoadGeneration.current === generation;
 
     (async () => {
@@ -135,14 +241,14 @@ function Workspace({ catalog }: { catalog: Catalog }) {
         .map(({ party }) => party)
         .filter((party): party is PartyDraft => party !== null);
       setSavedParties(parties);
-
-      const latest = entries.find(({ summary, party }) => summary.currentResultId !== null && party !== null);
-      const latestParty = latest?.party;
-      if (!latest || !latestParty) return;
+      const latestParty = parties[0];
+      if (!latestParty) return;
+      if (draftInteractionVersion.current !== initialDraftVersion || visiblePartyId.current !== null) return;
 
       const partyId = getPartyId(latestParty);
-      if (!partyId || latest.summary.currentResultId === null) return;
-      setView("analysis");
+      if (!partyId) return;
+      visiblePartyId.current = partyId;
+      setDraft(latestParty);
       setSelectedPartyId(partyId);
       setResultParty(latestParty);
       setResultLoading(true);
@@ -151,6 +257,7 @@ function Workspace({ catalog }: { catalog: Catalog }) {
       if (!isCurrent()) return;
       setResolution(current);
       setResultValidity(current ? "current" : null);
+      setAnalysisStatus(current ? "succeeded" : "queued");
       setResultLoading(false);
     })().catch((error: unknown) => {
       if (!isCurrent()) return;
@@ -167,28 +274,31 @@ function Workspace({ catalog }: { catalog: Catalog }) {
     const partyId = getPartyId(party);
     if (!partyId) return;
     const generation = ++resultLoadGeneration.current;
-    setView("analysis");
+    draftInteractionVersion.current += 1;
+    visiblePartyId.current = partyId;
+    setView("party");
+    setDraft(party);
     setSelectedPartyId(partyId);
     setResultParty(party);
     setResolution(null);
     setResultValidity(null);
     setResultError(null);
     setResultLoading(true);
-    if (!ACTIVE_ANALYSIS_STATUSES.has(analysisStatus)) {
-      setSteps([]);
-      setAnalysisError(null);
-    }
+    setAnalysisError(null);
+    setAnalysisErrorPartyId(null);
     try {
       const current = await loadCurrentAnalysisResult(partyId);
-      if (resultLoadGeneration.current !== generation) return;
+      if (resultLoadGeneration.current !== generation || visiblePartyId.current !== partyId) return;
       setResolution(current);
-      setResultValidity(current ? "current" : null);
+      setResultValidity(current ? (analysisPartyId === partyId ? "soft_stale" : "current") : null);
     } catch (error: unknown) {
-      if (resultLoadGeneration.current !== generation) return;
+      if (resultLoadGeneration.current !== generation || visiblePartyId.current !== partyId) return;
       setResultError(error instanceof Error ? error.message : String(error));
       setNotice(error instanceof Error ? error.message : "分析結果を読み込めませんでした。");
     } finally {
-      if (resultLoadGeneration.current === generation) setResultLoading(false);
+      if (resultLoadGeneration.current === generation && visiblePartyId.current === partyId) {
+        setResultLoading(false);
+      }
     }
   };
 
@@ -199,83 +309,84 @@ function Workspace({ catalog }: { catalog: Catalog }) {
       : savedParties.filter((party) => party.name.toLocaleLowerCase("ja").includes(query));
   }, [savedParties, search]);
 
-  const handleSave = async (next: PartyDraft) => {
-    const partyId = getPartyId(next) ?? createPartyId();
-    const saved = { ...next, partyId, id: partyId };
-    try {
-      await savePartyDraft(saved);
-      resultLoadGeneration.current += 1;
-      setResultLoading(false);
-      setDraft(createEmptyParty(createPartyId()));
-      setSavedParties((current) => {
-        const remaining = current.filter((party) => (party.partyId ?? party.id) !== partyId);
-        return [saved, ...remaining];
-      });
-      setNotice(`「${saved.name}」を保存しました。`);
-    } catch (error) {
-      setNotice(error instanceof Error ? error.message : "編成を保存できませんでした。");
-    }
-  };
-
   const handleAnalyze = async (next: PartyDraft) => {
     const characterById = new Map(catalog.characters.map((character) => [character.id, character]));
     const partyId = getPartyId(next) ?? createPartyId();
     const saved = { ...next, partyId, id: partyId };
+    const wasPreviouslySaved = savedParties.some((party) => getPartyId(party) === partyId);
+    let temporaryDraftSaved = false;
     let unlisten: () => void = () => undefined;
+
     try {
       const input = buildAnalysisInput(saved, catalog);
-      await savePartyDraft(saved);
-
-      // 入力保存が成功した時点で、作成フォームを新規状態へ切り替える。
+      analysisOperationPartyId.current = partyId;
+      activeAnalysisRunId.current = null;
       resultLoadGeneration.current += 1;
-      setResultLoading(false);
-      setDraft(createEmptyParty(createPartyId()));
-      if (resolution === null || resultParty === null) {
-        setResultParty(saved);
-        setSelectedPartyId(partyId);
-        setResolution(null);
-        setResultValidity(null);
-      } else {
-        setResultValidity("soft_stale");
-      }
+      draftInteractionVersion.current += 1;
+      visiblePartyId.current = partyId;
+      setView("party");
+      setDraft(saved);
+      setSelectedPartyId(partyId);
+      setAnalysisPartyId(partyId);
       setAnalysisStatus("queued");
       setAnalysisError(null);
+      setAnalysisErrorPartyId(null);
       setResultError(null);
+      setResultLoading(false);
       setSteps(
-        saved.members.map((member) => ({
-          characterId: member.characterId ?? `slot-${member.slotIndex + 1}`,
-          characterName: member.characterId ? characterById.get(member.characterId)?.name : undefined,
-          status: "queued",
-          detail: "調査ジョブの開始を待っています。",
-        })),
+        saved.members.map((member) => {
+          const character = member.characterId ? characterById.get(member.characterId) : undefined;
+          return {
+            characterId: member.characterId ?? `slot-${member.slotIndex + 1}`,
+            characterName: character?.name,
+            characterImageUrl: character?.imageUrl,
+            status: "queued",
+          };
+        }),
       );
-      setNotice("分析入力を保存しました。Codex調査ジョブを開始します。");
-      setView("analysis");
-      setSavedParties((current) => {
-        const remaining = current.filter((party) => getPartyId(party) !== partyId);
-        return [saved, ...remaining];
-      });
+      setNotice("編成を受け付けました。分析の準備をしています。");
+
+      await savePartyDraft(saved);
+      temporaryDraftSaved = true;
+      if (wasPreviouslySaved) {
+        setSavedParties((current) => [saved, ...current.filter((party) => getPartyId(party) !== partyId)]);
+        setResultValidity(resolution ? "soft_stale" : null);
+      } else {
+        setResultParty(saved);
+        setResolution(null);
+        setResultValidity(null);
+      }
+      setNotice("編成を受け付けました。4人の情報を順番に確認しています。");
 
       unlisten = await subscribeAnalysisProgress((progress) => {
+        if (activeAnalysisRunId.current === null) {
+          if (progress.status !== "starting_codex") return;
+          activeAnalysisRunId.current = progress.analysisRunId;
+        }
+        if (activeAnalysisRunId.current !== progress.analysisRunId) return;
         setAnalysisStatus(progress.status);
-        if (progress.error) setAnalysisError(progress.error);
+        if (progress.error) {
+          setAnalysisError(progress.error);
+          setAnalysisErrorPartyId(partyId);
+        }
         if (progress.status === "cancelled") {
           setSteps((current) =>
             current.map((step) => ({
-              characterId: step.characterId,
-              characterName: step.characterName,
+              ...step,
               status: "cancelled",
-              detail: "分析をキャンセルしました。",
             })),
           );
         }
-        if (progress.characterId && progress.characterStage && CHARACTER_STAGES.has(progress.characterStage as AnalysisCharacterStepStatus)) {
+        if (
+          progress.characterId &&
+          progress.characterStage &&
+          CHARACTER_STAGES.has(progress.characterStage as AnalysisCharacterStepStatus)
+        ) {
           setSteps((current) =>
             current.map((step) =>
               step.characterId === progress.characterId
                 ? {
-                    characterId: step.characterId,
-                    characterName: step.characterName,
+                    ...step,
                     status: progress.characterStage as AnalysisCharacterStepStatus,
                     detail: progress.detail,
                     error: progress.error ?? undefined,
@@ -285,20 +396,54 @@ function Workspace({ catalog }: { catalog: Catalog }) {
           );
         }
       });
+
       const completed = await startAnalysis(input);
-      resultLoadGeneration.current += 1;
-      setResultLoading(false);
-      setResultError(null);
-      setResolution(completed.resolution);
-      setResultParty(saved);
-      setSelectedPartyId(partyId);
-      setResultValidity("current");
+      setSavedParties((current) => [saved, ...current.filter((party) => getPartyId(party) !== partyId)]);
       setAnalysisStatus("succeeded");
-      setNotice("検証済みの分析結果を保存しました。");
+      analysisOperationPartyId.current = null;
+      activeAnalysisRunId.current = null;
+      setAnalysisPartyId(null);
+      setSteps([]);
+      setAnalysisError(null);
+      setAnalysisErrorPartyId(null);
+      if (visiblePartyId.current === partyId) {
+        resultLoadGeneration.current += 1;
+        setResultLoading(false);
+        setResultError(null);
+        if (wasPreviouslySaved) {
+          setResolution(completed.resolution);
+          setResultParty(saved);
+          setSelectedPartyId(partyId);
+          setResultValidity("current");
+        } else {
+          visiblePartyId.current = null;
+          setDraft(createEmptyParty(createPartyId()));
+          setResolution(null);
+          setResultParty(null);
+          setSelectedPartyId(null);
+          setResultValidity(null);
+        }
+      }
+      setNotice(`「${saved.name}」の分析結果を保存しました。`);
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      setAnalysisStatus(message.includes("キャンセル") ? "cancelled" : "failed");
+      const wasCancelled = message.includes("キャンセル") || message.toLocaleLowerCase().includes("cancel");
+      setAnalysisStatus(wasCancelled ? "cancelled" : "failed");
+      analysisOperationPartyId.current = null;
+      activeAnalysisRunId.current = null;
+      setAnalysisPartyId(null);
+      setSteps([]);
       setAnalysisError(message);
+      setAnalysisErrorPartyId(partyId);
+      if (!wasPreviouslySaved && temporaryDraftSaved) {
+        try {
+          await deletePartyDraft(partyId);
+        } catch (deleteError) {
+          const cleanupMessage = deleteError instanceof Error ? deleteError.message : String(deleteError);
+          setNotice(`${message} 一時保存データの整理にも失敗しました: ${cleanupMessage}`);
+          return;
+        }
+      }
       setNotice(message);
     } finally {
       unlisten();
@@ -307,11 +452,67 @@ function Workspace({ catalog }: { catalog: Catalog }) {
 
   const handleNewParty = () => {
     resultLoadGeneration.current += 1;
+    draftInteractionVersion.current += 1;
+    visiblePartyId.current = null;
     setResultLoading(false);
     setResultError(null);
+    setResultParty(null);
+    setResolution(null);
+    setResultValidity(null);
+    setSelectedPartyId(null);
+    setAnalysisError(null);
+    setAnalysisErrorPartyId(null);
     setDraft(createEmptyParty(createPartyId()));
     setNotice("新しい編成を開きました。");
     setView("party");
+  };
+
+  const handleDeleteParty = async (party: PartyDraft) => {
+    const partyId = getPartyId(party);
+    if (!partyId) throw new Error("削除対象の編成IDがありません。");
+    if (analysisOperationPartyId.current === partyId) {
+      throw new Error("分析中の編成は削除できません。分析をキャンセルしてから削除してください。");
+    }
+    await deletePartyDraft(partyId);
+    setSavedParties((current) => current.filter((candidate) => getPartyId(candidate) !== partyId));
+    if (visiblePartyId.current === partyId) {
+      handleNewParty();
+    }
+    setNotice(`「${party.name}」を削除しました。`);
+  };
+
+  const handleChooseVariant = (characterId: string, variantId: string) => {
+    const partyId = resultParty ? getPartyId(resultParty) : undefined;
+    if (!partyId) return;
+    const selectionKey = `${characterId}:${variantId}`;
+    if (variantSelectionPending.current !== null) return;
+    variantSelectionPending.current = selectionKey;
+    setChoosingVariantKey(selectionKey);
+    const generation = resultLoadGeneration.current;
+    void saveAnalysisVariantSelection(partyId, characterId, variantId)
+      .then((selected) => {
+        if (
+          resultLoadGeneration.current !== generation ||
+          visiblePartyId.current !== partyId ||
+          (resultParty ? getPartyId(resultParty) : undefined) !== partyId
+        ) {
+          return;
+        }
+        setResolution(selected);
+        setResultValidity("current");
+        setNotice("候補の選択を保存しました。");
+      })
+      .catch((error: unknown) => {
+        if (visiblePartyId.current === partyId) {
+          setNotice(error instanceof Error ? error.message : String(error));
+        }
+      })
+      .finally(() => {
+        if (variantSelectionPending.current === selectionKey) {
+          variantSelectionPending.current = null;
+          setChoosingVariantKey(null);
+        }
+      });
   };
 
   return (
@@ -322,98 +523,145 @@ function Workspace({ catalog }: { catalog: Catalog }) {
       >
         メインコンテンツへ
       </a>
-      <div className="grid min-h-dvh lg:grid-cols-[17rem_minmax(0,1fr)_19rem]">
+      <div
+        className={cn(
+          "grid min-h-dvh",
+          sidebarOpen
+            ? "lg:grid-cols-[17rem_minmax(0,1fr)_19rem]"
+            : "lg:grid-cols-[minmax(0,1fr)_19rem]",
+        )}
+      >
         <aside
+          id="workspace-sidebar"
           className="border-b border-slate-800 bg-slate-900/55 p-5 lg:border-b-0 lg:border-r"
           aria-label="編成ナビゲーション"
+          hidden={!sidebarOpen}
         >
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-amber-400">Genshin Reco</p>
-            <h1 className="mt-2 text-balance text-xl font-bold">根拠付き編成ビルド</h1>
-            <p className="mt-2 text-sm leading-6 text-slate-400">
-              Ver.{catalog.gameVersion} / {catalog.characters.length}キャラ
-            </p>
-          </div>
-
-          <nav className="mt-6 grid gap-2 sm:grid-cols-3 lg:grid-cols-1" aria-label="主要画面">
-            {NAVIGATION.map(({ id, label, icon: Icon }) => (
-              <button
-                key={id}
-                type="button"
-                className={cn(
-                  "flex min-h-11 items-center gap-3 rounded-lg px-3 py-2 text-left font-semibold",
-                  view === id
-                    ? "bg-slate-800 text-amber-300"
-                    : "text-slate-300 hover:bg-slate-900 hover:text-slate-100",
-                )}
-                onClick={() => setView(id)}
-                aria-current={view === id ? "page" : undefined}
-              >
-                <Icon aria-hidden="true" size={19} strokeWidth={1.8} />
-                {label}
-              </button>
-            ))}
-          </nav>
-
-          <section className="mt-8 border-t border-slate-800 pt-5" aria-labelledby="saved-parties-heading">
-            <div className="flex items-center justify-between gap-3">
-              <h2 id="saved-parties-heading" className="font-semibold">保存した編成</h2>
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-amber-400">Genshin Reco</p>
+                <h1 className="mt-2 text-balance text-xl font-bold">根拠付き編成ビルド</h1>
+                <p className="mt-2 text-sm leading-6 text-slate-400">
+                  Ver.{catalog.gameVersion} / {catalog.characters.length}キャラ
+                </p>
+              </div>
               <button
                 type="button"
                 className="grid min-h-11 min-w-11 place-items-center rounded-lg text-slate-300 hover:bg-slate-800 hover:text-slate-100"
-                onClick={handleNewParty}
-                aria-label="新しい編成を作成"
+                onClick={() => setSidebarOpen(false)}
+                aria-label="サイドバーを閉じる"
+                title="サイドバーを閉じる"
+                aria-controls="workspace-sidebar"
+                aria-expanded="true"
               >
-                <Plus aria-hidden="true" size={20} />
+                <PanelLeftClose aria-hidden="true" size={20} />
               </button>
             </div>
-            <label htmlFor="party-search" className="sr-only">
-              保存編成を検索
-            </label>
-            <div className="relative mt-3">
-              <Search
-                aria-hidden="true"
-                className="pointer-events-none absolute left-3 top-3 text-slate-500"
-                size={18}
-              />
-              <input
-                id="party-search"
-                type="search"
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-                className="min-h-11 w-full rounded-lg border border-slate-700 bg-slate-950 py-2 pl-10 pr-3 text-sm placeholder:text-slate-500"
-                placeholder="編成名で検索"
-              />
-            </div>
-            <div className="mt-3 space-y-1">
-              {filteredParties.length === 0 ? (
-                <p className="text-sm leading-6 text-slate-500">保存した編成はまだありません。</p>
-              ) : (
-                filteredParties.map((party) => {
-                  const partyId = getPartyId(party);
-                  return (
-                    <button
-                      key={partyId}
-                      type="button"
-                      className={cn(
-                        "w-full rounded-lg px-3 py-2 text-left text-sm hover:bg-slate-800 hover:text-slate-100",
-                        view === "analysis" && selectedPartyId === partyId
-                          ? "bg-slate-800 text-amber-300"
-                          : "text-slate-300",
-                      )}
-                      onClick={() => void loadResultForParty(party)}
-                      aria-current={view === "analysis" && selectedPartyId === partyId ? "page" : undefined}
-                    >
-                      {party.name}
-                    </button>
-                  );
-                })
-              )}
-            </div>
-          </section>
+
+            <nav className="mt-6 grid gap-2 sm:grid-cols-2 lg:grid-cols-1" aria-label="主要画面">
+              {NAVIGATION.map(({ id, label, icon: Icon }) => (
+                <button
+                  key={id}
+                  type="button"
+                  className={cn(
+                    "flex min-h-11 items-center gap-3 rounded-lg px-3 py-2 text-left font-semibold disabled:cursor-not-allowed disabled:opacity-50",
+                    view === id
+                      ? "bg-slate-800 text-amber-300"
+                      : "text-slate-300 hover:bg-slate-900 hover:text-slate-100",
+                  )}
+                  onClick={() => {
+                    if (id === "party") handleNewParty();
+                    else setView(id);
+                  }}
+                  disabled={isAnalysisActive}
+                  aria-current={view === id && (id !== "party" || selectedPartyId === null) ? "page" : undefined}
+                >
+                  <Icon aria-hidden="true" size={19} strokeWidth={1.8} />
+                  {label}
+                </button>
+              ))}
+            </nav>
+
+            <section className="mt-8 border-t border-slate-800 pt-5" aria-labelledby="saved-parties-heading">
+              <div className="flex items-center justify-between gap-3">
+                <h2 id="saved-parties-heading" className="font-semibold">保存した編成</h2>
+                <button
+                  type="button"
+                  className="grid min-h-11 min-w-11 place-items-center rounded-lg text-slate-300 hover:bg-slate-800 hover:text-slate-100"
+                  onClick={handleNewParty}
+                  aria-label="新しい編成を作成"
+                  title="新しい編成を作成"
+                  disabled={isAnalysisActive}
+                >
+                  <Plus aria-hidden="true" size={20} />
+                </button>
+              </div>
+              <label htmlFor="party-search" className="sr-only">
+                保存編成を検索
+              </label>
+              <div className="relative mt-3">
+                <Search
+                  aria-hidden="true"
+                  className="pointer-events-none absolute left-3 top-3 text-slate-500"
+                  size={18}
+                />
+                <input
+                  id="party-search"
+                  type="search"
+                  value={search}
+                  onChange={(event) => setSearch(event.target.value)}
+                  className="min-h-11 w-full rounded-lg border border-slate-700 bg-slate-950 py-2 pl-10 pr-3 text-sm placeholder:text-slate-500"
+                  placeholder="編成名で検索"
+                />
+              </div>
+              <div className="mt-3 space-y-1">
+                {filteredParties.length === 0 ? (
+                  <p className="text-sm leading-6 text-slate-500">保存した編成はまだありません。</p>
+                ) : (
+                  filteredParties.map((party) => {
+                    const partyId = getPartyId(party);
+                    const isSelected = view === "party" && selectedPartyId === partyId;
+                    return (
+                      <div key={partyId} className="flex min-w-0 items-center gap-1">
+                        <button
+                          type="button"
+                          className={cn(
+                            "min-h-11 min-w-0 flex-1 truncate rounded-lg px-3 py-2 text-left text-sm hover:bg-slate-800 hover:text-slate-100 disabled:cursor-not-allowed disabled:opacity-50",
+                            isSelected ? "bg-slate-800 text-amber-300" : "text-slate-300",
+                          )}
+                          onClick={() => void loadResultForParty(party)}
+                          aria-current={isSelected ? "page" : undefined}
+                          disabled={isAnalysisActive}
+                        >
+                          {party.name}
+                        </button>
+                        <DeletePartyButton
+                          party={party}
+                          onDelete={handleDeleteParty}
+                          disabled={isAnalysisActive && analysisPartyId === partyId}
+                        />
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            </section>
         </aside>
 
         <main id="workspace-main" className="min-w-0 px-5 py-7 sm:px-8 lg:px-10 lg:py-9">
+          {!sidebarOpen ? (
+            <button
+              type="button"
+              className="mb-5 grid min-h-11 min-w-11 place-items-center rounded-lg border border-slate-700 text-slate-300 hover:bg-slate-900 hover:text-slate-100"
+              onClick={() => setSidebarOpen(true)}
+              aria-label="サイドバーを開く"
+              title="サイドバーを開く"
+              aria-controls="workspace-sidebar"
+              aria-expanded="false"
+            >
+              <PanelLeftOpen aria-hidden="true" size={20} />
+            </button>
+          ) : null}
           {notice ? (
             <p
               className="mb-5 border-l-2 border-amber-400 pl-3 text-sm leading-6 text-slate-300"
@@ -423,69 +671,56 @@ function Workspace({ catalog }: { catalog: Catalog }) {
               {notice}
             </p>
           ) : null}
+
           {view === "party" ? (
-            <PartyBuilder
-              catalog={catalog}
-              draft={draft}
-              onChange={setDraft}
-              onSave={(next) => void handleSave(next)}
-              onAnalyze={(next) => void handleAnalyze(next)}
-              disabled={ACTIVE_ANALYSIS_STATUSES.has(analysisStatus) && steps.length > 0}
-            />
-          ) : null}
-          {view === "analysis" ? (
             <div className="space-y-9">
-              {steps.length > 0 || analysisError ? (
+              <PartyBuilder
+                catalog={catalog}
+                draft={draft}
+                onChange={(nextDraft) => {
+                  draftInteractionVersion.current += 1;
+                  setDraft(nextDraft);
+                }}
+                onAnalyze={(next) => void handleAnalyze(next)}
+                mode={selectedIsSaved ? "edit" : "create"}
+                actionError={analysisErrorPartyId === currentDraftId ? analysisError : null}
+                disabled={isAnalysisActive}
+              />
+              {showAnalysisProgress ? (
                 <AnalysisProgressPanel
                   status={analysisStatus}
                   characterSteps={steps}
-                  lastResultValidity={resultValidity === "current" ? null : resultValidity}
-                  error={analysisError}
-                  onCancel={
-                    ACTIVE_ANALYSIS_STATUSES.has(analysisStatus) && steps.length > 0
-                      ? () => {
-                          void cancelAnalysis().catch((error: unknown) => {
-                            setAnalysisError(error instanceof Error ? error.message : String(error));
-                          });
-                        }
-                      : undefined
-                  }
-                />
-              ) : null}
-              {resultLoading ? (
-                <p className="text-sm text-slate-400" role="status" aria-live="polite">
-                  分析結果を読み込み中です。
-                </p>
-              ) : null}
-              {resultError ? (
-                <p className="border-l-2 border-rose-400 pl-3 text-sm leading-6 text-rose-200" role="alert">
-                  {resultError}
-                </p>
-              ) : null}
-              {!resultLoading &&
-              !resultError &&
-              !(resolution === null && ACTIVE_ANALYSIS_STATUSES.has(analysisStatus) && steps.length > 0) ? (
-                <TeamResultPanel
-                  catalog={catalog}
-                  party={resultParty}
-                  resolution={resolution}
-                  validity={resultValidity ?? "current"}
-                  onChooseVariant={(characterId, variantId) => {
-                    const partyId = resultParty ? getPartyId(resultParty) : undefined;
-                    if (!partyId) return;
-                    const generation = resultLoadGeneration.current;
-                    void saveAnalysisVariantSelection(partyId, characterId, variantId)
-                      .then((selected) => {
-                        if (resultLoadGeneration.current !== generation) return;
-                        setResolution(selected);
-                        setResultValidity("current");
-                        setNotice("候補の選択を保存しました。");
-                      })
-                      .catch((error: unknown) => {
-                        setNotice(error instanceof Error ? error.message : String(error));
-                      });
+                  onCancel={() => {
+                    void cancelAnalysis().catch((error: unknown) => {
+                      setAnalysisError(error instanceof Error ? error.message : String(error));
+                      setAnalysisErrorPartyId(analysisPartyId);
+                    });
                   }}
                 />
+              ) : null}
+              {selectedIsSaved ? (
+                <section className="space-y-5" aria-label="保存編成の分析結果">
+                  {resultLoading ? (
+                    <p className="text-sm text-slate-400" role="status" aria-live="polite">
+                      分析結果を読み込み中です。
+                    </p>
+                  ) : null}
+                  {resultError ? (
+                    <p className="border-l-2 border-rose-400 pl-3 text-sm leading-6 text-rose-200" role="alert">
+                      {resultError}
+                    </p>
+                  ) : null}
+                  {!resultLoading && !resultError ? (
+                    <TeamResultPanel
+                      catalog={catalog}
+                      party={resultParty}
+                      resolution={resolution}
+                      validity={resultValidity ?? "current"}
+                      onChooseVariant={handleChooseVariant}
+                      choosingVariantKey={choosingVariantKey}
+                    />
+                  ) : null}
+                </section>
               ) : null}
             </div>
           ) : null}
@@ -494,9 +729,9 @@ function Workspace({ catalog }: { catalog: Catalog }) {
 
         <aside
           className="border-t border-slate-800 bg-slate-900/30 p-5 lg:border-l lg:border-t-0"
-          aria-label={view === "analysis" ? "分析結果の補足事項" : "現在の編成情報"}
+          aria-label={view === "party" && selectedIsSaved ? "分析結果の補足事項" : "現在の編成情報"}
         >
-          {view === "analysis" ? (
+          {view === "party" && selectedIsSaved ? (
             <AnalysisNotesPanel catalog={catalog} resolution={resolution} validity={resultValidity ?? "current"} />
           ) : (
             <>
@@ -551,8 +786,7 @@ function App() {
         if (!active) return;
         setState({
           status: "error",
-          message:
-            error instanceof Error ? error.message : "カタログの検証に失敗しました。",
+          message: error instanceof Error ? error.message : "カタログの検証に失敗しました。",
         });
       });
     return () => {

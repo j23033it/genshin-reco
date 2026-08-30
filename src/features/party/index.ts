@@ -14,5 +14,5 @@ export type {
   PartyValidationResult,
 } from "./partyDraft";
 export type { SlotIndex, Constellation, Refinement } from "./partyTypes";
-export { listPartyDrafts, loadPartyDraft, savePartyDraft } from "./partyRepository";
+export { deletePartyDraft, listPartyDrafts, loadPartyDraft, savePartyDraft } from "./partyRepository";
 export type { PartySummary } from "./partyRepository";
