@@ -9,7 +9,10 @@ use serde_json::{Value, json};
 use std::{
     collections::{HashMap, HashSet, VecDeque},
     path::{Path, PathBuf},
-    sync::Arc,
+    sync::{
+        Arc,
+        atomic::{AtomicBool, Ordering},
+    },
     time::Duration,
 };
 use tauri::Manager;
@@ -17,7 +20,7 @@ use thiserror::Error;
 use tokio::{
     io::{AsyncBufReadExt, AsyncWriteExt, BufReader},
     process::{Child, ChildStdin, Command},
-    sync::{Mutex, mpsc},
+    sync::{Mutex, Notify, mpsc},
     task::JoinHandle,
     time::{Instant, timeout},
 };
@@ -89,6 +92,8 @@ enum AppServerError {
     TransientTurn(String),
     #[error("Codexターンが失敗しました: {0}")]
     TurnFailed(String),
+    #[error("分析がキャンセルされました")]
+    Cancelled,
     #[error("アプリ専用Codexホームの準備に失敗しました: {0}")]
     IsolatedHome(String),
 }
@@ -187,6 +192,39 @@ pub struct AppServerSupervisor {
 pub(crate) struct ObservedCharacterResearch {
     pub output: CharacterResearchOutput,
     pub opened_urls: Vec<String>,
+}
+
+/// 実行中の調査ターンへ協調的な中断を通知する共有トークン。
+#[derive(Clone, Default)]
+pub(crate) struct ResearchCancellation {
+    inner: Arc<ResearchCancellationInner>,
+}
+
+#[derive(Default)]
+struct ResearchCancellationInner {
+    cancelled: AtomicBool,
+    notify: Notify,
+}
+
+impl ResearchCancellation {
+    pub fn cancel(&self) {
+        self.inner.cancelled.store(true, Ordering::Release);
+        self.inner.notify.notify_waiters();
+    }
+
+    pub fn is_cancelled(&self) -> bool {
+        self.inner.cancelled.load(Ordering::Acquire)
+    }
+
+    async fn cancelled(&self) {
+        loop {
+            let notified = self.inner.notify.notified();
+            if self.is_cancelled() {
+                return;
+            }
+            notified.await;
+        }
+    }
 }
 
 struct ManagedAppServer {
@@ -799,6 +837,7 @@ pub(crate) async fn research_character_with_codex(
     supervisor: &AppServerSupervisor,
     analysis_input: &AnalysisInput,
     character_id: &str,
+    cancellation: Option<&ResearchCancellation>,
 ) -> Result<ObservedCharacterResearch, String> {
     validate_analysis_input(analysis_input).map_err(|error| error.to_string())?;
     if !analysis_input
@@ -812,7 +851,15 @@ pub(crate) async fn research_character_with_codex(
     let mut guard = supervisor.session.lock().await;
     let mut last_error = None;
     for attempt in 0..=1 {
-        match run_character_research_attempt(app, &mut guard, analysis_input, character_id).await {
+        match run_character_research_attempt(
+            app,
+            &mut guard,
+            analysis_input,
+            character_id,
+            cancellation,
+        )
+        .await
+        {
             Ok(observed) => {
                 validate_character_research_output(
                     &observed.output,
@@ -840,7 +887,11 @@ async fn run_character_research_attempt(
     slot: &mut Option<ManagedAppServer>,
     analysis_input: &AnalysisInput,
     character_id: &str,
+    cancellation: Option<&ResearchCancellation>,
 ) -> Result<ObservedCharacterResearch, AppServerError> {
+    if cancellation.is_some_and(ResearchCancellation::is_cancelled) {
+        return Err(AppServerError::Cancelled);
+    }
     let workspace = ensure_managed_session(app, slot)
         .await
         .map(|session| PathBuf::from(&session.codex_home).join("workspace"))?;
@@ -886,7 +937,7 @@ async fn run_character_research_attempt(
         )
         .await?;
         let turn_id = required_json_string(&turn_result, &["turn", "id"])?;
-        let completion = supervised_wait_for_turn(slot, &thread_id, &turn_id).await?;
+        let completion = wait_for_research_turn(slot, &thread_id, &turn_id, cancellation).await?;
         validate_research_turn_completion(&completion)?;
         let observations = slot
             .as_ref()
@@ -920,6 +971,33 @@ async fn run_character_research_attempt(
         (Ok(observed), Ok(())) => Ok(observed),
         (Err(error), _) => Err(error),
         (Ok(_), Err(error)) => Err(error),
+    }
+}
+
+async fn wait_for_research_turn(
+    slot: &mut Option<ManagedAppServer>,
+    thread_id: &str,
+    turn_id: &str,
+    cancellation: Option<&ResearchCancellation>,
+) -> Result<Value, AppServerError> {
+    let Some(cancellation) = cancellation else {
+        return supervised_wait_for_turn(slot, thread_id, turn_id).await;
+    };
+    let session = slot
+        .as_mut()
+        .ok_or_else(|| AppServerError::Protocol("常駐セッションがありません".into()))?;
+    tokio::select! {
+        completion = session.rpc.wait_for_turn_completion(thread_id, turn_id) => completion,
+        () = cancellation.cancelled() => {
+            session
+                .request(
+                    "turn/interrupt",
+                    Some(json!({ "threadId": thread_id, "turnId": turn_id })),
+                )
+                .await?;
+            let _ = session.rpc.wait_for_turn_completion(thread_id, turn_id).await;
+            Err(AppServerError::Cancelled)
+        }
     }
 }
 
@@ -1830,6 +1908,22 @@ mod tests {
                 .expect("観測があること")
                 .unexpected_tool_observed
         );
+    }
+
+    #[tokio::test]
+    async fn 調査キャンセルトークンが待機処理を起こす() {
+        let cancellation = ResearchCancellation::default();
+        let waiting = cancellation.clone();
+        let task = tokio::spawn(async move { waiting.cancelled().await });
+
+        cancellation.cancel();
+
+        timeout(Duration::from_secs(1), task)
+            .await
+            .expect("キャンセル待機が解除されること")
+            .expect("待機taskが成功すること");
+        assert!(cancellation.is_cancelled());
+        assert!(!AppServerError::Cancelled.retryable_research_error());
     }
 
     #[tokio::test]

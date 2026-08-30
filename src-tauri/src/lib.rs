@@ -30,7 +30,8 @@ pub fn run() {
             database_commands::save_party_draft,
             database_commands::load_party_draft,
             database_commands::list_party_drafts,
-            analysis::start_analysis
+            analysis::start_analysis,
+            analysis::cancel_analysis
         ])
         .run(tauri::generate_context!())
         .expect("Tauriアプリケーションを起動できませんでした");

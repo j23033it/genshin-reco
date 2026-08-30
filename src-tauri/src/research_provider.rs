@@ -114,6 +114,14 @@ impl CodexResearchProvider {
     }
 
     pub fn research_verified(&self, request: CharacterResearchRequest) -> VerifiedResearchFuture {
+        self.research_verified_cancellable(request, None)
+    }
+
+    pub(crate) fn research_verified_cancellable(
+        &self,
+        request: CharacterResearchRequest,
+        cancellation: Option<app_server::ResearchCancellation>,
+    ) -> VerifiedResearchFuture {
         let app = self.app.clone();
         Box::pin(async move {
             validate_analysis_input(&request.analysis_input)
@@ -124,6 +132,7 @@ impl CodexResearchProvider {
                 supervisor.inner(),
                 &request.analysis_input,
                 &request.character_id,
+                cancellation.as_ref(),
             )
             .await
             .map_err(ResearchProviderError::AppServer)?;

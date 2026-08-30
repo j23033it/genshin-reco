@@ -6,6 +6,7 @@ import {
   AnalysisProgressPanel,
   TeamResultPanel,
   buildAnalysisInput,
+  cancelAnalysis,
   startAnalysis,
   subscribeAnalysisProgress,
   type AnalysisCharacterStepStatus,
@@ -161,6 +162,16 @@ function Workspace({ catalog }: { catalog: Catalog }) {
       unlisten = await subscribeAnalysisProgress((progress) => {
         setAnalysisStatus(progress.status);
         if (progress.error) setAnalysisError(progress.error);
+        if (progress.status === "cancelled") {
+          setSteps((current) =>
+            current.map((step) => ({
+              characterId: step.characterId,
+              characterName: step.characterName,
+              status: "cancelled",
+              detail: "分析をキャンセルしました。",
+            })),
+          );
+        }
         if (progress.characterId && progress.characterStage && CHARACTER_STAGES.has(progress.characterStage as AnalysisCharacterStepStatus)) {
           setSteps((current) =>
             current.map((step) =>
@@ -184,7 +195,7 @@ function Workspace({ catalog }: { catalog: Catalog }) {
       setNotice("検証済みの分析結果を保存しました。");
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      setAnalysisStatus("failed");
+      setAnalysisStatus(message.includes("キャンセル") ? "cancelled" : "failed");
       setAnalysisError(message);
       setNotice(message);
     } finally {
@@ -318,6 +329,15 @@ function Workspace({ catalog }: { catalog: Catalog }) {
                 characterSteps={steps}
                 lastResultValidity={resultValidity === "current" ? null : resultValidity}
                 error={analysisError}
+                onCancel={
+                  ACTIVE_ANALYSIS_STATUSES.has(analysisStatus) && steps.length > 0
+                    ? () => {
+                        void cancelAnalysis().catch((error: unknown) => {
+                          setAnalysisError(error instanceof Error ? error.message : String(error));
+                        });
+                      }
+                    : undefined
+                }
               />
               <TeamResultPanel resolution={resolution} validity={resultValidity ?? "current"} />
             </div>

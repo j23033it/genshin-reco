@@ -2,6 +2,7 @@ export { AnalysisProgressPanel } from "./AnalysisProgressPanel";
 export { TeamResultPanel } from "./TeamResultPanel";
 export {
   buildAnalysisInput,
+  cancelAnalysis,
   startAnalysis,
   subscribeAnalysisProgress,
   type AnalysisCommandResult,

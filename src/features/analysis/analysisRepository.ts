@@ -89,3 +89,8 @@ export async function startAnalysis(input: AnalysisInput): Promise<AnalysisComma
   }
   return invoke<AnalysisCommandResult>("start_analysis", { input });
 }
+
+export async function cancelAnalysis(): Promise<void> {
+  if (!isTauriRuntime()) return;
+  await invoke("cancel_analysis");
+}

@@ -1,4 +1,5 @@
 use crate::{
+    app_server::ResearchCancellation,
     candidate_validation::{
         validate_analysis_input_against_catalog, validate_build_variants_against_catalog,
     },
@@ -14,7 +15,7 @@ use crate::{
 };
 use serde::Serialize;
 use serde_json::Value;
-use std::{collections::BTreeMap, time::SystemTime};
+use std::{collections::BTreeMap, sync::Mutex as StdMutex, time::SystemTime};
 use tauri::{Emitter, State};
 use tokio::sync::Mutex;
 
@@ -26,9 +27,24 @@ const SOLVER_VERSION: &str = "solver-v1";
 const ANALYSIS_PROGRESS_EVENT: &str = "analysis-progress";
 
 /// 複数の分析実行が同時にWeb調査を始めないための直列化ゲート。
-#[derive(Default)]
 pub struct AnalysisCoordinator {
     gate: Mutex<()>,
+    active: StdMutex<Option<ActiveAnalysis>>,
+}
+
+#[derive(Clone)]
+struct ActiveAnalysis {
+    analysis_run_id: String,
+    cancellation: ResearchCancellation,
+}
+
+impl Default for AnalysisCoordinator {
+    fn default() -> Self {
+        Self {
+            gate: Mutex::new(()),
+            active: StdMutex::new(None),
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -74,21 +90,61 @@ pub async fn start_analysis(
     let run_id = database
         .begin_analysis_run(&input.party_id, &composition_hash, &input_hash)
         .map_err(|error| error.to_string())?;
+    let cancellation = ResearchCancellation::default();
+    {
+        let mut active = coordinator
+            .active
+            .lock()
+            .map_err(|_| "分析キャンセル状態を取得できませんでした".to_string())?;
+        *active = Some(ActiveAnalysis {
+            analysis_run_id: run_id.clone(),
+            cancellation: cancellation.clone(),
+        });
+    }
 
-    let result = execute_analysis(&app, &database, &catalog, &run_id, &input).await;
+    let result = execute_analysis(&app, &database, &catalog, &run_id, &input, &cancellation).await;
+    if let Ok(mut active) = coordinator.active.lock()
+        && active
+            .as_ref()
+            .is_some_and(|analysis| analysis.analysis_run_id == run_id)
+    {
+        *active = None;
+    }
     if let Err(error) = &result {
-        let _ = database.update_run_status(&run_id, AnalysisStatus::Failed, Some(error));
+        let status = if cancellation.is_cancelled() {
+            AnalysisStatus::Cancelled
+        } else {
+            AnalysisStatus::Failed
+        };
+        let _ = database.update_run_status(&run_id, status, Some(error));
         emit_progress(
             &app,
             &run_id,
-            AnalysisStatus::Failed,
+            status,
             None,
             None,
-            "分析を完了できませんでした。",
+            if status == AnalysisStatus::Cancelled {
+                "分析をキャンセルしました。"
+            } else {
+                "分析を完了できませんでした。"
+            },
             Some(error.clone()),
         );
     }
     result
+}
+
+#[tauri::command]
+pub fn cancel_analysis(coordinator: State<'_, AnalysisCoordinator>) -> Result<(), String> {
+    let active = coordinator
+        .active
+        .lock()
+        .map_err(|_| "分析キャンセル状態を取得できませんでした".to_string())?;
+    let Some(active) = active.as_ref() else {
+        return Err("キャンセルできる分析はありません".into());
+    };
+    active.cancellation.cancel();
+    Ok(())
 }
 
 async fn execute_analysis(
@@ -97,7 +153,9 @@ async fn execute_analysis(
     catalog: &crate::catalog::Catalog,
     run_id: &str,
     input: &AnalysisInput,
+    cancellation: &ResearchCancellation,
 ) -> Result<AnalysisCommandResult, String> {
+    ensure_not_cancelled(cancellation)?;
     set_status(
         app,
         database,
@@ -113,6 +171,7 @@ async fn execute_analysis(
     let mut research_warnings = Vec::new();
 
     for member in &input.members {
+        ensure_not_cancelled(cancellation)?;
         update_character_progress(
             app,
             database,
@@ -123,12 +182,16 @@ async fn execute_analysis(
             "個別本文ページを調査しています。",
         )?;
         let research = provider
-            .research_verified(CharacterResearchRequest {
-                analysis_input: input.clone(),
-                character_id: member.character_id.clone(),
-            })
+            .research_verified_cancellable(
+                CharacterResearchRequest {
+                    analysis_input: input.clone(),
+                    character_id: member.character_id.clone(),
+                },
+                Some(cancellation.clone()),
+            )
             .await
             .map_err(|error| error.to_string())?;
+        ensure_not_cancelled(cancellation)?;
 
         update_character_progress(
             app,
@@ -176,6 +239,7 @@ async fn execute_analysis(
         );
     }
 
+    ensure_not_cancelled(cancellation)?;
     set_status(
         app,
         database,
@@ -212,6 +276,7 @@ async fn execute_analysis(
         created_at: now,
     };
 
+    ensure_not_cancelled(cancellation)?;
     set_status(
         app,
         database,
@@ -355,6 +420,14 @@ fn host_timestamp() -> String {
         .duration_since(SystemTime::UNIX_EPOCH)
         .unwrap_or_default();
     format!("{}.{:09}Z", elapsed.as_secs(), elapsed.subsec_nanos())
+}
+
+fn ensure_not_cancelled(cancellation: &ResearchCancellation) -> Result<(), String> {
+    if cancellation.is_cancelled() {
+        Err("分析がキャンセルされました".into())
+    } else {
+        Ok(())
+    }
 }
 
 #[cfg(test)]
