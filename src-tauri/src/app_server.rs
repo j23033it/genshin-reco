@@ -27,6 +27,8 @@ use tokio::{
 
 const SUPPORTED_CODEX_MAJOR: u64 = 0;
 const SUPPORTED_CODEX_MINOR: u64 = 118;
+const DEFAULT_CODEX_MODEL: &str = "gpt-5.6-luna";
+const DEFAULT_REASONING_EFFORT: &str = "high";
 const RPC_TIMEOUT: Duration = Duration::from_secs(15);
 const TURN_TIMEOUT: Duration = Duration::from_secs(120);
 const MAX_DIAGNOSTIC_LINES: usize = 100;
@@ -901,6 +903,8 @@ async fn run_character_research_attempt(
         slot,
         "thread/start",
         Some(json!({
+            "model": DEFAULT_CODEX_MODEL,
+            "effort": DEFAULT_REASONING_EFFORT,
             "cwd": workspace,
             "approvalPolicy": "never",
             "sandbox": "read-only",
@@ -1120,6 +1124,8 @@ async fn run_gate0_smoke(
         slot,
         "thread/start",
         Some(json!({
+            "model": DEFAULT_CODEX_MODEL,
+            "effort": DEFAULT_REASONING_EFFORT,
             "cwd": workspace,
             "approvalPolicy": "never",
             "sandbox": "read-only",
