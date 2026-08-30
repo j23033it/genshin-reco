@@ -1,6 +1,7 @@
 mod app_server;
 pub mod catalog;
 pub mod domain;
+pub mod hashing;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
