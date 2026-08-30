@@ -298,7 +298,7 @@ mod tests {
     use super::*;
     use crate::domain::{
         ArtifactPlan, BuildCondition, EvidenceClaimType, FixedAssumptions, MainStatPackage,
-        NormalizedClaimValue, PartyMemberInput, ResearchBuildVariant, ResearchClaim,
+        PartyMemberInput, ResearchBuildVariant, ResearchClaim, ResearchClaimValue,
         ResearchEvidence, ResearchLocator, ResearchSchemaVersion, ResearchSourcePage, StatPriority,
         StatUnit, TargetScope, TargetStatRange,
     };
@@ -386,49 +386,43 @@ mod tests {
         let claims = vec![
             ResearchClaim {
                 claim_type: EvidenceClaimType::ArtifactPlan,
-                normalized_value: NormalizedClaimValue::ArtifactPlan {
-                    value: ArtifactPlan::FourPiece {
-                        set_id: "set-a".to_string(),
-                    },
-                },
+                normalized_value: ResearchClaimValue::ArtifactPlan,
                 conditions: Vec::new(),
                 evidence: evidence.clone(),
             },
             ResearchClaim {
                 claim_type: EvidenceClaimType::MainStatPackage,
-                normalized_value: NormalizedClaimValue::MainStatPackage {
-                    value: package.clone(),
-                },
+                normalized_value: ResearchClaimValue::MainStatPackage,
                 conditions: Vec::new(),
                 evidence: evidence.clone(),
             },
             ResearchClaim {
                 claim_type: EvidenceClaimType::SubstatPriority,
-                normalized_value: NormalizedClaimValue::SubstatPriority {
-                    value: package.substat_priority.clone(),
+                normalized_value: ResearchClaimValue::SubstatPriority,
+                conditions: Vec::new(),
+                evidence: evidence.clone(),
+            },
+            ResearchClaim {
+                claim_type: EvidenceClaimType::TargetStat,
+                normalized_value: ResearchClaimValue::TargetStat {
+                    stat: package.target_stats[0].stat.clone(),
+                    scope: package.target_stats[0].scope,
                 },
                 conditions: Vec::new(),
                 evidence: evidence.clone(),
             },
             ResearchClaim {
                 claim_type: EvidenceClaimType::TargetStat,
-                normalized_value: NormalizedClaimValue::TargetStat {
-                    value: package.target_stats[0].clone(),
-                },
-                conditions: Vec::new(),
-                evidence: evidence.clone(),
-            },
-            ResearchClaim {
-                claim_type: EvidenceClaimType::TargetStat,
-                normalized_value: NormalizedClaimValue::TargetStat {
-                    value: package.target_stats[1].clone(),
+                normalized_value: ResearchClaimValue::TargetStat {
+                    stat: package.target_stats[1].stat.clone(),
+                    scope: package.target_stats[1].scope,
                 },
                 conditions: Vec::new(),
                 evidence,
             },
         ];
         CharacterResearchOutput {
-            schema_version: ResearchSchemaVersion::V1,
+            schema_version: ResearchSchemaVersion::V2,
             character_id: character_id.to_string(),
             sources: vec![ResearchSourcePage {
                 source_url,

@@ -113,6 +113,8 @@ pub fn reconcile_character_research(
             let mut verified_required_claims = HashSet::new();
 
             for claim in &variant.claims {
+                let normalized_value = resolve_claim_value(claim, variant)
+                    .ok_or_else(|| ReconcilerError::ContradictoryVariant(variant.id.clone()))?;
                 let normalized_url = normalize_source_url(&claim.evidence.source_url)?;
                 let page = verified_by_url.get(&normalized_url).ok_or_else(|| {
                     ReconcilerError::UnverifiedUrl(claim.evidence.source_url.clone())
@@ -129,7 +131,7 @@ pub fn reconcile_character_research(
                 for condition in &claim.conditions {
                     conditions_hold &= condition_matches(condition, analysis_input, member)?;
                 }
-                if claim_conflicts_with_variant(claim, variant) || !conditions_hold {
+                if !conditions_hold {
                     return Err(ReconcilerError::ContradictoryVariant(variant.id.clone()));
                 }
                 if grade != domain::EvidenceGrade::C && is_required {
@@ -142,7 +144,7 @@ pub fn reconcile_character_research(
 
                 evidence_claims.push(domain::EvidenceClaim {
                     claim_type: claim.claim_type,
-                    normalized_value: claim.normalized_value.clone(),
+                    normalized_value,
                     conditions: claim.conditions.clone(),
                     evidence: domain::SourceEvidence {
                         source_page_id: page.source_page_id.clone(),
@@ -278,23 +280,44 @@ fn compare_numbers(
     }
 }
 
-fn claim_conflicts_with_variant(
+fn resolve_claim_value(
     claim: &domain::ResearchClaim,
     variant: &domain::ResearchBuildVariant,
-) -> bool {
+) -> Option<domain::NormalizedClaimValue> {
     match &claim.normalized_value {
-        domain::NormalizedClaimValue::ArtifactPlan { value } => value != &variant.artifact_plan,
-        domain::NormalizedClaimValue::MainStatPackage { value } => {
-            value != &variant.main_stat_package
+        domain::ResearchClaimValue::ArtifactPlan => {
+            Some(domain::NormalizedClaimValue::ArtifactPlan {
+                value: variant.artifact_plan.clone(),
+            })
         }
-        domain::NormalizedClaimValue::SubstatPriority { value } => {
-            value != &variant.main_stat_package.substat_priority
+        domain::ResearchClaimValue::MainStatPackage => {
+            Some(domain::NormalizedClaimValue::MainStatPackage {
+                value: variant.main_stat_package.clone(),
+            })
         }
-        domain::NormalizedClaimValue::TargetStat { value } => {
-            !variant.main_stat_package.target_stats.contains(value)
+        domain::ResearchClaimValue::SubstatPriority => {
+            Some(domain::NormalizedClaimValue::SubstatPriority {
+                value: variant.main_stat_package.substat_priority.clone(),
+            })
         }
-        domain::NormalizedClaimValue::Role { .. }
-        | domain::NormalizedClaimValue::TeamInteraction { .. } => false,
+        domain::ResearchClaimValue::TargetStat { stat, scope } => variant
+            .main_stat_package
+            .target_stats
+            .iter()
+            .find(|target| {
+                domain::target_stat_key(&target.stat, target.scope)
+                    == domain::target_stat_key(stat, *scope)
+            })
+            .cloned()
+            .map(|value| domain::NormalizedClaimValue::TargetStat { value }),
+        domain::ResearchClaimValue::Role { value } => Some(domain::NormalizedClaimValue::Role {
+            value: value.clone(),
+        }),
+        domain::ResearchClaimValue::TeamInteraction { value } => {
+            Some(domain::NormalizedClaimValue::TeamInteraction {
+                value: value.clone(),
+            })
+        }
     }
 }
 
@@ -356,7 +379,7 @@ mod tests {
 
     fn claim(
         claim_type: domain::EvidenceClaimType,
-        normalized_value: domain::NormalizedClaimValue,
+        normalized_value: domain::ResearchClaimValue,
         source_url: &str,
     ) -> domain::ResearchClaim {
         domain::ResearchClaim {
@@ -397,7 +420,7 @@ mod tests {
             })
             .collect();
         domain::CharacterResearchOutput {
-            schema_version: domain::ResearchSchemaVersion::V1,
+            schema_version: domain::ResearchSchemaVersion::V2,
             character_id: "char-a".to_owned(),
             sources,
             variants: vec![domain::ResearchBuildVariant {
@@ -413,34 +436,30 @@ mod tests {
     }
 
     fn required_claims(url: &str) -> Vec<domain::ResearchClaim> {
-        let plan = artifact_plan("set-a");
-        let main = package("攻撃力%");
         let mut claims = vec![
             claim(
                 domain::EvidenceClaimType::ArtifactPlan,
-                domain::NormalizedClaimValue::ArtifactPlan { value: plan },
+                domain::ResearchClaimValue::ArtifactPlan,
                 url,
             ),
             claim(
                 domain::EvidenceClaimType::MainStatPackage,
-                domain::NormalizedClaimValue::MainStatPackage { value: main },
+                domain::ResearchClaimValue::MainStatPackage,
                 url,
             ),
             claim(
                 domain::EvidenceClaimType::SubstatPriority,
-                domain::NormalizedClaimValue::SubstatPriority {
-                    value: vec![domain::StatPriority {
-                        stat: "会心率".to_owned(),
-                        rank: 1,
-                    }],
-                },
+                domain::ResearchClaimValue::SubstatPriority,
                 url,
             ),
         ];
         claims.extend(target_stats().into_iter().map(|value| {
             claim(
                 domain::EvidenceClaimType::TargetStat,
-                domain::NormalizedClaimValue::TargetStat { value },
+                domain::ResearchClaimValue::TargetStat {
+                    stat: value.stat,
+                    scope: value.scope,
+                },
                 url,
             )
         }));
@@ -488,7 +507,7 @@ mod tests {
                 "catalogVersion": "catalog-v2",
                 "sourcePolicyVersion": "source-v1",
                 "promptVersion": "prompt-v1",
-                "schemaVersion": "character-research-v1",
+                "schemaVersion": "character-research-v2",
                 "reconcilerVersion": "reconciler-v1",
                 "solverVersion": "solver-v1"
             }
@@ -548,16 +567,12 @@ mod tests {
         let mut claims = required_claims(URL_ONE);
         claims.push(claim(
             domain::EvidenceClaimType::ArtifactPlan,
-            domain::NormalizedClaimValue::ArtifactPlan {
-                value: artifact_plan("set-a"),
-            },
+            domain::ResearchClaimValue::ArtifactPlan,
             URL_TWO,
         ));
         claims.push(claim(
             domain::EvidenceClaimType::ArtifactPlan,
-            domain::NormalizedClaimValue::ArtifactPlan {
-                value: artifact_plan("set-a"),
-            },
+            domain::ResearchClaimValue::ArtifactPlan,
             URL_THREE,
         ));
         let output = output_with_claims(claims);
@@ -662,19 +677,11 @@ mod tests {
     }
 
     #[test]
-    fn 候補本体と必須claimの差分を矛盾として拒否する() {
+    fn 存在しない目標ステータス参照を拒否する() {
         let mut claims = required_claims(URL_ONE);
-        claims[0].normalized_value = domain::NormalizedClaimValue::ArtifactPlan {
-            value: artifact_plan("set-b"),
-        };
-        claims[1].normalized_value = domain::NormalizedClaimValue::MainStatPackage {
-            value: package("元素チャージ効率%"),
-        };
-        claims[2].normalized_value = domain::NormalizedClaimValue::SubstatPriority {
-            value: vec![domain::StatPriority {
-                stat: "攻撃力%".to_owned(),
-                rank: 1,
-            }],
+        claims[3].normalized_value = domain::ResearchClaimValue::TargetStat {
+            stat: "存在しないステータス".to_owned(),
+            scope: domain::TargetScope::CharacterSheetUnbuffed,
         };
         let output = output_with_claims(claims);
         let result = reconcile_character_research(
@@ -690,7 +697,8 @@ mod tests {
 
         assert!(matches!(
             result,
-            Err(ReconcilerError::ContradictoryVariant(_))
+            Err(ReconcilerError::Domain(domain::DomainValidationError::Invalid(message)))
+                if message.contains("存在しない目標ステータス")
         ));
     }
 
@@ -788,12 +796,6 @@ mod tests {
             .main_stat_package
             .conditions
             .push(condition.clone());
-        if let domain::NormalizedClaimValue::MainStatPackage { value } =
-            &mut output.variants[0].claims[1].normalized_value
-        {
-            value.conditions.push(condition);
-        }
-
         let result = reconcile_character_research(
             &output,
             &[page(

@@ -1378,7 +1378,7 @@ mod tests {
             }))
             .unwrap(),
             output: serde_json::from_value(json!({
-                "schemaVersion": "character-research-v1",
+                "schemaVersion": "character-research-v2",
                 "characterId": "char-a",
                 "sources": [],
                 "variants": [],

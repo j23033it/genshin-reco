@@ -216,10 +216,18 @@ export interface ResearchEvidence {
 
 export interface ResearchClaim {
   claimType: EvidenceClaimType;
-  normalizedValue: NormalizedClaimValue;
+  normalizedValue: ResearchClaimValue;
   conditions: BuildCondition[];
   evidence: ResearchEvidence;
 }
+
+export type ResearchClaimValue =
+  | { kind: "artifact_plan" }
+  | { kind: "main_stat_package" }
+  | { kind: "substat_priority" }
+  | { kind: "target_stat"; stat: string; scope: TargetScope }
+  | { kind: "role"; value: CharacterBuildIntent }
+  | { kind: "team_interaction"; value: string };
 
 export interface ResearchBuildVariant {
   id: string;
@@ -232,7 +240,7 @@ export interface ResearchBuildVariant {
 
 /** Codex構造化出力には、Rust側で生成するID・hash・検証結果を含めない。 */
 export interface CharacterResearchOutput {
-  schemaVersion: "character-research-v1";
+  schemaVersion: "character-research-v2";
   characterId: string;
   sources: ResearchSourcePage[];
   variants: ResearchBuildVariant[];

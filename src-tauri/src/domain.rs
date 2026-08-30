@@ -96,8 +96,8 @@ string_enum!(EvidenceClaimType {
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
 pub enum ResearchSchemaVersion {
-    #[serde(rename = "character-research-v1")]
-    V1,
+    #[serde(rename = "character-research-v2")]
+    V2,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
@@ -283,6 +283,25 @@ pub enum NormalizedClaimValue {
     TeamInteraction { value: String },
 }
 
+/// Codexへ要求する根拠対象。
+///
+/// 候補本体の複雑な値を二重入力させず、Rust側で正規値へ解決する。
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema, PartialEq)]
+#[serde(
+    tag = "kind",
+    rename_all = "snake_case",
+    rename_all_fields = "camelCase",
+    deny_unknown_fields
+)]
+pub enum ResearchClaimValue {
+    ArtifactPlan,
+    MainStatPackage,
+    SubstatPriority,
+    TargetStat { stat: String, scope: TargetScope },
+    Role { value: CharacterBuildIntent },
+    TeamInteraction { value: String },
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema, PartialEq)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct EvidenceClaim {
@@ -375,7 +394,7 @@ pub struct ResearchLocator {
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct ResearchClaim {
     pub claim_type: EvidenceClaimType,
-    pub normalized_value: NormalizedClaimValue,
+    pub normalized_value: ResearchClaimValue,
     #[schemars(length(max = 16))]
     pub conditions: Vec<BuildCondition>,
     pub evidence: ResearchEvidence,
@@ -517,6 +536,15 @@ pub fn validate_character_research_output(
             if claim.claim_type != claim.normalized_value.claim_type() {
                 return Err(invalid("claimTypeとnormalizedValue.kindが一致しません"));
             }
+            if let ResearchClaimValue::TargetStat { stat, scope } = &claim.normalized_value
+                && !variant.main_stat_package.target_stats.iter().any(|target| {
+                    target_stat_key(&target.stat, target.scope) == target_stat_key(stat, *scope)
+                })
+            {
+                return Err(invalid(
+                    "target_stat claimが候補内に存在しない目標ステータスを参照しています",
+                ));
+            }
             let evidence_url = normalize_source_url(&claim.evidence.source_url)
                 .map_err(|error| invalid(format!("根拠URLが不正です: {error}")))?;
             if !source_urls.contains(&evidence_url) {
@@ -549,15 +577,17 @@ pub fn validate_character_research_output(
             }
         }
         for target in &variant.main_stat_package.target_stats {
+            let target_key = target_stat_key(&target.stat, target.scope);
             let has_matching_claim = variant.claims.iter().any(|claim| {
                 matches!(
                     &claim.normalized_value,
-                    NormalizedClaimValue::TargetStat { value } if value == target
+                    ResearchClaimValue::TargetStat { stat, scope }
+                        if target_stat_key(stat, *scope) == target_key
                 )
             });
             if !has_matching_claim {
                 return Err(invalid(
-                    "各目標ステータスに一致するtarget_stat claimが必要です",
+                    "各目標ステータスを参照するtarget_stat claimが必要です",
                 ));
             }
         }
@@ -565,17 +595,21 @@ pub fn validate_character_research_output(
     Ok(())
 }
 
-impl NormalizedClaimValue {
-    fn claim_type(&self) -> EvidenceClaimType {
+impl ResearchClaimValue {
+    pub fn claim_type(&self) -> EvidenceClaimType {
         match self {
-            Self::ArtifactPlan { .. } => EvidenceClaimType::ArtifactPlan,
-            Self::MainStatPackage { .. } => EvidenceClaimType::MainStatPackage,
-            Self::SubstatPriority { .. } => EvidenceClaimType::SubstatPriority,
+            Self::ArtifactPlan => EvidenceClaimType::ArtifactPlan,
+            Self::MainStatPackage => EvidenceClaimType::MainStatPackage,
+            Self::SubstatPriority => EvidenceClaimType::SubstatPriority,
             Self::TargetStat { .. } => EvidenceClaimType::TargetStat,
             Self::Role { .. } => EvidenceClaimType::Role,
             Self::TeamInteraction { .. } => EvidenceClaimType::TeamInteraction,
         }
     }
+}
+
+pub fn target_stat_key(stat: &str, scope: TargetScope) -> (String, TargetScope) {
+    (stat.trim().to_lowercase().replace([' ', '-'], "_"), scope)
 }
 
 fn validate_artifact_plan(plan: &ArtifactPlan) -> Result<(), DomainValidationError> {
@@ -619,7 +653,7 @@ fn validate_main_stat_package(package: &MainStatPackage) -> Result<(), DomainVal
 
     let mut target_keys = HashSet::new();
     for target in &package.target_stats {
-        let normalized_stat = target.stat.trim().to_lowercase().replace([' ', '-'], "_");
+        let normalized_stat = target_stat_key(&target.stat, target.scope).0;
         let has_invalid_number = target
             .minimum
             .into_iter()
@@ -784,6 +818,24 @@ mod tests {
                 .len(),
             5
         );
+        let claim_values = schema["$defs"]["ResearchClaimValue"]["anyOf"]
+            .as_array()
+            .unwrap();
+        for kind in ["artifact_plan", "main_stat_package", "substat_priority"] {
+            let properties = claim_values
+                .iter()
+                .find(|variant| variant["properties"]["kind"]["enum"][0] == kind)
+                .and_then(|variant| variant["properties"].as_object())
+                .unwrap();
+            assert_eq!(properties.len(), 1, "{kind}へ候補本体を複製しています");
+        }
+        let target_stat = claim_values
+            .iter()
+            .find(|variant| variant["properties"]["kind"]["enum"][0] == "target_stat")
+            .unwrap();
+        assert!(target_stat["properties"].get("value").is_none());
+        assert!(target_stat["properties"].get("stat").is_some());
+        assert!(target_stat["properties"].get("scope").is_some());
         let serialized = serde_json::to_string(&schema).unwrap();
         assert!(!serialized.contains("\"oneOf\""));
         assert!(!serialized.contains("\"const\""));
@@ -926,7 +978,7 @@ mod tests {
             "locator": null
         });
         let output: CharacterResearchOutput = serde_json::from_value(json!({
-            "schemaVersion": "character-research-v1",
+            "schemaVersion": "character-research-v2",
             "characterId": "char-a",
             "sources": [{
                 "sourceUrl": "https://wikiwiki.jp/genshinwiki/example",
@@ -944,37 +996,39 @@ mod tests {
                 "claims": [
                     {
                         "claimType": "artifact_plan",
-                        "normalizedValue": {
-                            "kind": "artifact_plan",
-                            "value": { "type": "four_piece", "setId": "set-a" }
-                        },
+                        "normalizedValue": { "kind": "artifact_plan" },
                         "conditions": [],
                         "evidence": evidence.clone()
                     },
                     {
                         "claimType": "main_stat_package",
-                        "normalizedValue": { "kind": "main_stat_package", "value": package.clone() },
+                        "normalizedValue": { "kind": "main_stat_package" },
                         "conditions": [],
                         "evidence": evidence.clone()
                     },
                     {
                         "claimType": "substat_priority",
+                        "normalizedValue": { "kind": "substat_priority" },
+                        "conditions": [],
+                        "evidence": evidence.clone()
+                    },
+                    {
+                        "claimType": "target_stat",
                         "normalizedValue": {
-                            "kind": "substat_priority",
-                            "value": [{ "stat": "会心率", "rank": 1 }]
+                            "kind": "target_stat",
+                            "stat": "会心率",
+                            "scope": "character_sheet_unbuffed"
                         },
                         "conditions": [],
                         "evidence": evidence.clone()
                     },
                     {
                         "claimType": "target_stat",
-                        "normalizedValue": { "kind": "target_stat", "value": target_stats[0].clone() },
-                        "conditions": [],
-                        "evidence": evidence.clone()
-                    },
-                    {
-                        "claimType": "target_stat",
-                        "normalizedValue": { "kind": "target_stat", "value": target_stats[1].clone() },
+                        "normalizedValue": {
+                            "kind": "target_stat",
+                            "stat": "会心ダメージ",
+                            "scope": "character_sheet_unbuffed"
+                        },
                         "conditions": [],
                         "evidence": evidence
                     }
@@ -989,6 +1043,27 @@ mod tests {
             Ok(())
         );
         assert!(validate_character_research_output(&output, "char-b", "7.0").is_err());
+
+        let mut canonical_change = output.clone();
+        let target = &mut canonical_change.variants[0].main_stat_package.target_stats[0];
+        target.note = Some("注記だけを変更".into());
+        target.included_bonuses[0].condition = Some("条件だけを変更".into());
+        assert_eq!(
+            validate_character_research_output(&canonical_change, "char-a", "7.0"),
+            Ok(())
+        );
+
+        let mut missing_target_claim = canonical_change;
+        missing_target_claim.variants[0].claims.retain(|claim| {
+            !matches!(
+                &claim.normalized_value,
+                ResearchClaimValue::TargetStat { stat, .. } if stat == "会心率"
+            )
+        });
+        assert!(matches!(
+            validate_character_research_output(&missing_target_claim, "char-a", "7.0"),
+            Err(DomainValidationError::Invalid(message)) if message.contains("参照するtarget_stat")
+        ));
 
         let mut version_mismatch = output.clone();
         version_mismatch.sources[0].game_version = "6.0".into();
@@ -1058,7 +1133,7 @@ mod tests {
     #[test]
     fn codex出力の許可外urlを拒否する() {
         let output: CharacterResearchOutput = serde_json::from_value(json!({
-            "schemaVersion": "character-research-v1",
+            "schemaVersion": "character-research-v2",
             "characterId": "char-a",
             "sources": [{
                 "sourceUrl": "https://evil.example/genshinwiki/a",

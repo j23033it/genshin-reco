@@ -239,127 +239,6 @@
       ],
       "type": "object"
     },
-    "NormalizedClaimValue": {
-      "anyOf": [
-        {
-          "additionalProperties": false,
-          "properties": {
-            "kind": {
-              "enum": [
-                "artifact_plan"
-              ],
-              "type": "string"
-            },
-            "value": {
-              "$ref": "#/$defs/ArtifactPlan"
-            }
-          },
-          "required": [
-            "kind",
-            "value"
-          ],
-          "type": "object"
-        },
-        {
-          "additionalProperties": false,
-          "properties": {
-            "kind": {
-              "enum": [
-                "main_stat_package"
-              ],
-              "type": "string"
-            },
-            "value": {
-              "$ref": "#/$defs/MainStatPackage"
-            }
-          },
-          "required": [
-            "kind",
-            "value"
-          ],
-          "type": "object"
-        },
-        {
-          "additionalProperties": false,
-          "properties": {
-            "kind": {
-              "enum": [
-                "substat_priority"
-              ],
-              "type": "string"
-            },
-            "value": {
-              "items": {
-                "$ref": "#/$defs/StatPriority"
-              },
-              "type": "array"
-            }
-          },
-          "required": [
-            "kind",
-            "value"
-          ],
-          "type": "object"
-        },
-        {
-          "additionalProperties": false,
-          "properties": {
-            "kind": {
-              "enum": [
-                "target_stat"
-              ],
-              "type": "string"
-            },
-            "value": {
-              "$ref": "#/$defs/TargetStatRange"
-            }
-          },
-          "required": [
-            "kind",
-            "value"
-          ],
-          "type": "object"
-        },
-        {
-          "additionalProperties": false,
-          "properties": {
-            "kind": {
-              "enum": [
-                "role"
-              ],
-              "type": "string"
-            },
-            "value": {
-              "$ref": "#/$defs/CharacterBuildIntent"
-            }
-          },
-          "required": [
-            "kind",
-            "value"
-          ],
-          "type": "object"
-        },
-        {
-          "additionalProperties": false,
-          "properties": {
-            "kind": {
-              "enum": [
-                "team_interaction"
-              ],
-              "type": "string"
-            },
-            "value": {
-              "type": "string"
-            }
-          },
-          "required": [
-            "kind",
-            "value"
-          ],
-          "type": "object"
-        }
-      ]
-    },
     "ReactionOwnership": {
       "enum": [
         "main",
@@ -433,7 +312,7 @@
           "$ref": "#/$defs/ResearchEvidence"
         },
         "normalizedValue": {
-          "$ref": "#/$defs/NormalizedClaimValue"
+          "$ref": "#/$defs/ResearchClaimValue"
         }
       },
       "required": [
@@ -443,6 +322,117 @@
         "normalizedValue"
       ],
       "type": "object"
+    },
+    "ResearchClaimValue": {
+      "anyOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "enum": [
+                "artifact_plan"
+              ],
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "enum": [
+                "main_stat_package"
+              ],
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "enum": [
+                "substat_priority"
+              ],
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "enum": [
+                "target_stat"
+              ],
+              "type": "string"
+            },
+            "scope": {
+              "$ref": "#/$defs/TargetScope"
+            },
+            "stat": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "scope",
+            "stat"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "enum": [
+                "role"
+              ],
+              "type": "string"
+            },
+            "value": {
+              "$ref": "#/$defs/CharacterBuildIntent"
+            }
+          },
+          "required": [
+            "kind",
+            "value"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "enum": [
+                "team_interaction"
+              ],
+              "type": "string"
+            },
+            "value": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "value"
+          ],
+          "type": "object"
+        }
+      ],
+      "description": "Codexへ要求する根拠対象。\n\n候補本体の複雑な値を二重入力させず、Rust側で正規値へ解決する。"
     },
     "ResearchEvidence": {
       "additionalProperties": false,
@@ -514,7 +504,7 @@
     },
     "ResearchSchemaVersion": {
       "enum": [
-        "character-research-v1"
+        "character-research-v2"
       ],
       "type": "string"
     },
