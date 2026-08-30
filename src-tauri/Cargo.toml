@@ -4,6 +4,7 @@ version = "0.1.0"
 description = "原神の根拠付き・編成連動ビルド推薦デスクトップアプリ"
 authors = ["taiki"]
 edition = "2024"
+default-run = "genshin-reco"
 
 [lib]
 # Windowsではライブラリ名とバイナリ名を分ける必要がある。
@@ -24,4 +25,3 @@ serde_json = "1"
 thiserror = "2"
 tokio = { version = "1", features = ["io-util", "macros", "process", "rt-multi-thread", "sync", "time"] }
 url = "2"
-
