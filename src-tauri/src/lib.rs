@@ -1,6 +1,7 @@
 mod app_server;
 pub mod candidate_validation;
 pub mod catalog;
+pub mod database;
 pub mod domain;
 pub mod hashing;
 pub mod reconciler;
