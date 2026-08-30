@@ -43,6 +43,40 @@ pub fn normalize_source_url(raw: &str) -> Result<String, SourcePolicyError> {
     Ok(url.into())
 }
 
+/// 検索結果・サイトトップ・一覧ページではなく、個別本文ページとして扱えるURLか判定する。
+///
+/// URLだけで本文の存在を証明するものではないため、呼び出し側はWeb取得イベントの
+/// `openPage`または`findInPage`と組み合わせて使用する。
+pub fn is_direct_content_url(raw: &str) -> Result<bool, SourcePolicyError> {
+    let normalized = normalize_source_url(raw)?;
+    let url = Url::parse(&normalized).map_err(|_| SourcePolicyError::InvalidUrl)?;
+    let path = url.path().trim_end_matches('/');
+    let has_search_query = url.query_pairs().any(|(key, _)| {
+        matches!(
+            key.to_ascii_lowercase().as_str(),
+            "q" | "query" | "keyword" | "search" | "searchword"
+        )
+    });
+    if has_search_query {
+        return Ok(false);
+    }
+
+    let lower_path = path.to_ascii_lowercase();
+    if lower_path
+        .split('/')
+        .any(|segment| matches!(segment, "search" | "list" | "category" | "recentchanges"))
+    {
+        return Ok(false);
+    }
+
+    match url.host_str() {
+        Some("wikiwiki.jp") => Ok(path != "/genshinwiki"),
+        Some("game8.jp") => Ok(path != "/genshin"),
+        Some("wiki.hoyolab.com") => Ok(lower_path.contains("/entry/")),
+        _ => Ok(false),
+    }
+}
+
 fn path_is_within(path: &str, root: &str) -> bool {
     path == root || path.starts_with(&format!("{root}/"))
 }
@@ -76,6 +110,25 @@ mod tests {
                 normalize_source_url(url).is_err(),
                 "{url}を拒否できませんでした"
             );
+        }
+    }
+
+    #[test]
+    fn 検索結果とトップを個別本文として扱わない() {
+        for url in [
+            "https://game8.jp/genshin/search?q=raiden",
+            "https://game8.jp/genshin/",
+            "https://wikiwiki.jp/genshinwiki/",
+            "https://wiki.hoyolab.com/pc/genshin/home",
+        ] {
+            assert!(!is_direct_content_url(url).unwrap(), "{url}");
+        }
+        for url in [
+            "https://game8.jp/genshin/12345",
+            "https://wikiwiki.jp/genshinwiki/雷電将軍",
+            "https://wiki.hoyolab.com/pc/genshin/entry/1",
+        ] {
+            assert!(is_direct_content_url(url).unwrap(), "{url}");
         }
     }
 }

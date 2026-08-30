@@ -1,8 +1,15 @@
+use crate::app_server;
 use crate::domain::{
-    AnalysisInput, CharacterResearchOutput, DomainValidationError, validate_analysis_input,
-    validate_character_research_output,
+    AnalysisInput, CharacterResearchOutput, DomainValidationError, EvidenceVerification,
+    validate_analysis_input, validate_character_research_output,
 };
+use crate::hashing::sha256_canonical;
+use crate::reconciler::VerifiedSourcePage;
+use crate::source_policy::normalize_source_url;
+use serde::Serialize;
 use std::{collections::HashMap, error::Error, fmt, future::Future, pin::Pin};
+use tauri::Manager;
+use url::Url;
 
 /// キャラクター1件の調査を依頼するための入力。
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -27,6 +34,10 @@ pub enum ResearchProviderError {
         character_id: String,
         source: DomainValidationError,
     },
+    /// Codex App Serverによる実調査に失敗した。
+    AppServer(String),
+    /// 本文イベントから検証済み根拠を生成できなかった。
+    EvidenceVerification(String),
     /// プロバイダ実装がどちらの入口も実装していない。
     Unsupported,
 }
@@ -47,6 +58,10 @@ impl fmt::Display for ResearchProviderError {
                 formatter,
                 "調査fixtureが不正です ({character_id}): {source}"
             ),
+            Self::AppServer(message) => write!(formatter, "Codex調査に失敗しました: {message}"),
+            Self::EvidenceVerification(message) => {
+                write!(formatter, "根拠検証に失敗しました: {message}")
+            }
             Self::Unsupported => write!(formatter, "調査プロバイダが未実装です"),
         }
     }
@@ -58,7 +73,10 @@ impl Error for ResearchProviderError {
             Self::InvalidAnalysisInput(source) | Self::InvalidFixture { source, .. } => {
                 Some(source)
             }
-            Self::CharacterNotConfigured { .. } | Self::Unsupported => None,
+            Self::CharacterNotConfigured { .. }
+            | Self::AppServer(_)
+            | Self::EvidenceVerification(_)
+            | Self::Unsupported => None,
         }
     }
 }
@@ -75,6 +93,116 @@ pub trait ResearchProvider: Send + Sync {
     fn research_character(&self, _request: CharacterResearchRequest) -> ResearchFuture {
         Box::pin(async { Err(ResearchProviderError::Unsupported) })
     }
+}
+
+/// 実Web調査の出力と、App Serverイベントからホストが検証したページ一覧。
+#[derive(Debug, Clone, PartialEq)]
+pub struct VerifiedCharacterResearch {
+    pub output: CharacterResearchOutput,
+    pub verified_pages: Vec<VerifiedSourcePage>,
+}
+
+/// 常駐Codex App Serverを利用する実調査プロバイダ。
+#[derive(Clone)]
+pub struct CodexResearchProvider {
+    app: tauri::AppHandle,
+}
+
+impl CodexResearchProvider {
+    pub fn new(app: tauri::AppHandle) -> Self {
+        Self { app }
+    }
+
+    pub fn research_verified(&self, request: CharacterResearchRequest) -> VerifiedResearchFuture {
+        let app = self.app.clone();
+        Box::pin(async move {
+            validate_analysis_input(&request.analysis_input)
+                .map_err(ResearchProviderError::InvalidAnalysisInput)?;
+            let supervisor = app.state::<app_server::AppServerSupervisor>();
+            let observed = app_server::research_character_with_codex(
+                &app,
+                supervisor.inner(),
+                &request.analysis_input,
+                &request.character_id,
+            )
+            .await
+            .map_err(ResearchProviderError::AppServer)?;
+            let verified_pages = build_verified_pages(&observed.output)?;
+            Ok(VerifiedCharacterResearch {
+                output: observed.output,
+                verified_pages,
+            })
+        })
+    }
+}
+
+impl ResearchProvider for CodexResearchProvider {
+    fn research(&self, request: CharacterResearchRequest) -> ResearchFuture {
+        let provider = self.clone();
+        Box::pin(async move {
+            provider
+                .research_verified(request)
+                .await
+                .map(|research| research.output)
+        })
+    }
+}
+
+pub type VerifiedResearchFuture =
+    Pin<Box<dyn Future<Output = Result<VerifiedCharacterResearch, ResearchProviderError>> + Send>>;
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct CapturedPageEvidence<'a> {
+    source: &'a crate::domain::ResearchSourcePage,
+    claims: Vec<&'a crate::domain::ResearchClaim>,
+}
+
+fn build_verified_pages(
+    output: &CharacterResearchOutput,
+) -> Result<Vec<VerifiedSourcePage>, ResearchProviderError> {
+    output
+        .sources
+        .iter()
+        .map(|source| {
+            let normalized = normalize_source_url(&source.source_url)
+                .map_err(|error| ResearchProviderError::EvidenceVerification(error.to_string()))?;
+            let claims = output
+                .variants
+                .iter()
+                .flat_map(|variant| variant.claims.iter())
+                .filter(|claim| {
+                    normalize_source_url(&claim.evidence.source_url)
+                        .is_ok_and(|claim_url| claim_url == normalized)
+                })
+                .collect::<Vec<_>>();
+            if claims.is_empty() {
+                return Err(ResearchProviderError::EvidenceVerification(format!(
+                    "参照ページに対応するclaimがありません: {normalized}"
+                )));
+            }
+            let content_hash = sha256_canonical(&CapturedPageEvidence { source, claims })
+                .map_err(|error| ResearchProviderError::EvidenceVerification(error.to_string()))?;
+            let source_page_hash = sha256_canonical(&normalized)
+                .map_err(|error| ResearchProviderError::EvidenceVerification(error.to_string()))?;
+            let host = Url::parse(&normalized)
+                .ok()
+                .and_then(|url| url.host_str().map(str::to_string))
+                .ok_or_else(|| {
+                    ResearchProviderError::EvidenceVerification(
+                        "参照ページのhostを取得できません".into(),
+                    )
+                })?;
+            Ok(VerifiedSourcePage {
+                source_url: normalized,
+                source_page_id: format!("source-{source_page_hash}"),
+                content_hash: Some(content_hash),
+                verification: EvidenceVerification::HostExactMatch,
+                source_family: host,
+                is_direct_content_page: true,
+            })
+        })
+        .collect()
 }
 
 /// 決められたfixtureを使う、ネットワーク不要の調査プロバイダ。
@@ -357,6 +485,45 @@ mod tests {
             error,
             ResearchProviderError::InvalidFixture { source, .. }
                 if source.to_string().contains("ゲーム版")
+        ));
+    }
+
+    #[test]
+    fn 本文根拠から決定論的な検証済みページを作る() {
+        let output = valid_output("char-a");
+
+        let first = build_verified_pages(&output).expect("検証済みページを作れること");
+        let second = build_verified_pages(&output).expect("再度作れること");
+
+        assert_eq!(first, second);
+        assert_eq!(first.len(), 1);
+        assert_eq!(first[0].verification, EvidenceVerification::HostExactMatch);
+        assert!(first[0].is_direct_content_page);
+        assert_eq!(first[0].source_family, "wikiwiki.jp");
+        assert!(
+            first[0]
+                .content_hash
+                .as_deref()
+                .is_some_and(|hash| hash.len() == 64)
+        );
+        assert!(first[0].source_page_id.starts_with("source-"));
+    }
+
+    #[test]
+    fn claimから参照されないsourceは検証済みにしない() {
+        let mut output = valid_output("char-a");
+        output.sources.push(ResearchSourcePage {
+            source_url: "https://game8.jp/genshin/12345".into(),
+            title: "未使用ページ".into(),
+            publisher: "Game8".into(),
+            game_version: "7.0".into(),
+            updated_at: None,
+        });
+
+        assert!(matches!(
+            build_verified_pages(&output),
+            Err(ResearchProviderError::EvidenceVerification(message))
+                if message.contains("claimがありません")
         ));
     }
 
