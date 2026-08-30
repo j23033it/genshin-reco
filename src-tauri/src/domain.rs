@@ -3,6 +3,8 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 use thiserror::Error;
 
+use crate::source_policy::normalize_source_url;
+
 macro_rules! string_enum {
     ($name:ident { $($variant:ident),+ $(,)? }) => {
         #[derive(Debug, Clone, Copy, Serialize, Deserialize, JsonSchema, PartialEq, Eq, Hash)]
@@ -433,6 +435,9 @@ pub fn validate_analysis_input(input: &AnalysisInput) -> Result<(), DomainValida
         if member.character_id.trim().is_empty() || member.weapon_id.trim().is_empty() {
             return Err(invalid("分析開始時はキャラクターと武器が必須です"));
         }
+        if !(1..=5).contains(&member.refinement) || member.constellation > 6 {
+            return Err(invalid("精錬ランクまたは命ノ星座の範囲が不正です"));
+        }
         if !characters.insert(member.character_id.as_str()) {
             return Err(invalid("同一キャラクターを重複編成できません"));
         }
@@ -472,7 +477,9 @@ pub fn validate_character_research_output(
         {
             return Err(invalid("参照ページの必須項目が空です"));
         }
-        if !source_urls.insert(source.source_url.as_str()) {
+        let normalized_url = normalize_source_url(&source.source_url)
+            .map_err(|error| invalid(format!("根拠URLが不正です: {error}")))?;
+        if !source_urls.insert(normalized_url) {
             return Err(invalid("同じ参照URLを重複登録できません"));
         }
     }
@@ -495,7 +502,9 @@ pub fn validate_character_research_output(
             if claim.claim_type != claim.normalized_value.claim_type() {
                 return Err(invalid("claimTypeとnormalizedValue.kindが一致しません"));
             }
-            if !source_urls.contains(claim.evidence.source_url.as_str()) {
+            let evidence_url = normalize_source_url(&claim.evidence.source_url)
+                .map_err(|error| invalid(format!("根拠URLが不正です: {error}")))?;
+            if !source_urls.contains(&evidence_url) {
                 return Err(invalid("根拠URLがsourcesに含まれていません"));
             }
             required_claims.insert(claim.claim_type);
@@ -595,6 +604,13 @@ fn make_strict_output_schema(value: &mut serde_json::Value) {
                 make_strict_output_schema(child);
             }
 
+            if let Some(variants) = object.remove("oneOf") {
+                object.insert("anyOf".into(), variants);
+            }
+            if let Some(constant) = object.remove("const") {
+                object.insert("enum".into(), serde_json::Value::Array(vec![constant]));
+            }
+
             let property_names = object
                 .get("properties")
                 .and_then(serde_json::Value::as_object)
@@ -660,6 +676,9 @@ mod tests {
                 .len(),
             5
         );
+        let serialized = serde_json::to_string(&schema).unwrap();
+        assert!(!serialized.contains("\"oneOf\""));
+        assert!(!serialized.contains("\"const\""));
     }
 
     #[test]
@@ -751,6 +770,11 @@ mod tests {
         value["members"][1]["characterId"] = json!("char-a");
         let duplicate: AnalysisInput = serde_json::from_value(value).unwrap();
         assert!(validate_analysis_input(&duplicate).is_err());
+
+        let mut invalid_range = duplicate;
+        invalid_range.members[0].character_id = "char-z".into();
+        invalid_range.members[0].refinement = 0;
+        assert!(validate_analysis_input(&invalid_range).is_err());
     }
 
     #[test]
@@ -822,5 +846,42 @@ mod tests {
             Ok(())
         );
         assert!(validate_character_research_output(&output, "char-b").is_err());
+    }
+
+    #[test]
+    fn codex出力の許可外urlを拒否する() {
+        let output: CharacterResearchOutput = serde_json::from_value(json!({
+            "schemaVersion": "character-research-v1",
+            "characterId": "char-a",
+            "sources": [{
+                "sourceUrl": "https://evil.example/genshinwiki/a",
+                "title": "不正ページ",
+                "publisher": "不正",
+                "gameVersion": "7.0",
+                "updatedAt": null
+            }],
+            "variants": [{
+                "id": "dummy",
+                "artifactPlan": { "type": "four_piece", "setId": "set-a" },
+                "mainStatPackage": {
+                    "id": "main",
+                    "sands": "攻撃力%",
+                    "goblet": "元素ダメージ",
+                    "circlet": "会心率",
+                    "conditions": [],
+                    "substatPriority": [{ "stat": "会心率", "rank": 1 }],
+                    "targetStats": []
+                },
+                "conditions": [],
+                "teamBuffKeys": [],
+                "claims": []
+            }],
+            "warnings": []
+        }))
+        .unwrap();
+        assert!(matches!(
+            validate_character_research_output(&output, "char-a"),
+            Err(DomainValidationError::Invalid(message)) if message.contains("根拠URL")
+        ));
     }
 }

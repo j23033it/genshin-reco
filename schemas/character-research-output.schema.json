@@ -1,12 +1,14 @@
 {
   "$defs": {
     "ArtifactHalf": {
-      "oneOf": [
+      "anyOf": [
         {
           "additionalProperties": false,
           "properties": {
             "kind": {
-              "const": "exact_set",
+              "enum": [
+                "exact_set"
+              ],
               "type": "string"
             },
             "setId": {
@@ -26,7 +28,9 @@
               "type": "string"
             },
             "kind": {
-              "const": "effect_group",
+              "enum": [
+                "effect_group"
+              ],
               "type": "string"
             }
           },
@@ -39,7 +43,7 @@
       ]
     },
     "ArtifactPlan": {
-      "oneOf": [
+      "anyOf": [
         {
           "additionalProperties": false,
           "properties": {
@@ -47,7 +51,9 @@
               "type": "string"
             },
             "type": {
-              "const": "four_piece",
+              "enum": [
+                "four_piece"
+              ],
               "type": "string"
             }
           },
@@ -67,7 +73,9 @@
               "$ref": "#/$defs/ArtifactHalf"
             },
             "type": {
-              "const": "two_plus_two",
+              "enum": [
+                "two_plus_two"
+              ],
               "type": "string"
             }
           },
@@ -231,12 +239,14 @@
       "type": "object"
     },
     "NormalizedClaimValue": {
-      "oneOf": [
+      "anyOf": [
         {
           "additionalProperties": false,
           "properties": {
             "kind": {
-              "const": "artifact_plan",
+              "enum": [
+                "artifact_plan"
+              ],
               "type": "string"
             },
             "value": {
@@ -253,7 +263,9 @@
           "additionalProperties": false,
           "properties": {
             "kind": {
-              "const": "main_stat_package",
+              "enum": [
+                "main_stat_package"
+              ],
               "type": "string"
             },
             "value": {
@@ -270,7 +282,9 @@
           "additionalProperties": false,
           "properties": {
             "kind": {
-              "const": "substat_priority",
+              "enum": [
+                "substat_priority"
+              ],
               "type": "string"
             },
             "value": {
@@ -290,7 +304,9 @@
           "additionalProperties": false,
           "properties": {
             "kind": {
-              "const": "target_stat",
+              "enum": [
+                "target_stat"
+              ],
               "type": "string"
             },
             "value": {
@@ -307,7 +323,9 @@
           "additionalProperties": false,
           "properties": {
             "kind": {
-              "const": "role",
+              "enum": [
+                "role"
+              ],
               "type": "string"
             },
             "value": {
@@ -324,7 +342,9 @@
           "additionalProperties": false,
           "properties": {
             "kind": {
-              "const": "team_interaction",
+              "enum": [
+                "team_interaction"
+              ],
               "type": "string"
             },
             "value": {
