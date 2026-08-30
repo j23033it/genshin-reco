@@ -172,7 +172,7 @@ export function Gate0Screen({ embedded = false }: { embedded?: boolean }) {
             根拠付き・編成連動ビルド推薦
           </h1>
           <p className="mt-5 max-w-2xl text-pretty text-lg leading-8 text-slate-300">
-            4人編成、武器、精錬、命ノ星座、役割をもとに、条件へ適合する聖遺物候補を比較します。
+            4人編成、武器、精錬、命ノ星座と検証済みの根拠をもとに、条件へ適合する聖遺物候補を比較します。
           </p>
         </header>
 
