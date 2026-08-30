@@ -454,6 +454,7 @@ pub fn validate_analysis_input(input: &AnalysisInput) -> Result<(), DomainValida
 pub fn validate_character_research_output(
     output: &CharacterResearchOutput,
     expected_character_id: &str,
+    expected_game_version: &str,
 ) -> Result<(), DomainValidationError> {
     if output.character_id != expected_character_id {
         return Err(invalid("調査対象とcharacterIdが一致しません"));
@@ -477,6 +478,9 @@ pub fn validate_character_research_output(
         {
             return Err(invalid("参照ページの必須項目が空です"));
         }
+        if source.game_version != expected_game_version {
+            return Err(invalid("根拠ページのゲーム版が分析対象と一致しません"));
+        }
         let normalized_url = normalize_source_url(&source.source_url)
             .map_err(|error| invalid(format!("根拠URLが不正です: {error}")))?;
         if !source_urls.insert(normalized_url) {
@@ -498,6 +502,7 @@ pub fn validate_character_research_output(
         }
 
         let mut required_claims = HashSet::new();
+        let mut unique_claims = HashSet::new();
         for claim in &variant.claims {
             if claim.claim_type != claim.normalized_value.claim_type() {
                 return Err(invalid("claimTypeとnormalizedValue.kindが一致しません"));
@@ -506,6 +511,16 @@ pub fn validate_character_research_output(
                 .map_err(|error| invalid(format!("根拠URLが不正です: {error}")))?;
             if !source_urls.contains(&evidence_url) {
                 return Err(invalid("根拠URLがsourcesに含まれていません"));
+            }
+            let claim_key = serde_json::to_string(&(
+                claim.claim_type,
+                &claim.normalized_value,
+                &claim.conditions,
+                evidence_url,
+            ))
+            .map_err(|error| invalid(format!("claimを正規化できません: {error}")))?;
+            if !unique_claims.insert(claim_key) {
+                return Err(invalid("同一の根拠claimを重複登録できません"));
             }
             required_claims.insert(claim.claim_type);
         }
@@ -842,10 +857,25 @@ mod tests {
         .unwrap();
 
         assert_eq!(
-            validate_character_research_output(&output, "char-a"),
+            validate_character_research_output(&output, "char-a", "7.0"),
             Ok(())
         );
-        assert!(validate_character_research_output(&output, "char-b").is_err());
+        assert!(validate_character_research_output(&output, "char-b", "7.0").is_err());
+
+        let mut version_mismatch = output.clone();
+        version_mismatch.sources[0].game_version = "6.0".into();
+        assert!(matches!(
+            validate_character_research_output(&version_mismatch, "char-a", "7.0"),
+            Err(DomainValidationError::Invalid(message)) if message.contains("ゲーム版")
+        ));
+
+        let mut duplicated = output;
+        let duplicate_claim = duplicated.variants[0].claims[0].clone();
+        duplicated.variants[0].claims.push(duplicate_claim);
+        assert!(matches!(
+            validate_character_research_output(&duplicated, "char-a", "7.0"),
+            Err(DomainValidationError::Invalid(message)) if message.contains("重複登録")
+        ));
     }
 
     #[test]
@@ -880,7 +910,7 @@ mod tests {
         }))
         .unwrap();
         assert!(matches!(
-            validate_character_research_output(&output, "char-a"),
+            validate_character_research_output(&output, "char-a", "7.0"),
             Err(DomainValidationError::Invalid(message)) if message.contains("根拠URL")
         ));
     }

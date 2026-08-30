@@ -132,12 +132,15 @@ impl FakeResearchProvider {
                     });
                 };
 
-                validate_character_research_output(output, &request.character_id).map_err(
-                    |source| ResearchProviderError::InvalidFixture {
-                        character_id: request.character_id.clone(),
-                        source,
-                    },
-                )?;
+                validate_character_research_output(
+                    output,
+                    &request.character_id,
+                    &request.analysis_input.game_version,
+                )
+                .map_err(|source| ResearchProviderError::InvalidFixture {
+                    character_id: request.character_id.clone(),
+                    source,
+                })?;
                 Ok(output.clone())
             });
 
@@ -339,6 +342,21 @@ mod tests {
             error,
             ResearchProviderError::InvalidFixture { character_id, .. }
                 if character_id == "char-a"
+        ));
+    }
+
+    #[test]
+    fn 分析対象と根拠のゲーム版不一致を拒否する() {
+        let mut output = valid_output("char-a");
+        output.sources[0].game_version = "6.0".into();
+        let provider = FakeResearchProvider::new([("char-a".to_string(), output)]);
+
+        let error = futures_block_on(provider.research(request("char-a"))).unwrap_err();
+
+        assert!(matches!(
+            error,
+            ResearchProviderError::InvalidFixture { source, .. }
+                if source.to_string().contains("ゲーム版")
         ));
     }
 

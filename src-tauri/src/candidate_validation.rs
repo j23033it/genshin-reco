@@ -4,6 +4,7 @@ use crate::{
         ArtifactHalf, ArtifactPlan, BuildVariant, NormalizedClaimValue, validate_analysis_input,
     },
 };
+use std::collections::HashSet;
 use thiserror::Error;
 
 #[derive(Debug, Error, PartialEq, Eq)]
@@ -78,11 +79,50 @@ pub fn validate_build_variants_against_catalog(
             return Err(catalog_error("候補のcharacterIdが調査対象と一致しません"));
         }
         validate_artifact_plan_against_catalog(&variant.artifact_plan, catalog)?;
+        validate_team_buff_keys(variant, catalog)?;
         for claim in &variant.evidence_claims {
             if let NormalizedClaimValue::ArtifactPlan { value } = &claim.normalized_value {
                 validate_artifact_plan_against_catalog(value, catalog)?;
             }
         }
+    }
+    Ok(())
+}
+
+fn validate_team_buff_keys(
+    variant: &BuildVariant,
+    catalog: &Catalog,
+) -> Result<(), CandidateValidationError> {
+    let known_keys = catalog
+        .artifact_sets
+        .iter()
+        .filter_map(|artifact| artifact.team_buff_key.as_deref())
+        .collect::<HashSet<_>>();
+    let provided = variant
+        .team_buff_keys
+        .iter()
+        .map(String::as_str)
+        .collect::<HashSet<_>>();
+    if provided.len() != variant.team_buff_keys.len()
+        || provided.iter().any(|key| !known_keys.contains(key))
+    {
+        return Err(catalog_error(
+            "teamBuffKeysに重複またはカタログ外の値があります",
+        ));
+    }
+
+    let expected = match &variant.artifact_plan {
+        ArtifactPlan::FourPiece { set_id } => find_set(catalog, set_id)?
+            .team_buff_key
+            .iter()
+            .map(String::as_str)
+            .collect::<HashSet<_>>(),
+        ArtifactPlan::TwoPlusTwo { .. } => HashSet::new(),
+    };
+    if provided != expected {
+        return Err(catalog_error(
+            "teamBuffKeysが聖遺物構成のカタログ値と一致しません",
+        ));
     }
     Ok(())
 }
@@ -155,7 +195,32 @@ fn catalog_error(message: impl Into<String>) -> CandidateValidationError {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{catalog::load_embedded_catalog, domain::ArtifactHalf};
+    use crate::{
+        catalog::load_embedded_catalog,
+        domain::{ArtifactHalf, MainStatPackage},
+    };
+
+    fn variant(plan: ArtifactPlan, team_buff_keys: Vec<String>) -> BuildVariant {
+        BuildVariant {
+            id: "variant-a".into(),
+            character_id: "character-a".into(),
+            artifact_plan: plan,
+            main_stat_package: MainStatPackage {
+                id: "main-a".into(),
+                sands: "攻撃力%".into(),
+                goblet: "元素ダメージ".into(),
+                circlet: "会心率".into(),
+                conditions: vec![],
+                substat_priority: vec![],
+                target_stats: vec![],
+            },
+            conditions: vec![],
+            team_buff_keys,
+            evidence_claims: vec![],
+            source_family_count: 1,
+            conflict_penalty: 0,
+        }
+    }
 
     #[test]
     fn カタログに存在する4セットだけを許可する() {
@@ -240,6 +305,37 @@ mod tests {
                 &catalog
             )
             .is_err()
+        );
+    }
+
+    #[test]
+    fn team_buff_keyは聖遺物カタログから決定する() {
+        let catalog = load_embedded_catalog().unwrap();
+        let artifact = catalog
+            .artifact_sets
+            .iter()
+            .find(|artifact| {
+                artifact.four_piece_effect.is_some() && artifact.team_buff_key.is_some()
+            })
+            .unwrap();
+        let expected = artifact.team_buff_key.clone().unwrap();
+        let plan = ArtifactPlan::FourPiece {
+            set_id: artifact.id.clone(),
+        };
+
+        assert!(validate_team_buff_keys(&variant(plan.clone(), vec![]), &catalog).is_err());
+        assert!(
+            validate_team_buff_keys(&variant(plan.clone(), vec![expected.clone()]), &catalog)
+                .is_ok()
+        );
+        let unrelated = catalog
+            .artifact_sets
+            .iter()
+            .filter_map(|artifact| artifact.team_buff_key.clone())
+            .find(|key| key != &expected)
+            .unwrap();
+        assert!(
+            validate_team_buff_keys(&variant(plan, vec![expected, unrelated]), &catalog).is_err()
         );
     }
 }

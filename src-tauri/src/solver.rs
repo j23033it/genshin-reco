@@ -34,17 +34,7 @@ impl NumericScore {
         Self {
             evidence_grade_total: selection
                 .iter()
-                .map(|variant| {
-                    variant
-                        .evidence_claims
-                        .iter()
-                        .map(|claim| match claim.evidence_grade {
-                            EvidenceGrade::A => 3,
-                            EvidenceGrade::B => 2,
-                            EvidenceGrade::C => 1,
-                        })
-                        .sum::<u32>()
-                })
+                .map(|variant| evidence_score_by_claim_type(variant))
                 .sum(),
             conflict_penalty_total: selection
                 .iter()
@@ -199,6 +189,7 @@ fn validate_candidates(candidates: &[Vec<BuildVariant>]) -> Result<(), SolverErr
                     index + 1
                 )));
             }
+            validate_required_evidence(candidate)?;
         }
         let unique_ids = character_candidates
             .iter()
@@ -289,6 +280,79 @@ fn duplicate_buff_warnings(variants: &[&BuildVariant]) -> Vec<String> {
         .collect()
 }
 
+fn validate_required_evidence(candidate: &BuildVariant) -> Result<(), SolverError> {
+    let trusted = |claim: &crate::domain::EvidenceClaim| {
+        claim.evidence_grade != EvidenceGrade::C
+            && matches!(
+                claim.evidence.verification,
+                crate::domain::EvidenceVerification::HostExactMatch
+                    | crate::domain::EvidenceVerification::HostFuzzyMatch
+            )
+            && claim
+                .evidence
+                .content_hash
+                .as_deref()
+                .is_some_and(|hash| !hash.trim().is_empty())
+            && !claim.evidence.source_page_id.trim().is_empty()
+            && !claim.evidence.evidence_summary.trim().is_empty()
+    };
+    let artifact_supported = candidate.evidence_claims.iter().any(|claim| {
+        trusted(claim)
+            && claim.claim_type == crate::domain::EvidenceClaimType::ArtifactPlan
+            && matches!(
+                &claim.normalized_value,
+                crate::domain::NormalizedClaimValue::ArtifactPlan { value }
+                    if value == &candidate.artifact_plan
+            )
+    });
+    let main_supported = candidate.evidence_claims.iter().any(|claim| {
+        trusted(claim)
+            && claim.claim_type == crate::domain::EvidenceClaimType::MainStatPackage
+            && matches!(
+                &claim.normalized_value,
+                crate::domain::NormalizedClaimValue::MainStatPackage { value }
+                    if value == &candidate.main_stat_package
+            )
+    });
+    let substats_supported = candidate.evidence_claims.iter().any(|claim| {
+        trusted(claim)
+            && claim.claim_type == crate::domain::EvidenceClaimType::SubstatPriority
+            && matches!(
+                &claim.normalized_value,
+                crate::domain::NormalizedClaimValue::SubstatPriority { value }
+                    if value == &candidate.main_stat_package.substat_priority
+            )
+    });
+    if !(artifact_supported && main_supported && substats_supported) {
+        return Err(SolverError::Invalid(format!(
+            "候補「{}」に本文確認済みの必須根拠がありません",
+            candidate.id
+        )));
+    }
+    Ok(())
+}
+
+fn evidence_score_by_claim_type(variant: &BuildVariant) -> u32 {
+    let mut best_by_type = [0_u32; 6];
+    for claim in &variant.evidence_claims {
+        let index = match claim.claim_type {
+            crate::domain::EvidenceClaimType::ArtifactPlan => 0,
+            crate::domain::EvidenceClaimType::MainStatPackage => 1,
+            crate::domain::EvidenceClaimType::SubstatPriority => 2,
+            crate::domain::EvidenceClaimType::TargetStat => 3,
+            crate::domain::EvidenceClaimType::Role => 4,
+            crate::domain::EvidenceClaimType::TeamInteraction => 5,
+        };
+        let score = match claim.evidence_grade {
+            EvidenceGrade::A => 3,
+            EvidenceGrade::B => 2,
+            EvidenceGrade::C => 0,
+        };
+        best_by_type[index] = best_by_type[index].max(score);
+    }
+    best_by_type.into_iter().sum()
+}
+
 #[cfg(test)]
 #[allow(non_snake_case)]
 mod tests {
@@ -299,44 +363,65 @@ mod tests {
     };
 
     fn variant(character_id: &str, id: &str, grade: EvidenceGrade) -> BuildVariant {
+        let artifact_plan = ArtifactPlan::FourPiece {
+            set_id: "set".into(),
+        };
+        let main_stat_package = MainStatPackage {
+            id: "main".into(),
+            sands: "攻撃力%".into(),
+            goblet: "元素ダメージ".into(),
+            circlet: "会心率".into(),
+            conditions: vec![],
+            substat_priority: vec![crate::domain::StatPriority {
+                stat: "会心率".into(),
+                rank: 1,
+            }],
+            target_stats: vec![],
+        };
+        let evidence = || SourceEvidence {
+            source_page_id: "source".into(),
+            evidence_excerpt: None,
+            evidence_summary: "summary".into(),
+            locator: None,
+            verification: EvidenceVerification::HostExactMatch,
+            content_hash: Some("hash".into()),
+        };
         BuildVariant {
             id: id.into(),
             character_id: character_id.into(),
-            artifact_plan: ArtifactPlan::FourPiece {
-                set_id: "set".into(),
-            },
-            main_stat_package: MainStatPackage {
-                id: "main".into(),
-                sands: "攻撃力%".into(),
-                goblet: "元素ダメージ".into(),
-                circlet: "会心率".into(),
-                conditions: vec![],
-                substat_priority: vec![],
-                target_stats: vec![],
-            },
+            artifact_plan: artifact_plan.clone(),
+            main_stat_package: main_stat_package.clone(),
             conditions: vec![],
             team_buff_keys: vec![],
-            evidence_claims: vec![EvidenceClaim {
-                claim_type: EvidenceClaimType::Role,
-                normalized_value: crate::domain::NormalizedClaimValue::Role {
-                    value: crate::domain::CharacterBuildIntent {
-                        role: crate::domain::BuildIntent::Auto,
-                        reaction_ownership: crate::domain::ReactionOwnership::Unknown,
-                        energy_priority: crate::domain::EnergyPriority::Balanced,
-                        survivability_priority: crate::domain::SurvivabilityPriority::Normal,
+            evidence_claims: vec![
+                EvidenceClaim {
+                    claim_type: EvidenceClaimType::ArtifactPlan,
+                    normalized_value: crate::domain::NormalizedClaimValue::ArtifactPlan {
+                        value: artifact_plan,
                     },
+                    conditions: vec![],
+                    evidence: evidence(),
+                    evidence_grade: grade,
                 },
-                conditions: vec![],
-                evidence: SourceEvidence {
-                    source_page_id: "source".into(),
-                    evidence_excerpt: None,
-                    evidence_summary: "summary".into(),
-                    locator: None,
-                    verification: EvidenceVerification::HostExactMatch,
-                    content_hash: None,
+                EvidenceClaim {
+                    claim_type: EvidenceClaimType::MainStatPackage,
+                    normalized_value: crate::domain::NormalizedClaimValue::MainStatPackage {
+                        value: main_stat_package.clone(),
+                    },
+                    conditions: vec![],
+                    evidence: evidence(),
+                    evidence_grade: grade,
                 },
-                evidence_grade: grade,
-            }],
+                EvidenceClaim {
+                    claim_type: EvidenceClaimType::SubstatPriority,
+                    normalized_value: crate::domain::NormalizedClaimValue::SubstatPriority {
+                        value: main_stat_package.substat_priority.clone(),
+                    },
+                    conditions: vec![],
+                    evidence: evidence(),
+                    evidence_grade: grade,
+                },
+            ],
             source_family_count: 1,
             conflict_penalty: 0,
         }
@@ -457,5 +542,48 @@ mod tests {
             solve_team_builds(candidates),
             Err(SolverError::Invalid(_))
         ));
+    }
+
+    #[test]
+    fn c評価の必須根拠はsolver直接入力でも拒否する() {
+        let mut candidates = team();
+        for claim in &mut candidates[0][0].evidence_claims {
+            claim.evidence_grade = EvidenceGrade::C;
+            claim.evidence.verification = EvidenceVerification::UrlEventOnly;
+            claim.evidence.content_hash = None;
+        }
+
+        assert!(matches!(
+            solve_team_builds(candidates),
+            Err(SolverError::Invalid(message)) if message.contains("必須根拠")
+        ));
+    }
+
+    #[test]
+    fn 候補本体と異なるclaimはsolver直接入力でも拒否する() {
+        let mut candidates = team();
+        candidates[0][0].artifact_plan = ArtifactPlan::FourPiece {
+            set_id: "different-set".into(),
+        };
+
+        assert!(matches!(
+            solve_team_builds(candidates),
+            Err(SolverError::Invalid(message)) if message.contains("必須根拠")
+        ));
+    }
+
+    #[test]
+    fn 同じclaim種別の複製で評価を水増しできない() {
+        let base = variant("char-a", "base", EvidenceGrade::A);
+        let mut duplicated = base.clone();
+        let duplicate = duplicated.evidence_claims[0].clone();
+        duplicated
+            .evidence_claims
+            .extend([duplicate.clone(), duplicate]);
+
+        assert_eq!(
+            evidence_score_by_claim_type(&base),
+            evidence_score_by_claim_type(&duplicated)
+        );
     }
 }
