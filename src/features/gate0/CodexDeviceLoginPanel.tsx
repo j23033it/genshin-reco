@@ -38,7 +38,7 @@ export function CodexDeviceLoginPanel({ onRecheck }: { onRecheck: () => void }) 
 
     const pollLoginStatus = async () => {
       try {
-        const result = await readCodexLoginStatus(activeLoginId);
+        const result = await readCodexLoginStatus();
         if (disposed) return;
 
         if (result.authenticated || result.loginCompleted === true) {
@@ -154,7 +154,7 @@ export function CodexDeviceLoginPanel({ onRecheck }: { onRecheck: () => void }) 
       {(loginState.status === "active" || loginState.status === "cancelling") && (
         <div className="mt-4 space-y-4">
           <p className="text-pretty text-sm leading-6 text-amber-200">
-            表示されたURLをブラウザで開き、次のコードを入力してください。うちはブラウザを自動で開きません。
+            表示されたURLをブラウザで開き、次のコードを入力してください。このアプリはブラウザを自動で開きません。
           </p>
           <dl className="grid gap-3 sm:grid-cols-2">
             <div className="min-w-0 rounded-lg border border-amber-300/30 bg-slate-950/50 p-3 sm:col-span-2">

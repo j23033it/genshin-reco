@@ -242,11 +242,11 @@ fn take_matching_notification(
     let index = notifications.iter().position(|notification| {
         let method_matches = notification.get("method").and_then(Value::as_str) == Some(method);
         let login_matches = login_id.is_none_or(|expected| {
-            notification
+            let actual = notification
                 .get("params")
                 .and_then(|params| params.get("loginId"))
-                .and_then(Value::as_str)
-                == Some(expected)
+                .and_then(Value::as_str);
+            actual.is_none() || actual == Some(expected)
         });
         method_matches && login_matches
     })?;
@@ -424,6 +424,12 @@ impl JsonlRpcSession {
         take_matching_notification(&mut notifications, method, login_id)
     }
 
+    async fn clear_notifications(&self, method: &str) {
+        self.notifications.lock().await.retain(|notification| {
+            notification.get("method").and_then(Value::as_str) != Some(method)
+        });
+    }
+
     async fn shutdown(mut self) {
         let _ = self.stdin.lock().await.shutdown().await;
         let _ = self.child.kill().await;
@@ -458,6 +464,12 @@ pub async fn start_codex_device_login(
         .is_some()
     {
         return Err("進行中のdevice code認証があります".into());
+    }
+    if let Some(session) = guard.as_ref() {
+        session
+            .rpc
+            .clear_notifications("account/login/completed")
+            .await;
     }
     let result = supervised_request(
         &app,
@@ -949,6 +961,24 @@ mod tests {
         assert_eq!(notification["params"]["success"], true);
         assert_eq!(notifications.len(), 1);
         assert_eq!(notifications[0]["params"]["loginId"], "old-login");
+    }
+
+    #[test]
+    fn login_idがnullの完了通知を現在の認証へ対応付ける() {
+        let mut notifications = VecDeque::from([json!({
+            "method": "account/login/completed",
+            "params": { "loginId": null, "success": false, "error": "cancelled" }
+        })]);
+
+        let notification = take_matching_notification(
+            &mut notifications,
+            "account/login/completed",
+            Some("current-login"),
+        )
+        .expect("nullの完了通知を現在の認証へ対応付けること");
+
+        assert_eq!(notification["params"]["error"], "cancelled");
+        assert!(notifications.is_empty());
     }
 
     #[test]
