@@ -1,0 +1,667 @@
+{
+  "$defs": {
+    "ArtifactHalf": {
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "exact_set",
+              "type": "string"
+            },
+            "setId": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "setId"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "effectGroupId": {
+              "type": "string"
+            },
+            "kind": {
+              "const": "effect_group",
+              "type": "string"
+            }
+          },
+          "required": [
+            "effectGroupId",
+            "kind"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "ArtifactPlan": {
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "setId": {
+              "type": "string"
+            },
+            "type": {
+              "const": "four_piece",
+              "type": "string"
+            }
+          },
+          "required": [
+            "setId",
+            "type"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "first": {
+              "$ref": "#/$defs/ArtifactHalf"
+            },
+            "second": {
+              "$ref": "#/$defs/ArtifactHalf"
+            },
+            "type": {
+              "const": "two_plus_two",
+              "type": "string"
+            }
+          },
+          "required": [
+            "first",
+            "second",
+            "type"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "BuildCondition": {
+      "additionalProperties": false,
+      "properties": {
+        "description": {
+          "type": "string"
+        },
+        "field": {
+          "type": "string"
+        },
+        "operator": {
+          "$ref": "#/$defs/ConditionOperator"
+        },
+        "value": {
+          "$ref": "#/$defs/ConditionValue"
+        }
+      },
+      "required": [
+        "description",
+        "field",
+        "operator",
+        "value"
+      ],
+      "type": "object"
+    },
+    "BuildIntent": {
+      "enum": [
+        "auto",
+        "on_field_damage",
+        "off_field_damage",
+        "reaction_trigger",
+        "support",
+        "sustain"
+      ],
+      "type": "string"
+    },
+    "CharacterBuildIntent": {
+      "additionalProperties": false,
+      "properties": {
+        "energyPriority": {
+          "$ref": "#/$defs/EnergyPriority"
+        },
+        "reactionOwnership": {
+          "$ref": "#/$defs/ReactionOwnership"
+        },
+        "role": {
+          "$ref": "#/$defs/BuildIntent"
+        },
+        "survivabilityPriority": {
+          "$ref": "#/$defs/SurvivabilityPriority"
+        }
+      },
+      "required": [
+        "energyPriority",
+        "reactionOwnership",
+        "role",
+        "survivabilityPriority"
+      ],
+      "type": "object"
+    },
+    "ConditionOperator": {
+      "enum": [
+        "equals",
+        "not_equals",
+        "includes",
+        "gte",
+        "lte"
+      ],
+      "type": "string"
+    },
+    "ConditionValue": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "number"
+        },
+        {
+          "type": "boolean"
+        }
+      ]
+    },
+    "EnergyPriority": {
+      "enum": [
+        "damage_first",
+        "balanced",
+        "burst_stability"
+      ],
+      "type": "string"
+    },
+    "EvidenceClaimType": {
+      "enum": [
+        "artifact_plan",
+        "main_stat_package",
+        "substat_priority",
+        "target_stat",
+        "role",
+        "team_interaction"
+      ],
+      "type": "string"
+    },
+    "MainStatPackage": {
+      "additionalProperties": false,
+      "properties": {
+        "circlet": {
+          "type": "string"
+        },
+        "conditions": {
+          "items": {
+            "$ref": "#/$defs/BuildCondition"
+          },
+          "maxItems": 16,
+          "type": "array"
+        },
+        "goblet": {
+          "type": "string"
+        },
+        "id": {
+          "type": "string"
+        },
+        "sands": {
+          "type": "string"
+        },
+        "substatPriority": {
+          "items": {
+            "$ref": "#/$defs/StatPriority"
+          },
+          "maxItems": 32,
+          "minItems": 1,
+          "type": "array"
+        },
+        "targetStats": {
+          "items": {
+            "$ref": "#/$defs/TargetStatRange"
+          },
+          "maxItems": 16,
+          "type": "array"
+        }
+      },
+      "required": [
+        "circlet",
+        "conditions",
+        "goblet",
+        "id",
+        "sands",
+        "substatPriority",
+        "targetStats"
+      ],
+      "type": "object"
+    },
+    "NormalizedClaimValue": {
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "artifact_plan",
+              "type": "string"
+            },
+            "value": {
+              "$ref": "#/$defs/ArtifactPlan"
+            }
+          },
+          "required": [
+            "kind",
+            "value"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "main_stat_package",
+              "type": "string"
+            },
+            "value": {
+              "$ref": "#/$defs/MainStatPackage"
+            }
+          },
+          "required": [
+            "kind",
+            "value"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "substat_priority",
+              "type": "string"
+            },
+            "value": {
+              "items": {
+                "$ref": "#/$defs/StatPriority"
+              },
+              "type": "array"
+            }
+          },
+          "required": [
+            "kind",
+            "value"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "target_stat",
+              "type": "string"
+            },
+            "value": {
+              "$ref": "#/$defs/TargetStatRange"
+            }
+          },
+          "required": [
+            "kind",
+            "value"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "role",
+              "type": "string"
+            },
+            "value": {
+              "$ref": "#/$defs/CharacterBuildIntent"
+            }
+          },
+          "required": [
+            "kind",
+            "value"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "team_interaction",
+              "type": "string"
+            },
+            "value": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "value"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "ReactionOwnership": {
+      "enum": [
+        "main",
+        "partial",
+        "none",
+        "unknown"
+      ],
+      "type": "string"
+    },
+    "ResearchBuildVariant": {
+      "additionalProperties": false,
+      "properties": {
+        "artifactPlan": {
+          "$ref": "#/$defs/ArtifactPlan"
+        },
+        "claims": {
+          "items": {
+            "$ref": "#/$defs/ResearchClaim"
+          },
+          "maxItems": 48,
+          "minItems": 3,
+          "type": "array"
+        },
+        "conditions": {
+          "items": {
+            "$ref": "#/$defs/BuildCondition"
+          },
+          "maxItems": 16,
+          "type": "array"
+        },
+        "id": {
+          "maxLength": 100,
+          "minLength": 1,
+          "type": "string"
+        },
+        "mainStatPackage": {
+          "$ref": "#/$defs/MainStatPackage"
+        },
+        "teamBuffKeys": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 16,
+          "type": "array"
+        }
+      },
+      "required": [
+        "artifactPlan",
+        "claims",
+        "conditions",
+        "id",
+        "mainStatPackage",
+        "teamBuffKeys"
+      ],
+      "type": "object"
+    },
+    "ResearchClaim": {
+      "additionalProperties": false,
+      "properties": {
+        "claimType": {
+          "$ref": "#/$defs/EvidenceClaimType"
+        },
+        "conditions": {
+          "items": {
+            "$ref": "#/$defs/BuildCondition"
+          },
+          "maxItems": 16,
+          "type": "array"
+        },
+        "evidence": {
+          "$ref": "#/$defs/ResearchEvidence"
+        },
+        "normalizedValue": {
+          "$ref": "#/$defs/NormalizedClaimValue"
+        }
+      },
+      "required": [
+        "claimType",
+        "conditions",
+        "evidence",
+        "normalizedValue"
+      ],
+      "type": "object"
+    },
+    "ResearchEvidence": {
+      "additionalProperties": false,
+      "description": "Codexから受け取る根拠。host由来のsourcePageId等を意図的に含めない。",
+      "properties": {
+        "evidenceExcerpt": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "evidenceSummary": {
+          "maxLength": 1000,
+          "minLength": 1,
+          "type": "string"
+        },
+        "locator": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ResearchLocator"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "sourceUrl": {
+          "maxLength": 2048,
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "evidenceExcerpt",
+        "evidenceSummary",
+        "locator",
+        "sourceUrl"
+      ],
+      "type": "object"
+    },
+    "ResearchLocator": {
+      "additionalProperties": false,
+      "properties": {
+        "heading": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "section": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "textFragment": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "heading",
+        "section",
+        "textFragment"
+      ],
+      "type": "object"
+    },
+    "ResearchSchemaVersion": {
+      "enum": [
+        "character-research-v1"
+      ],
+      "type": "string"
+    },
+    "ResearchSourcePage": {
+      "additionalProperties": false,
+      "description": "Codexから受け取る未信頼な参照ページ。ID・検証結果・hashはRust側で付与する。",
+      "properties": {
+        "gameVersion": {
+          "maxLength": 32,
+          "minLength": 1,
+          "type": "string"
+        },
+        "publisher": {
+          "maxLength": 100,
+          "minLength": 1,
+          "type": "string"
+        },
+        "sourceUrl": {
+          "maxLength": 2048,
+          "minLength": 1,
+          "type": "string"
+        },
+        "title": {
+          "maxLength": 200,
+          "minLength": 1,
+          "type": "string"
+        },
+        "updatedAt": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "gameVersion",
+        "publisher",
+        "sourceUrl",
+        "title",
+        "updatedAt"
+      ],
+      "type": "object"
+    },
+    "StatPriority": {
+      "additionalProperties": false,
+      "properties": {
+        "rank": {
+          "maximum": 65535,
+          "minimum": 1,
+          "type": "integer"
+        },
+        "stat": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "rank",
+        "stat"
+      ],
+      "type": "object"
+    },
+    "StatUnit": {
+      "enum": [
+        "flat",
+        "percent"
+      ],
+      "type": "string"
+    },
+    "SurvivabilityPriority": {
+      "enum": [
+        "normal",
+        "high"
+      ],
+      "type": "string"
+    },
+    "TargetScope": {
+      "enum": [
+        "character_sheet_unbuffed",
+        "character_sheet_with_static_team_effects",
+        "in_combat_conditional"
+      ],
+      "type": "string"
+    },
+    "TargetStatRange": {
+      "additionalProperties": false,
+      "properties": {
+        "maximum": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "minimum": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "note": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "scope": {
+          "$ref": "#/$defs/TargetScope"
+        },
+        "stat": {
+          "type": "string"
+        },
+        "unit": {
+          "$ref": "#/$defs/StatUnit"
+        }
+      },
+      "required": [
+        "maximum",
+        "minimum",
+        "note",
+        "scope",
+        "stat",
+        "unit"
+      ],
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "1キャラクター分のCodex構造化出力契約。",
+  "properties": {
+    "characterId": {
+      "maxLength": 100,
+      "minLength": 1,
+      "type": "string"
+    },
+    "schemaVersion": {
+      "$ref": "#/$defs/ResearchSchemaVersion"
+    },
+    "sources": {
+      "items": {
+        "$ref": "#/$defs/ResearchSourcePage"
+      },
+      "maxItems": 12,
+      "minItems": 1,
+      "type": "array"
+    },
+    "variants": {
+      "items": {
+        "$ref": "#/$defs/ResearchBuildVariant"
+      },
+      "maxItems": 3,
+      "minItems": 1,
+      "type": "array"
+    },
+    "warnings": {
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 16,
+      "type": "array"
+    }
+  },
+  "required": [
+    "characterId",
+    "schemaVersion",
+    "sources",
+    "variants",
+    "warnings"
+  ],
+  "title": "CharacterResearchOutput",
+  "type": "object"
+}

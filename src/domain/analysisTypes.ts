@@ -136,9 +136,17 @@ export type EvidenceClaimType =
   | "role"
   | "team_interaction";
 
+export type NormalizedClaimValue =
+  | { kind: "artifact_plan"; value: ArtifactPlan }
+  | { kind: "main_stat_package"; value: MainStatPackage }
+  | { kind: "substat_priority"; value: StatPriority[] }
+  | { kind: "target_stat"; value: TargetStatRange }
+  | { kind: "role"; value: CharacterBuildIntent }
+  | { kind: "team_interaction"; value: string };
+
 export interface EvidenceClaim {
   claimType: EvidenceClaimType;
-  normalizedValue: unknown;
+  normalizedValue: NormalizedClaimValue;
   conditions: BuildCondition[];
   evidence: SourceEvidence;
   evidenceGrade: EvidenceGrade;
@@ -177,4 +185,50 @@ export interface HostGeneratedIdentity {
   resultHash: string;
   checkedAt: string;
   createdAt: string;
+}
+
+export interface ResearchSourcePage {
+  sourceUrl: string;
+  title: string;
+  publisher: string;
+  gameVersion: string;
+  updatedAt: string | null;
+}
+
+export interface ResearchLocator {
+  heading: string | null;
+  section: string | null;
+  textFragment: string | null;
+}
+
+export interface ResearchEvidence {
+  sourceUrl: string;
+  evidenceExcerpt: string | null;
+  evidenceSummary: string;
+  locator: ResearchLocator | null;
+}
+
+export interface ResearchClaim {
+  claimType: EvidenceClaimType;
+  normalizedValue: NormalizedClaimValue;
+  conditions: BuildCondition[];
+  evidence: ResearchEvidence;
+}
+
+export interface ResearchBuildVariant {
+  id: string;
+  artifactPlan: ArtifactPlan;
+  mainStatPackage: MainStatPackage;
+  conditions: BuildCondition[];
+  teamBuffKeys: string[];
+  claims: ResearchClaim[];
+}
+
+/** Codex構造化出力には、Rust側で生成するID・hash・検証結果を含めない。 */
+export interface CharacterResearchOutput {
+  schemaVersion: "character-research-v1";
+  characterId: string;
+  sources: ResearchSourcePage[];
+  variants: ResearchBuildVariant[];
+  warnings: string[];
 }
