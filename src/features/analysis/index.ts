@@ -3,6 +3,7 @@ export { TeamResultPanel } from "./TeamResultPanel";
 export {
   buildAnalysisInput,
   cancelAnalysis,
+  loadCurrentAnalysisResult,
   startAnalysis,
   subscribeAnalysisProgress,
   type AnalysisCommandResult,

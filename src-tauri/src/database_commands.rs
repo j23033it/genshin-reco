@@ -1,4 +1,5 @@
 use crate::database::{Database, PartyDraft, PartySummary};
+use crate::domain::TeamBuildResolution;
 use tauri::{AppHandle, Manager, State};
 
 /// DBエラーをRendererへ返すための、日本語の安全な文字列へ変換する。
@@ -22,6 +23,16 @@ pub fn load_party_draft(
 #[tauri::command]
 pub fn list_party_drafts(database: State<'_, Database>) -> Result<Vec<PartySummary>, String> {
     list_party_drafts_impl(&database)
+}
+
+#[tauri::command]
+pub fn load_current_analysis_result(
+    database: State<'_, Database>,
+    party_id: String,
+) -> Result<Option<TeamBuildResolution>, String> {
+    database
+        .load_current_result(&party_id)
+        .map_err(database_error_message)
 }
 
 fn save_party_draft_impl(database: &Database, draft: PartyDraft) -> Result<(), String> {
@@ -109,5 +120,16 @@ mod tests {
         let error = load_party_draft_impl(&database, " ").unwrap_err();
 
         assert!(error.contains("編成IDは必須です"));
+    }
+
+    #[test]
+    fn 現在結果がない編成はnull相当を返す() {
+        let database = Database::open_in_memory().unwrap();
+        database.save_party(draft()).unwrap();
+
+        assert_eq!(
+            database.load_current_result("party-command-test").unwrap(),
+            None
+        );
     }
 }

@@ -94,3 +94,10 @@ export async function cancelAnalysis(): Promise<void> {
   if (!isTauriRuntime()) return;
   await invoke("cancel_analysis");
 }
+
+export async function loadCurrentAnalysisResult(
+  partyId: string,
+): Promise<TeamBuildResolution | null> {
+  if (!isTauriRuntime()) return null;
+  return invoke<TeamBuildResolution | null>("load_current_analysis_result", { partyId });
+}

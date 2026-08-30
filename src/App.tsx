@@ -7,6 +7,7 @@ import {
   TeamResultPanel,
   buildAnalysisInput,
   cancelAnalysis,
+  loadCurrentAnalysisResult,
   startAnalysis,
   subscribeAnalysisProgress,
   type AnalysisCharacterStepStatus,
@@ -291,6 +292,17 @@ function Workspace({ catalog }: { catalog: Catalog }) {
                     className="w-full rounded-lg px-3 py-2 text-left text-sm text-slate-300 hover:bg-slate-800 hover:text-slate-100"
                     onClick={() => {
                       setDraft(party);
+                      const partyId = party.partyId ?? party.id;
+                      if (partyId) {
+                        void loadCurrentAnalysisResult(partyId)
+                          .then((current) => {
+                            setResolution(current);
+                            setResultValidity(current ? "current" : null);
+                          })
+                          .catch((error: unknown) => {
+                            setNotice(error instanceof Error ? error.message : String(error));
+                          });
+                      }
                       setView("party");
                     }}
                   >
