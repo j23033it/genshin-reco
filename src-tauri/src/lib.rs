@@ -2,6 +2,7 @@ mod app_server;
 pub mod catalog;
 pub mod domain;
 pub mod hashing;
+pub mod reconciler;
 pub mod source_policy;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
