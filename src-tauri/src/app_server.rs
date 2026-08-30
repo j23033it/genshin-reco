@@ -2,7 +2,7 @@ use semver::Version;
 use serde::Serialize;
 use serde_json::{Value, json};
 use std::{
-    collections::VecDeque,
+    collections::{HashMap, VecDeque},
     path::{Path, PathBuf},
     sync::Arc,
     time::Duration,
@@ -20,8 +20,10 @@ use tokio::{
 const SUPPORTED_CODEX_MAJOR: u64 = 0;
 const SUPPORTED_CODEX_MINOR: u64 = 118;
 const RPC_TIMEOUT: Duration = Duration::from_secs(15);
+const TURN_TIMEOUT: Duration = Duration::from_secs(120);
 const MAX_DIAGNOSTIC_LINES: usize = 100;
 const MAX_NOTIFICATION_MESSAGES: usize = 256;
+const MAX_TURN_COMPLETIONS: usize = 64;
 const RESPONSE_CHANNEL_CAPACITY: usize = 16;
 const APP_CODEX_CONFIG: &str = r#"forced_login_method = "chatgpt"
 cli_auth_credentials_store = "keyring"
@@ -139,6 +141,18 @@ pub struct DeviceLoginStatus {
     login_error: Option<String>,
 }
 
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Gate0SmokeReport {
+    structured_output_valid: bool,
+    web_search_observed: bool,
+    cancellation_observed: bool,
+    instruction_sources_supported: bool,
+    model_rerouted: bool,
+    rerouted_from: Option<String>,
+    rerouted_to: Option<String>,
+}
+
 #[derive(Default)]
 pub struct AppServerSupervisor {
     session: Mutex<Option<ManagedAppServer>>,
@@ -175,6 +189,8 @@ struct JsonlRpcSession {
     stderr_lines: Arc<Mutex<VecDeque<String>>>,
     stderr_task: JoinHandle<()>,
     notifications: Arc<Mutex<VecDeque<Value>>>,
+    turn_completions: Arc<Mutex<VecDeque<Value>>>,
+    turn_observations: Arc<Mutex<HashMap<(String, String), TurnObservations>>>,
 }
 
 enum IncomingResponse {
@@ -232,6 +248,82 @@ async fn enqueue_notification(notifications: &Arc<Mutex<VecDeque<Value>>>, messa
         buffer.pop_front();
     }
     buffer.push_back(message);
+}
+
+fn should_buffer_notification(method: &str) -> bool {
+    matches!(
+        method,
+        "account/login/completed"
+            | "account/rateLimits/updated"
+            | "error"
+            | "item/started"
+            | "item/completed"
+            | "model/rerouted"
+            | "turn/started"
+    )
+}
+
+async fn route_notification(
+    notifications: &Arc<Mutex<VecDeque<Value>>>,
+    turn_completions: &Arc<Mutex<VecDeque<Value>>>,
+    turn_observations: &Arc<Mutex<HashMap<(String, String), TurnObservations>>>,
+    message: Value,
+) {
+    let Some(method) = message.get("method").and_then(Value::as_str) else {
+        return;
+    };
+    observe_turn_notification(turn_observations, &message).await;
+    if method == "turn/completed" {
+        let mut completions = turn_completions.lock().await;
+        if completions.len() == MAX_TURN_COMPLETIONS {
+            completions.pop_front();
+        }
+        completions.push_back(message);
+    } else if should_buffer_notification(method) {
+        enqueue_notification(notifications, message).await;
+    }
+}
+
+async fn observe_turn_notification(
+    turn_observations: &Arc<Mutex<HashMap<(String, String), TurnObservations>>>,
+    notification: &Value,
+) {
+    let params = &notification["params"];
+    let Some(thread_id) = params.get("threadId").and_then(Value::as_str) else {
+        return;
+    };
+    let Some(turn_id) = params
+        .get("turnId")
+        .and_then(Value::as_str)
+        .or_else(|| params["turn"]["id"].as_str())
+    else {
+        return;
+    };
+    let method = notification.get("method").and_then(Value::as_str);
+    let item = &params["item"];
+    let is_web_search = matches!(method, Some("item/started") | Some("item/completed"))
+        && item["type"].as_str() == Some("webSearch");
+    let agent_message = (method == Some("item/completed")
+        && item["type"].as_str() == Some("agentMessage"))
+    .then(|| item["text"].as_str().map(str::to_string))
+    .flatten();
+    let is_reroute = method == Some("model/rerouted");
+    if !is_web_search && agent_message.is_none() && !is_reroute {
+        return;
+    }
+
+    let mut observations = turn_observations.lock().await;
+    let observation = observations
+        .entry((thread_id.to_string(), turn_id.to_string()))
+        .or_default();
+    observation.web_search_observed |= is_web_search;
+    if let Some(message) = agent_message {
+        observation.agent_message = Some(message);
+    }
+    if is_reroute {
+        observation.rerouted_from = params["fromModel"].as_str().map(str::to_string);
+        observation.rerouted_to = params["toModel"].as_str().map(str::to_string);
+    }
 }
 
 fn take_matching_notification(
@@ -295,6 +387,10 @@ impl JsonlRpcSession {
         });
         let notifications = Arc::new(Mutex::new(VecDeque::new()));
         let notification_buffer = Arc::clone(&notifications);
+        let turn_completions = Arc::new(Mutex::new(VecDeque::new()));
+        let turn_completion_buffer = Arc::clone(&turn_completions);
+        let turn_observations = Arc::new(Mutex::new(HashMap::new()));
+        let turn_observation_buffer = Arc::clone(&turn_observations);
         let server_request_stdin = Arc::clone(&stdin);
         let (response_tx, response_rx) = mpsc::channel(RESPONSE_CHANNEL_CAPACITY);
         let stdout_task = tokio::spawn(async move {
@@ -331,7 +427,13 @@ impl JsonlRpcSession {
                         break;
                     }
                 } else if has_method {
-                    enqueue_notification(&notification_buffer, message).await;
+                    route_notification(
+                        &notification_buffer,
+                        &turn_completion_buffer,
+                        &turn_observation_buffer,
+                        message,
+                    )
+                    .await;
                 } else if response_tx
                     .send(IncomingResponse::Message(message))
                     .await
@@ -350,6 +452,8 @@ impl JsonlRpcSession {
             stderr_lines,
             stderr_task,
             notifications,
+            turn_completions,
+            turn_observations,
         })
     }
 
@@ -430,6 +534,58 @@ impl JsonlRpcSession {
         });
     }
 
+    async fn wait_for_turn_completion(
+        &mut self,
+        thread_id: &str,
+        turn_id: &str,
+    ) -> Result<Value, AppServerError> {
+        let deadline = Instant::now() + TURN_TIMEOUT;
+        loop {
+            {
+                let mut completions = self.turn_completions.lock().await;
+                if let Some(index) = completions.iter().position(|notification| {
+                    notification.get("method").and_then(Value::as_str) == Some("turn/completed")
+                        && notification["params"]["threadId"].as_str() == Some(thread_id)
+                        && notification["params"]["turn"]["id"].as_str() == Some(turn_id)
+                }) {
+                    return completions.remove(index).ok_or_else(|| {
+                        AppServerError::Protocol("完了通知を取得できません".into())
+                    });
+                }
+            }
+            if self.child.try_wait()?.is_some() {
+                return Err(AppServerError::ProcessExited);
+            }
+            if Instant::now() >= deadline {
+                return Err(AppServerError::Timeout);
+            }
+            tokio::time::sleep(Duration::from_millis(50)).await;
+        }
+    }
+
+    async fn take_turn_observations(&self, thread_id: &str, turn_id: &str) -> TurnObservations {
+        self.turn_observations
+            .lock()
+            .await
+            .remove(&(thread_id.to_string(), turn_id.to_string()))
+            .unwrap_or_default()
+    }
+
+    async fn clear_thread_state(&self, thread_id: &str) {
+        self.notifications
+            .lock()
+            .await
+            .retain(|notification| notification["params"]["threadId"].as_str() != Some(thread_id));
+        self.turn_completions
+            .lock()
+            .await
+            .retain(|notification| notification["params"]["threadId"].as_str() != Some(thread_id));
+        self.turn_observations
+            .lock()
+            .await
+            .retain(|(event_thread_id, _), _| event_thread_id != thread_id);
+    }
+
     async fn shutdown(mut self) {
         let _ = self.stdin.lock().await.shutdown().await;
         let _ = self.child.kill().await;
@@ -439,6 +595,14 @@ impl JsonlRpcSession {
         self.stderr_task.abort();
         let _ = self.stderr_task.await;
     }
+}
+
+#[derive(Default)]
+struct TurnObservations {
+    agent_message: Option<String>,
+    web_search_observed: bool,
+    rerouted_from: Option<String>,
+    rerouted_to: Option<String>,
 }
 
 #[tauri::command]
@@ -555,6 +719,211 @@ pub async fn cancel_codex_device_login(
         session.active_login_id = None;
     }
     Ok(())
+}
+
+#[tauri::command]
+pub async fn run_codex_gate0_smoke(
+    app: tauri::AppHandle,
+    supervisor: tauri::State<'_, AppServerSupervisor>,
+) -> Result<Gate0SmokeReport, String> {
+    let mut guard = supervisor.session.lock().await;
+    run_gate0_smoke(&app, &mut guard)
+        .await
+        .map_err(|error| error.to_string())
+}
+
+async fn run_gate0_smoke(
+    app: &tauri::AppHandle,
+    slot: &mut Option<ManagedAppServer>,
+) -> Result<Gate0SmokeReport, AppServerError> {
+    let account_result = supervised_request(
+        app,
+        slot,
+        "account/read",
+        Some(json!({ "refreshToken": false })),
+    )
+    .await?;
+    if parse_account(&account_result)?.auth_mode.as_deref() != Some("chatgpt") {
+        return Err(AppServerError::Protocol(
+            "Gate 0スモークを実行するにはCodexへのログインが必要です".into(),
+        ));
+    }
+
+    let workspace = slot
+        .as_ref()
+        .map(|session| PathBuf::from(&session.codex_home).join("workspace"))
+        .ok_or_else(|| AppServerError::Protocol("常駐セッションがありません".into()))?;
+    let thread_result = supervised_request(
+        app,
+        slot,
+        "thread/start",
+        Some(json!({
+            "cwd": workspace,
+            "approvalPolicy": "never",
+            "sandbox": "read-only",
+            "serviceName": "genshin_reco_gate0",
+            "developerInstructions": "ローカルコマンドとファイル操作を使わず、指定されたWeb検索とJSON出力だけを行ってください。",
+            "ephemeral": true,
+            "experimentalRawEvents": false,
+            "persistExtendedHistory": false
+        })),
+    )
+    .await?;
+    let thread_id = match required_json_string(&thread_result, &["thread", "id"]) {
+        Ok(thread_id) => thread_id,
+        Err(error) => {
+            if let Some(session) = slot.take() {
+                session.rpc.shutdown().await;
+            }
+            return Err(error);
+        }
+    };
+
+    let smoke_result = async {
+        let instruction_sources_supported =
+            validate_instruction_sources(&thread_result, &workspace)?;
+        run_gate0_smoke_turns(app, slot, &thread_id, instruction_sources_supported).await
+    }
+    .await;
+    let cleanup_result = cleanup_smoke_thread(slot, &thread_id).await;
+    match (smoke_result, cleanup_result) {
+        (Ok(report), Ok(())) => Ok(report),
+        (Err(error), _) => {
+            if let Some(session) = slot.take() {
+                session.rpc.shutdown().await;
+            }
+            Err(error)
+        }
+        (Ok(_), Err(error)) => Err(error),
+    }
+}
+
+async fn run_gate0_smoke_turns(
+    app: &tauri::AppHandle,
+    slot: &mut Option<ManagedAppServer>,
+    thread_id: &str,
+    instruction_sources_supported: bool,
+) -> Result<Gate0SmokeReport, AppServerError> {
+    let turn_result = supervised_request(
+        app,
+        slot,
+        "turn/start",
+        Some(json!({
+            "threadId": thread_id,
+            "input": [{
+                "type": "text",
+                "text": "Web検索を必ず1回使い、HoYoWikiの原神トップページを確認してください。確認後、markerはgate0、okはtrue、sourceUrlは実際に確認したURLとして出力してください。",
+                "text_elements": []
+            }],
+            "outputSchema": {
+                "type": "object",
+                "properties": {
+                    "marker": { "type": "string", "const": "gate0" },
+                    "ok": { "type": "boolean", "const": true },
+                    "sourceUrl": { "type": "string" }
+                },
+                "required": ["marker", "ok", "sourceUrl"],
+                "additionalProperties": false
+            }
+        })),
+    )
+    .await?;
+    let structured_turn_id = required_json_string(&turn_result, &["turn", "id"])?;
+    let structured_completion =
+        supervised_wait_for_turn(slot, thread_id, &structured_turn_id).await?;
+    if structured_completion["params"]["turn"]["status"].as_str() != Some("completed") {
+        return Err(AppServerError::Protocol(
+            "構造化出力ターンが正常完了しませんでした".into(),
+        ));
+    }
+    let observations = slot
+        .as_ref()
+        .ok_or_else(|| AppServerError::Protocol("常駐セッションがありません".into()))?
+        .rpc
+        .take_turn_observations(thread_id, &structured_turn_id)
+        .await;
+    let structured_output_valid =
+        validate_gate0_structured_output(observations.agent_message.as_deref())?;
+
+    let cancel_turn_result = supervised_request(
+        app,
+        slot,
+        "turn/start",
+        Some(json!({
+            "threadId": thread_id,
+            "input": [{
+                "type": "text",
+                "text": "Web検索を使って原神の全キャラクターを調査し、長い報告書を作成してください。",
+                "text_elements": []
+            }]
+        })),
+    )
+    .await?;
+    let cancel_turn_id = required_json_string(&cancel_turn_result, &["turn", "id"])?;
+    if cancel_turn_result["turn"]["status"].as_str() != Some("inProgress") {
+        return Err(AppServerError::Protocol(
+            "中断対象ターンが開始時点で実行中ではないため、中断を検証できませんでした".into(),
+        ));
+    }
+    if let Err(error) = supervised_request(
+        app,
+        slot,
+        "turn/interrupt",
+        Some(json!({ "threadId": thread_id, "turnId": cancel_turn_id })),
+    )
+    .await
+    {
+        if let Some(session) = slot.take() {
+            session.rpc.shutdown().await;
+        }
+        return Err(AppServerError::Protocol(format!(
+            "ターンが先に完了したか、中断要求に失敗したため中断を検証できませんでした: {error}"
+        )));
+    }
+    let cancel_completion = supervised_wait_for_turn(slot, thread_id, &cancel_turn_id).await?;
+    let cancellation_observed =
+        cancel_completion["params"]["turn"]["status"].as_str() == Some("interrupted");
+    if !cancellation_observed {
+        return Err(AppServerError::Protocol(
+            "ターンの完了が中断より先行したため、中断を検証できませんでした".into(),
+        ));
+    }
+
+    Ok(Gate0SmokeReport {
+        structured_output_valid,
+        web_search_observed: observations.web_search_observed,
+        cancellation_observed,
+        instruction_sources_supported,
+        model_rerouted: observations.rerouted_to.is_some(),
+        rerouted_from: observations.rerouted_from,
+        rerouted_to: observations.rerouted_to,
+    })
+}
+
+async fn cleanup_smoke_thread(
+    slot: &mut Option<ManagedAppServer>,
+    thread_id: &str,
+) -> Result<(), AppServerError> {
+    let result = match slot.as_mut() {
+        Some(session) => session
+            .request("thread/unsubscribe", Some(json!({ "threadId": thread_id })))
+            .await
+            .map(|_| ()),
+        None => return Ok(()),
+    };
+    if let Some(session) = slot.as_ref() {
+        session.rpc.clear_thread_state(thread_id).await;
+    }
+    if result.is_err()
+        && let Some(session) = slot.take()
+    {
+        session.rpc.shutdown().await;
+    }
+    result.map_err(|error| {
+        AppServerError::Protocol(format!(
+            "Gate 0スモーク用スレッドの購読解除に失敗しました: {error}"
+        ))
+    })
 }
 
 async fn probe(
@@ -676,6 +1045,91 @@ async fn supervised_request(
         session.rpc.shutdown().await;
     }
     result
+}
+
+async fn supervised_wait_for_turn(
+    slot: &mut Option<ManagedAppServer>,
+    thread_id: &str,
+    turn_id: &str,
+) -> Result<Value, AppServerError> {
+    let result = match slot.as_mut() {
+        Some(session) => {
+            session
+                .rpc
+                .wait_for_turn_completion(thread_id, turn_id)
+                .await
+        }
+        None => Err(AppServerError::Protocol(
+            "常駐セッションがありません".into(),
+        )),
+    };
+    if result
+        .as_ref()
+        .err()
+        .is_some_and(AppServerError::invalidates_session)
+        && let Some(session) = slot.take()
+    {
+        session.rpc.shutdown().await;
+    }
+    result
+}
+
+fn required_json_string(value: &Value, path: &[&str]) -> Result<String, AppServerError> {
+    let mut current = value;
+    for segment in path {
+        current = current
+            .get(segment)
+            .ok_or_else(|| AppServerError::Protocol(format!("{}がありません", path.join("."))))?;
+    }
+    current.as_str().map(str::to_string).ok_or_else(|| {
+        AppServerError::Protocol(format!("{}が文字列ではありません", path.join(".")))
+    })
+}
+
+fn validate_instruction_sources(
+    thread_result: &Value,
+    workspace: &Path,
+) -> Result<bool, AppServerError> {
+    let Some(sources) = thread_result.get("instructionSources") else {
+        return Ok(false);
+    };
+    let sources = sources
+        .as_array()
+        .ok_or_else(|| AppServerError::Protocol("instructionSourcesが配列ではありません".into()))?;
+    if sources.is_empty() {
+        return Err(AppServerError::Protocol(
+            "アプリ専用AGENTS.mdが指示元へ読み込まれていません".into(),
+        ));
+    }
+    let expected = workspace.join("AGENTS.md").to_string_lossy().to_string();
+    for source in sources {
+        let source = source.as_str().ok_or_else(|| {
+            AppServerError::Protocol("instructionSourcesに文字列以外が含まれています".into())
+        })?;
+        if !source.eq_ignore_ascii_case(&expected) {
+            return Err(AppServerError::Protocol(format!(
+                "想定外の指示ファイルを検出しました: {source}"
+            )));
+        }
+    }
+    Ok(true)
+}
+
+fn validate_gate0_structured_output(message: Option<&str>) -> Result<bool, AppServerError> {
+    let message =
+        message.ok_or_else(|| AppServerError::Protocol("最終agentMessageがありません".into()))?;
+    let output: Value = serde_json::from_str(message)?;
+    let Some(object) = output.as_object() else {
+        return Ok(false);
+    };
+    let source_url = output
+        .get("sourceUrl")
+        .and_then(Value::as_str)
+        .unwrap_or_default();
+    Ok(object.len() == 3
+        && output.get("marker").and_then(Value::as_str) == Some("gate0")
+        && output.get("ok").and_then(Value::as_bool) == Some(true)
+        && source_url.starts_with("https://wiki.hoyolab.com/"))
 }
 
 async fn start_managed_session(app: &tauri::AppHandle) -> Result<ManagedAppServer, AppServerError> {
@@ -938,6 +1392,118 @@ mod tests {
         );
     }
 
+    #[tokio::test]
+    async fn ターン完了通知を通常通知の上限から分離する() {
+        let notifications = Arc::new(Mutex::new(VecDeque::new()));
+        let turn_completions = Arc::new(Mutex::new(VecDeque::new()));
+        let turn_observations = Arc::new(Mutex::new(HashMap::new()));
+        route_notification(
+            &notifications,
+            &turn_completions,
+            &turn_observations,
+            json!({
+                "method": "item/started",
+                "params": {
+                    "threadId": "thread-1",
+                    "turnId": "turn-1",
+                    "item": { "type": "webSearch" }
+                }
+            }),
+        )
+        .await;
+        for index in 0..=MAX_NOTIFICATION_MESSAGES {
+            route_notification(
+                &notifications,
+                &turn_completions,
+                &turn_observations,
+                json!({
+                    "method": "item/started",
+                    "params": {
+                        "threadId": "thread-1",
+                        "turnId": "turn-1",
+                        "index": index,
+                        "item": { "type": "commandExecution" }
+                    }
+                }),
+            )
+            .await;
+        }
+        route_notification(
+            &notifications,
+            &turn_completions,
+            &turn_observations,
+            json!({
+                "method": "turn/completed",
+                "params": {
+                    "threadId": "thread-1",
+                    "turn": { "id": "turn-1", "status": "completed" }
+                }
+            }),
+        )
+        .await;
+
+        assert_eq!(notifications.lock().await.len(), MAX_NOTIFICATION_MESSAGES);
+        let completions = turn_completions.lock().await;
+        assert_eq!(completions.len(), 1);
+        assert_eq!(completions[0]["params"]["turn"]["id"], "turn-1");
+        drop(completions);
+        assert!(
+            turn_observations
+                .lock()
+                .await
+                .get(&("thread-1".into(), "turn-1".into()))
+                .expect("ターン観測があること")
+                .web_search_observed
+        );
+    }
+
+    #[tokio::test]
+    async fn 高頻度の差分通知を保持しない() {
+        let notifications = Arc::new(Mutex::new(VecDeque::new()));
+        let turn_completions = Arc::new(Mutex::new(VecDeque::new()));
+        let turn_observations = Arc::new(Mutex::new(HashMap::new()));
+        route_notification(
+            &notifications,
+            &turn_completions,
+            &turn_observations,
+            json!({
+                "method": "item/agentMessage/delta",
+                "params": { "threadId": "thread-1", "turnId": "turn-1", "delta": "a" }
+            }),
+        )
+        .await;
+
+        assert!(notifications.lock().await.is_empty());
+        assert!(turn_completions.lock().await.is_empty());
+        assert!(turn_observations.lock().await.is_empty());
+    }
+
+    #[tokio::test]
+    async fn ターン完了通知キューを上限件数に保つ() {
+        let notifications = Arc::new(Mutex::new(VecDeque::new()));
+        let turn_completions = Arc::new(Mutex::new(VecDeque::new()));
+        let turn_observations = Arc::new(Mutex::new(HashMap::new()));
+        for index in 0..=MAX_TURN_COMPLETIONS {
+            route_notification(
+                &notifications,
+                &turn_completions,
+                &turn_observations,
+                json!({
+                    "method": "turn/completed",
+                    "params": {
+                        "threadId": "thread-1",
+                        "turn": { "id": format!("turn-{index}"), "status": "completed" }
+                    }
+                }),
+            )
+            .await;
+        }
+
+        let completions = turn_completions.lock().await;
+        assert_eq!(completions.len(), MAX_TURN_COMPLETIONS);
+        assert_eq!(completions[0]["params"]["turn"]["id"], "turn-1");
+    }
+
     #[test]
     fn login_idが一致する完了通知だけを取り出す() {
         let mut notifications = VecDeque::from([
@@ -1003,6 +1569,52 @@ mod tests {
 
         assert_eq!(response["id"], "server-request-1");
         assert_eq!(response["error"]["code"], -32601);
+    }
+
+    #[test]
+    fn gate0の構造化出力を検証できる() {
+        let message = r#"{"marker":"gate0","ok":true,"sourceUrl":"https://wiki.hoyolab.com/pc/genshin/home"}"#;
+        assert!(validate_gate0_structured_output(Some(message)).expect("検証できること"));
+        assert!(
+            !validate_gate0_structured_output(Some(
+                r#"{"marker":"gate0","ok":true,"sourceUrl":"https://example.com/"}"#
+            ))
+            .expect("不許可URLを不合格にできること")
+        );
+        assert!(
+            !validate_gate0_structured_output(Some(
+                r#"{"marker":"gate0","ok":true,"sourceUrl":"https://wiki.hoyolab.com/pc/genshin/home","extra":true}"#
+            ))
+            .expect("余分なフィールドを不合格にできること")
+        );
+    }
+
+    #[test]
+    fn 想定外のinstruction_sourceを拒否する() {
+        let workspace = Path::new(r"C:\app\codex-home\workspace");
+        assert!(
+            !validate_instruction_sources(&json!({ "thread": { "id": "thread-1" } }), workspace)
+                .expect("未対応版を判定できること")
+        );
+        assert!(
+            validate_instruction_sources(
+                &json!({
+                    "instructionSources": [r"C:\app\codex-home\workspace\AGENTS.md"]
+                }),
+                workspace
+            )
+            .expect("専用指示だけを許可できること")
+        );
+        assert!(
+            validate_instruction_sources(
+                &json!({ "instructionSources": [r"C:\Users\user\AGENTS.md"] }),
+                workspace
+            )
+            .is_err()
+        );
+        assert!(
+            validate_instruction_sources(&json!({ "instructionSources": [] }), workspace).is_err()
+        );
     }
 
     #[tokio::test]

@@ -1,6 +1,7 @@
 import { useRef, useState, type ReactNode } from "react";
 import { cn } from "../../lib/cn";
 import { CodexDeviceLoginPanel } from "./CodexDeviceLoginPanel";
+import { CodexGate0SmokePanel } from "./CodexGate0SmokePanel";
 import { probeCodexEnvironment } from "./probeCodexEnvironment";
 import type { Gate0ProbeReport } from "./types";
 
@@ -26,6 +27,7 @@ function BooleanValue({
 
 function ReportDetails({ report, onRecheck }: { report: Gate0ProbeReport; onRecheck: () => void }) {
   const accountNeedsAuth = report.account === null || report.account.requiresOpenaiAuth;
+  const smokeAvailable = report.account?.authMode === "chatgpt";
 
   return (
     <div className="mt-8 space-y-6" data-testid="gate0-report">
@@ -64,10 +66,19 @@ function ReportDetails({ report, onRecheck }: { report: Gate0ProbeReport; onRech
         {accountNeedsAuth ? (
           <CodexDeviceLoginPanel onRecheck={onRecheck} />
         ) : (
-          <dl className="mt-4 grid gap-3 sm:grid-cols-2">
-            <ReportItem label="認証方式" value={valueOrFallback(report.account?.authMode ?? null)} />
-            <ReportItem label="プラン" value={valueOrFallback(report.account?.planType ?? null)} />
-          </dl>
+          <>
+            <dl className="mt-4 grid gap-3 sm:grid-cols-2">
+              <ReportItem label="認証方式" value={valueOrFallback(report.account?.authMode ?? null)} />
+              <ReportItem label="プラン" value={valueOrFallback(report.account?.planType ?? null)} />
+            </dl>
+            {smokeAvailable ? (
+              <CodexGate0SmokePanel />
+            ) : (
+              <p className="mt-4 rounded-lg border border-amber-300/40 bg-amber-300/5 p-4 text-pretty text-sm leading-6 text-amber-100">
+                実ターンのスモークテストにはChatGPT認証が必要です。現在の認証方式では実行できません。
+              </p>
+            )}
+          </>
         )}
       </section>
 

@@ -8,7 +8,8 @@ pub fn run() {
             app_server::probe_codex_environment,
             app_server::start_codex_device_login,
             app_server::read_codex_login_status,
-            app_server::cancel_codex_device_login
+            app_server::cancel_codex_device_login,
+            app_server::run_codex_gate0_smoke
         ])
         .run(tauri::generate_context!())
         .expect("Tauriアプリケーションを起動できませんでした");

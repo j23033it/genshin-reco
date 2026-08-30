@@ -20,7 +20,7 @@ const successfulReport = {
   platformFamily: "windows",
   platformOs: "Windows 11",
   account: {
-    authMode: "openai",
+    authMode: "chatgpt",
     planType: "pro",
     requiresOpenaiAuth: false,
   },
@@ -96,5 +96,19 @@ describe("Gate 0", () => {
     await user.click(screen.getByRole("button", { name: "環境を確認" }));
 
     expect(await screen.findByText("Codexへログインしてください")).toBeInTheDocument();
+  });
+
+  it("ChatGPT以外の認証方式では実ターンスモークを表示しない", async () => {
+    probeMock.mockResolvedValue({
+      ...successfulReport,
+      account: { authMode: "apiKey", planType: null, requiresOpenaiAuth: false },
+    });
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByRole("button", { name: "環境を確認" }));
+
+    expect(await screen.findByText(/実ターンのスモークテストにはChatGPT認証が必要/)).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Gate 0スモークを実行" })).not.toBeInTheDocument();
   });
 });

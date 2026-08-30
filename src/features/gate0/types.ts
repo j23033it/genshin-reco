@@ -29,3 +29,13 @@ export interface CodexLoginStatus {
   loginCompleted: boolean | null;
   loginError: string | null;
 }
+
+export interface Gate0SmokeReport {
+  structuredOutputValid: boolean;
+  webSearchObserved: boolean;
+  cancellationObserved: boolean;
+  instructionSourcesSupported: boolean;
+  modelRerouted: boolean;
+  reroutedFrom: string | null;
+  reroutedTo: string | null;
+}
