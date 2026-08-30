@@ -818,8 +818,8 @@ async fn run_gate0_smoke_turns(
             "outputSchema": {
                 "type": "object",
                 "properties": {
-                    "marker": { "type": "string", "const": "gate0" },
-                    "ok": { "type": "boolean", "const": true },
+                    "marker": { "type": "string", "enum": ["gate0"] },
+                    "ok": { "type": "boolean", "enum": [true] },
                     "sourceUrl": { "type": "string" }
                 },
                 "required": ["marker", "ok", "sourceUrl"],
