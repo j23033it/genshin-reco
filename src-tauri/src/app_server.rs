@@ -915,11 +915,7 @@ async fn run_character_research_attempt(
     let thread_id = required_json_string(&thread_result, &["thread", "id"])?;
 
     let result = async {
-        if !validate_instruction_sources(&thread_result, &workspace)? {
-            return Err(AppServerError::Protocol(
-                "instructionSourcesを確認できないApp Server版です".into(),
-            ));
-        }
+        validate_instruction_sources(&thread_result, &workspace)?;
         let prompt = build_character_research_prompt(analysis_input, character_id)?;
         let output_schema = character_research_output_schema();
         let turn_result = supervised_request(
@@ -2169,12 +2165,17 @@ mod tests {
     }
 
     #[test]
-    fn 想定外のinstruction_sourceを拒否する() {
+    fn instruction_sources未報告の0118を互換扱いにする() {
         let workspace = Path::new(r"C:\app\codex-home\workspace");
         assert!(
             !validate_instruction_sources(&json!({ "thread": { "id": "thread-1" } }), workspace)
                 .expect("未対応版を判定できること")
         );
+    }
+
+    #[test]
+    fn instruction_sources報告時は専用指示だけ許可する() {
+        let workspace = Path::new(r"C:\app\codex-home\workspace");
         assert!(
             validate_instruction_sources(
                 &json!({
