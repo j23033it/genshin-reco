@@ -639,7 +639,6 @@
       "type": "object"
     }
   },
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
   "description": "1キャラクター分のCodex構造化出力契約。",
   "properties": {
@@ -682,6 +681,5 @@
     "variants",
     "warnings"
   ],
-  "title": "CharacterResearchOutput",
   "type": "object"
 }
