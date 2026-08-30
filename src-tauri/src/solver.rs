@@ -1,7 +1,7 @@
 use crate::domain::{
     BuildVariant, CharacterBuildResolution, EvidenceGrade, ResolutionStatus, TeamBuildResolution,
 };
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 use thiserror::Error;
 
 const MAX_SEARCH_SPACE: usize = 81;
@@ -90,13 +90,23 @@ pub fn solve_team_builds(
     let mut indices = vec![0; candidates.len()];
     enumerate_selections(&candidates, 0, &mut indices, &mut selections);
 
+    selections.sort_by(compare_selections);
     let best = selections
-        .into_iter()
-        .min_by(|left, right| compare_selections(left, right))
+        .first()
         .expect("候補は各キャラクター1件以上で検証済み");
-
-    let numeric_tie_with_different_id = best_numeric_tie_has_different_id(&candidates, &best);
-    let status = if numeric_tie_with_different_id {
+    let tied = selections
+        .iter()
+        .take_while(|selection| selection.numeric_score == best.numeric_score)
+        .collect::<Vec<_>>();
+    let tied_indices = (0..candidates.len())
+        .map(|character_index| {
+            tied.iter()
+                .map(|selection| selection.indices[character_index])
+                .collect::<BTreeSet<_>>()
+        })
+        .collect::<Vec<_>>();
+    let needs_user_choice = tied_indices.iter().any(|indices| indices.len() > 1);
+    let status = if needs_user_choice {
         ResolutionStatus::NeedsUserChoice
     } else {
         ResolutionStatus::Resolved
@@ -109,18 +119,28 @@ pub fn solve_team_builds(
         .map(|(character_index, character_candidates)| {
             let selected_index = best.indices[character_index];
             let selected = &character_candidates[selected_index];
+            let ambiguous = tied_indices[character_index].len() > 1;
             CharacterBuildResolution {
                 character_id: selected.character_id.clone(),
-                selected_variant_id: Some(selected.id.clone()),
-                alternatives: character_candidates
-                    .iter()
-                    .enumerate()
-                    .filter_map(|(index, candidate)| {
-                        (index != selected_index).then_some(candidate.clone())
-                    })
-                    .collect(),
-                reason: if numeric_tie_with_different_id {
-                    "数値評価が同点の候補があるため、候補IDを確認して選択してください。".into()
+                selected_variant_id: (!ambiguous).then(|| selected.id.clone()),
+                alternatives: if ambiguous {
+                    tied_indices[character_index]
+                        .iter()
+                        .map(|index| character_candidates[*index].clone())
+                        .collect()
+                } else {
+                    character_candidates
+                        .iter()
+                        .enumerate()
+                        .filter_map(|(index, candidate)| {
+                            (index != selected_index).then_some(candidate.clone())
+                        })
+                        .collect()
+                },
+                reason: if ambiguous {
+                    "数値評価が同点のため、自動決定せずユーザー選択を待っています。".into()
+                } else if needs_user_choice {
+                    "同点候補間で共通して選ばれる候補です。".into()
                 } else {
                     "根拠評価・競合・情報源数の比較で最適な候補を選択しました。".into()
                 },
@@ -179,6 +199,16 @@ fn validate_candidates(candidates: &[Vec<BuildVariant>]) -> Result<(), SolverErr
                     index + 1
                 )));
             }
+        }
+        let unique_ids = character_candidates
+            .iter()
+            .map(|candidate| candidate.id.as_str())
+            .collect::<BTreeSet<_>>();
+        if unique_ids.len() != character_candidates.len() {
+            return Err(SolverError::Invalid(format!(
+                "{}人目のvariantIdが重複しています",
+                index + 1
+            )));
         }
     }
     Ok(())
@@ -243,59 +273,6 @@ fn compare_selections(
                 .reverse()
         })
         .then_with(|| left.variant_id_key.cmp(&right.variant_id_key))
-}
-
-fn best_numeric_tie_has_different_id(
-    candidates: &[Vec<BuildVariant>],
-    best: &EvaluatedSelection<'_>,
-) -> bool {
-    let mut indices = vec![0; candidates.len()];
-    let mut found_different_id = false;
-    find_numeric_tie_with_different_id(candidates, 0, &mut indices, best, &mut found_different_id);
-    found_different_id
-}
-
-fn find_numeric_tie_with_different_id(
-    candidates: &[Vec<BuildVariant>],
-    depth: usize,
-    indices: &mut [usize],
-    best: &EvaluatedSelection<'_>,
-    found_different_id: &mut bool,
-) {
-    if *found_different_id {
-        return;
-    }
-    if depth == candidates.len() {
-        let variants = indices
-            .iter()
-            .enumerate()
-            .map(|(character_index, candidate_index)| {
-                &candidates[character_index][*candidate_index]
-            })
-            .collect::<Vec<_>>();
-        if NumericScore::for_selection(&variants) == best.numeric_score {
-            let variant_id_key = variants
-                .iter()
-                .map(|variant| variant.id.as_str())
-                .collect::<Vec<_>>()
-                .join("|");
-            if variant_id_key != best.variant_id_key {
-                *found_different_id = true;
-            }
-        }
-        return;
-    }
-
-    for candidate_index in 0..candidates[depth].len() {
-        indices[depth] = candidate_index;
-        find_numeric_tie_with_different_id(
-            candidates,
-            depth + 1,
-            indices,
-            best,
-            found_different_id,
-        );
-    }
 }
 
 fn duplicate_buff_warnings(variants: &[&BuildVariant]) -> Vec<String> {
@@ -415,11 +392,13 @@ mod tests {
         candidates[0].push(variant("char-0", "v-0-z", EvidenceGrade::A));
         let result = solve_team_builds(candidates).unwrap();
         assert_eq!(result.status, ResolutionStatus::NeedsUserChoice);
-        assert_eq!(
-            result.members[0].selected_variant_id.as_deref(),
-            Some("v-0-a")
+        assert_eq!(result.members[0].selected_variant_id, None);
+        assert_eq!(result.members[0].alternatives.len(), 2);
+        assert!(
+            result.members[1..]
+                .iter()
+                .all(|member| member.selected_variant_id.is_some())
         );
-        assert_eq!(result.members[0].alternatives.len(), 1);
         assert!(result.members[0].reason.contains("同点"));
     }
 
@@ -467,6 +446,13 @@ mod tests {
 
         let mut candidates = team();
         candidates[0].push(variant("char-other", "v-other", EvidenceGrade::A));
+        assert!(matches!(
+            solve_team_builds(candidates),
+            Err(SolverError::Invalid(_))
+        ));
+
+        let mut candidates = team();
+        candidates[0].push(variant("char-0", "v-0", EvidenceGrade::A));
         assert!(matches!(
             solve_team_builds(candidates),
             Err(SolverError::Invalid(_))
