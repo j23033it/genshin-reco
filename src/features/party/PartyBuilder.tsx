@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import type { ChangeEvent } from "react";
 import type { Catalog, Character, Weapon } from "../../domain/catalogTypes";
 import { cn } from "../../lib/cn";
@@ -138,8 +138,30 @@ function PartySlot({
   onChange: (slotIndex: SlotIndex, update: (member: PartyMemberDraft) => PartyMemberDraft) => void;
   disabled: boolean;
 }) {
+  const [characterSearch, setCharacterSearch] = useState("");
   const character = member.characterId ? characterById.get(member.characterId) : undefined;
   const weapon = member.weaponId ? weaponById.get(member.weaponId) : undefined;
+  const normalizedCharacterSearch = characterSearch.trim().toLocaleLowerCase("ja");
+  const matchingCharacters = useMemo(
+    () =>
+      catalog.characters.filter(
+        (candidate) =>
+          normalizedCharacterSearch.length === 0 ||
+          [candidate.name, candidate.element, candidate.weaponType].some((value) =>
+            value.toLocaleLowerCase("ja").includes(normalizedCharacterSearch),
+          ),
+      ),
+    [catalog.characters, normalizedCharacterSearch],
+  );
+  const characterOptions = useMemo(
+    () => {
+      if (!character || matchingCharacters.some((candidate) => candidate.id === character.id)) {
+        return matchingCharacters;
+      }
+      return [character, ...matchingCharacters];
+    },
+    [character, matchingCharacters],
+  );
   const weaponOptions = useMemo(
     () => (character ? catalog.weapons.filter((weapon) => weapon.weaponType === character.weaponType) : []),
     [catalog.weapons, character],
@@ -152,6 +174,32 @@ function PartySlot({
       <h3 className="text-balance text-lg font-semibold text-slate-100">スロット{slotIndex + 1}</h3>
 
       <div className="mt-4 space-y-4">
+        <div className="min-w-0">
+          <label htmlFor={`party-character-search-${slotIndex}`} className="text-sm font-semibold text-slate-200">
+            キャラクターを検索
+          </label>
+          <input
+            id={`party-character-search-${slotIndex}`}
+            type="search"
+            value={characterSearch}
+            onChange={(event) => setCharacterSearch(event.target.value)}
+            disabled={disabled}
+            className="mt-2 min-h-11 w-full min-w-0 rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500 hover:border-slate-500 disabled:cursor-not-allowed disabled:opacity-60"
+            placeholder="名前・元素・武器種"
+            aria-describedby={`party-character-search-result-${slotIndex}`}
+          />
+          <p
+            id={`party-character-search-result-${slotIndex}`}
+            className="mt-2 text-xs text-slate-400"
+            role="status"
+            aria-live="polite"
+          >
+            {normalizedCharacterSearch.length === 0
+              ? `${catalog.characters.length}人から選択できます。`
+              : `${matchingCharacters.length}人が一致しました。`}
+          </p>
+        </div>
+
         <div className="min-w-0">
           <label htmlFor={`party-character-${slotIndex}`} className="text-sm font-semibold text-slate-200">
             キャラクター
@@ -182,13 +230,14 @@ function PartySlot({
             disabled={disabled}
           >
             <option value="">キャラクターを選択</option>
-            {catalog.characters.map((candidate) => {
+            {characterOptions.map((candidate) => {
               const travelerKey = candidate.id.startsWith("traveler-") || candidate.id.startsWith("traveler_") || candidate.id === "traveler" ? "traveler" : null;
               const optionDisabled =
                 otherCharacterIds.has(candidate.id) ||
                 (travelerKey !== null && otherTravelerVariants.has(travelerKey));
               return <CharacterOption key={candidate.id} character={candidate} disabled={optionDisabled} />;
             })}
+            {matchingCharacters.length === 0 && <option disabled>一致するキャラクターはいません</option>}
           </select>
           {member.characterId && !character && (
             <p className="mt-2 text-xs leading-5 text-amber-200">このキャラクターは現在のカタログにありません。</p>

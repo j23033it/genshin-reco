@@ -104,6 +104,32 @@ describe("PartyBuilder", () => {
     expect(weaponSelect.querySelector('option[value="bow-weapon"]')).not.toBeInTheDocument();
   });
 
+  it("名前・元素・武器種でキャラクター候補を検索できる", async () => {
+    const user = userEvent.setup();
+    function ControlledBuilder() {
+      const [draft, setDraft] = useState(createEmptyParty("search-party"));
+      return <PartyBuilder catalog={catalog} draft={draft} onChange={setDraft} onSave={vi.fn()} onAnalyze={vi.fn()} />;
+    }
+    render(<ControlledBuilder />);
+
+    const searchInput = screen.getAllByLabelText("キャラクターを検索")[0];
+    const characterSelect = screen.getAllByLabelText("キャラクター")[0];
+    await user.type(searchInput, "雷");
+
+    expect(characterSelect.querySelector('option[value="bow"]')).toBeInTheDocument();
+    expect(characterSelect.querySelector('option[value="one-hand"]')).not.toBeInTheDocument();
+    expect(screen.getByText("1人が一致しました。")).toBeInTheDocument();
+
+    await user.selectOptions(characterSelect, "bow");
+    await user.clear(searchInput);
+    await user.type(searchInput, "存在しない名前");
+
+    expect(characterSelect).toHaveValue("bow");
+    expect(characterSelect.querySelector('option[value="bow"]')).toBeInTheDocument();
+    expect(screen.getByText("0人が一致しました。")).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: "一致するキャラクターはいません" })).toBeDisabled();
+  });
+
   it("重複キャラクターと旅人variantの同居を保存エラーにする", () => {
     const empty = createEmptyParty("duplicate-party");
     const draft = draftWithMembers([
@@ -167,9 +193,12 @@ describe("PartyBuilder", () => {
     const user = userEvent.setup();
     renderBuilder(fullDraft());
     const nameInput = screen.getByLabelText("編成名");
+    const firstCharacterSearch = screen.getAllByLabelText("キャラクターを検索")[0];
     const firstCharacter = screen.getAllByLabelText("キャラクター")[0];
 
     nameInput.focus();
+    await user.tab();
+    expect(firstCharacterSearch).toHaveFocus();
     await user.tab();
     expect(firstCharacter).toHaveFocus();
   });
