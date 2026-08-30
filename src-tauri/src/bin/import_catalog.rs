@@ -1,6 +1,6 @@
 use genshin_reco_lib::catalog::{
     ArtifactSet, Catalog, CatalogCounts, CatalogManifest, CatalogSource, Character, PieceImageUrls,
-    Weapon, hex_digest, validate_catalog,
+    Weapon, hex_digest, validate_catalog, validate_image_url,
 };
 use std::{env, fs, path::Path};
 
@@ -13,19 +13,23 @@ fn main() {
 
 fn run() -> Result<(), String> {
     let args: Vec<String> = env::args().skip(1).collect();
-    if args.len() != 4 {
+    let check = args.last().map(String::as_str) == Some("--check");
+    let argument_count = if check { 5 } else { 4 };
+    if args.len() != argument_count {
         return Err(
-            "使い方: import_catalog <characters.md> <weapons.md> <artifacts.md> <output_dir>"
-                .into(),
+            "使い方: import_catalog <characters.md> <weapons.md> <artifacts.md> <output_dir> [--check]".into(),
         );
     }
     let character_path = Path::new(&args[0]);
     let weapon_path = Path::new(&args[1]);
     let artifact_path = Path::new(&args[2]);
     let output_dir = Path::new(&args[3]);
-    let characters_source = fs::read_to_string(character_path).map_err(|e| e.to_string())?;
-    let weapons_source = fs::read_to_string(weapon_path).map_err(|e| e.to_string())?;
-    let artifacts_source = fs::read_to_string(artifact_path).map_err(|e| e.to_string())?;
+    let characters_source =
+        normalize_source(&fs::read_to_string(character_path).map_err(|e| e.to_string())?);
+    let weapons_source =
+        normalize_source(&fs::read_to_string(weapon_path).map_err(|e| e.to_string())?);
+    let artifacts_source =
+        normalize_source(&fs::read_to_string(artifact_path).map_err(|e| e.to_string())?);
 
     let character_metadata = parse_metadata(&characters_source)?;
     let weapon_metadata = parse_metadata(&weapons_source)?;
@@ -88,13 +92,20 @@ fn run() -> Result<(), String> {
         sources: vec![
             source(
                 "characters",
-                character_path,
+                "キャラクターカタログ.md",
+                &characters_source,
                 character_metadata.declared_count,
             )?,
-            source("weapons", weapon_path, weapon_metadata.declared_count)?,
+            source(
+                "weapons",
+                "武器カタログ.md",
+                &weapons_source,
+                weapon_metadata.declared_count,
+            )?,
             source(
                 "artifactSets",
-                artifact_path,
+                "聖遺物セットカタログ.md",
+                &artifacts_source,
                 artifact_metadata.declared_count,
             )?,
         ],
@@ -103,10 +114,52 @@ fn run() -> Result<(), String> {
         "{}\n",
         serde_json::to_string_pretty(&manifest).map_err(|e| e.to_string())?
     );
-    fs::create_dir_all(output_dir).map_err(|e| e.to_string())?;
-    fs::write(output_dir.join("catalog.json"), catalog_bytes).map_err(|e| e.to_string())?;
-    fs::write(output_dir.join("catalog.manifest.json"), manifest_json)
-        .map_err(|e| e.to_string())?;
+    let outputs = [
+        (output_dir.join("catalog.json"), catalog_bytes.to_vec()),
+        (
+            output_dir.join("catalog.manifest.json"),
+            manifest_json.into_bytes(),
+        ),
+        (
+            output_dir.join("sources/キャラクターカタログ.md"),
+            characters_source.into_bytes(),
+        ),
+        (
+            output_dir.join("sources/武器カタログ.md"),
+            weapons_source.into_bytes(),
+        ),
+        (
+            output_dir.join("sources/聖遺物セットカタログ.md"),
+            artifacts_source.into_bytes(),
+        ),
+    ];
+    if check {
+        check_outputs(&outputs)?;
+    } else {
+        fs::create_dir_all(output_dir).map_err(|e| e.to_string())?;
+        fs::create_dir_all(output_dir.join("sources")).map_err(|e| e.to_string())?;
+        for (path, bytes) in outputs {
+            fs::write(path, bytes).map_err(|e| e.to_string())?;
+        }
+    }
+    Ok(())
+}
+
+fn normalize_source(source: &str) -> String {
+    source.replace("\r\n", "\n").replace('\r', "\n")
+}
+
+fn check_outputs(outputs: &[(std::path::PathBuf, Vec<u8>)]) -> Result<(), String> {
+    for (path, expected) in outputs {
+        let actual = fs::read(path)
+            .map_err(|error| format!("check対象を読めません {}: {error}", path.display()))?;
+        if &actual != expected {
+            return Err(format!(
+                "check対象が生成結果と一致しません: {}",
+                path.display()
+            ));
+        }
+    }
     Ok(())
 }
 
@@ -139,19 +192,32 @@ fn parse_metadata(source: &str) -> Result<Metadata, String> {
     })
 }
 
-fn rows(source: &str) -> impl Iterator<Item = Vec<String>> + '_ {
-    source.lines().filter_map(|line| {
-        let line = line.trim();
-        if !line.starts_with('|') || line.contains("---") {
-            return None;
-        }
-        let row: Vec<String> = line
-            .trim_matches('|')
-            .split('|')
-            .map(|cell| normalize(cell.trim()))
-            .collect();
-        (row.first().map(String::as_str) != Some("ID")).then_some(row)
-    })
+fn rows(source: &str, expected_columns: usize) -> Result<Vec<Vec<String>>, String> {
+    source
+        .lines()
+        .filter_map(|line| {
+            let line = line.trim();
+            if !line.starts_with('|') || line.contains("---") {
+                return None;
+            }
+            let row: Vec<String> = line
+                .trim_matches('|')
+                .split('|')
+                .map(|cell| normalize(cell.trim()))
+                .collect();
+            (row.first().map(String::as_str) != Some("ID")).then_some(row)
+        })
+        .map(|row| {
+            if row.len() != expected_columns {
+                Err(format!(
+                    "表の列数が不正です: expected={expected_columns}, actual={}",
+                    row.len()
+                ))
+            } else {
+                Ok(row)
+            }
+        })
+        .collect()
 }
 
 fn normalize(value: &str) -> String {
@@ -168,15 +234,13 @@ fn image(cell: &str) -> Result<String, String> {
         .map(|index| start + index)
         .ok_or_else(|| format!("画像リンクが不正です: {cell}"))?;
     let url = &cell[start..end];
-    if !url.starts_with("https://") || url.chars().any(char::is_whitespace) {
-        return Err(format!("HTTPS画像URLが不正です: {url}"));
-    }
+    validate_image_url(url).map_err(|error| error.to_string())?;
     Ok(url.into())
 }
 
 fn parse_characters(source: &str) -> Result<Vec<Character>, String> {
-    rows(source)
-        .filter(|row| row.len() == 6)
+    rows(source, 6)?
+        .into_iter()
         .map(|row| {
             Ok(Character {
                 id: row[0].clone(),
@@ -193,8 +257,8 @@ fn parse_characters(source: &str) -> Result<Vec<Character>, String> {
 }
 
 fn parse_weapons(source: &str) -> Result<Vec<Weapon>, String> {
-    rows(source)
-        .filter(|row| row.len() == 5)
+    rows(source, 5)?
+        .into_iter()
         .map(|row| {
             Ok(Weapon {
                 id: row[0].clone(),
@@ -210,8 +274,8 @@ fn parse_weapons(source: &str) -> Result<Vec<Weapon>, String> {
 }
 
 fn parse_artifacts(source: &str) -> Result<Vec<ArtifactSet>, String> {
-    rows(source)
-        .filter(|row| row.len() == 10)
+    rows(source, 10)?
+        .into_iter()
         .map(|row| {
             Ok(ArtifactSet {
                 id: row[0].clone(),
@@ -235,17 +299,17 @@ fn nullable(value: &str) -> Option<String> {
     (value != "-").then(|| value.to_string())
 }
 
-fn source(kind: &str, path: &Path, declared_count: usize) -> Result<CatalogSource, String> {
-    let bytes = fs::read(path).map_err(|e| e.to_string())?;
-    let file_name = path
-        .file_name()
-        .and_then(|name| name.to_str())
-        .ok_or_else(|| "入力ファイル名が不正です".to_string())?;
+fn source(
+    kind: &str,
+    file_name: &str,
+    source: &str,
+    declared_count: usize,
+) -> Result<CatalogSource, String> {
     Ok(CatalogSource {
         kind: kind.into(),
         file_name: file_name.into(),
         declared_count,
-        sha256: hex_digest(&bytes),
+        sha256: hex_digest(source.as_bytes()),
     })
 }
 
@@ -255,9 +319,9 @@ mod tests {
 
     #[test]
     fn parses_minimal_markdown_fixture() {
-        let characters = "# キャラクターカタログ\n\n- ゲームバージョン: 7.0\n- カタログ更新日: 2026-08-24\n- 件数: 1\n\n| ID | 名前 | 元素 | 武器種 | レアリティ | 画像 |\n| --- | --- | --- | --- | ---: | --- |\n| traveler-anemo | 旅人（風） | 風 | 片手剣 | 5 | [画像](https://example.com/c.png) |\n";
-        let weapons = "# 武器カタログ\n\n- ゲームバージョン: 7.0\n- カタログ更新日: 2026-08-24\n- 件数: 1\n\n| ID | 名前 | 武器種 | レアリティ | 画像 |\n| --- | --- | --- | ---: | --- |\n| 11101 | 無鋒の剣 | 片手剣 | 1 | [画像](https://example.com/w.png) |\n";
-        let artifacts = "# 聖遺物セットカタログ\n\n- ゲームバージョン: 7.0\n- カタログ更新日: 2026-08-24\n- 件数: 1\n\n| ID | 名前 | チームバフキー | 2セット効果 | 4セット効果 | 花 | 羽 | 時計 | 杯 | 冠 |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n| 10001 | 旅人の心 | - | 攻撃力+18%。 | 一行目\\n・二行目 | [花](https://example.com/f.png) | [羽](https://example.com/p.png) | [時計](https://example.com/s.png) | [杯](https://example.com/g.png) | [冠](https://example.com/c.png) |\n";
+        let characters = "# キャラクターカタログ\n\n- ゲームバージョン: 7.0\n- カタログ更新日: 2026-08-24\n- 件数: 1\n\n| ID | 名前 | 元素 | 武器種 | レアリティ | 画像 |\n| --- | --- | --- | --- | ---: | --- |\n| traveler-anemo | 旅人（風） | 風 | 片手剣 | 5 | [画像](https://gi.yatta.moe/c.png) |\n";
+        let weapons = "# 武器カタログ\n\n- ゲームバージョン: 7.0\n- カタログ更新日: 2026-08-24\n- 件数: 1\n\n| ID | 名前 | 武器種 | レアリティ | 画像 |\n| --- | --- | --- | ---: | --- |\n| 11101 | 無鋒の剣 | 片手剣 | 1 | [画像](https://gi.yatta.moe/w.png) |\n";
+        let artifacts = "# 聖遺物セットカタログ\n\n- ゲームバージョン: 7.0\n- カタログ更新日: 2026-08-24\n- 件数: 1\n\n| ID | 名前 | チームバフキー | 2セット効果 | 4セット効果 | 花 | 羽 | 時計 | 杯 | 冠 |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n| 10001 | 旅人の心 | - | 攻撃力+18%。 | 一行目\\n・二行目 | [花](https://gi.yatta.moe/f.png) | [羽](https://gi.yatta.moe/p.png) | [時計](https://gi.yatta.moe/s.png) | [杯](https://gi.yatta.moe/g.png) | [冠](https://gi.yatta.moe/c.png) |\n";
 
         assert_eq!(
             parse_metadata(characters)
@@ -282,5 +346,12 @@ mod tests {
             artifact[0].four_piece_effect.as_deref(),
             Some("一行目\n・二行目")
         );
+        assert_eq!(normalize_source("a\r\nb\rc"), "a\nb\nc");
+    }
+
+    #[test]
+    fn 列数不正の表行を黙って破棄しない() {
+        let malformed = "| ID | 名前 | 元素 | 武器種 | レアリティ | 画像 |\n| --- | --- | --- | --- | ---: | --- |\n| traveler-anemo | 旅人（風） | 風 | 片手剣 | 5 | 余分な|区切り |\n";
+        assert!(parse_characters(malformed).is_err());
     }
 }

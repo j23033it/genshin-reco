@@ -2,9 +2,30 @@ use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::{collections::HashSet, fmt::Display};
 use thiserror::Error;
+use url::Url;
 
 const CATALOG_JSON: &[u8] = include_bytes!("../../public/data/catalog.json");
 const MANIFEST_JSON: &[u8] = include_bytes!("../../public/data/catalog.manifest.json");
+const EXPECTED_SOURCE_SPECS: [(&str, &str, usize, &str); 3] = [
+    (
+        "characters",
+        "キャラクターカタログ.md",
+        126,
+        "ffaa6467e0e02fd5af1ad8403e76a273f2477a2921746e12e7ad0a482f2a0e4b",
+    ),
+    (
+        "weapons",
+        "武器カタログ.md",
+        246,
+        "848fdd6deb2c5075812fdb43ebf9e6f6389145ee8dc3edd3fba8de8b43fc94ba",
+    ),
+    (
+        "artifactSets",
+        "聖遺物セットカタログ.md",
+        63,
+        "23e046452c203f81ff572485203ef60e99ce4f83441b18fd5377034958751888",
+    ),
+];
 
 #[derive(Debug, Error)]
 pub enum CatalogError {
@@ -142,11 +163,72 @@ pub fn validate_catalog(
         if manifest.catalog_sha256 != digest {
             return Err(invalid("catalogSha256が一致しません"));
         }
-        if manifest.sources.len() != 3 {
-            return Err(invalid("manifestのソース件数が不正です"));
-        }
+        validate_manifest_sources(manifest, &counts)?;
     }
     Ok(())
+}
+
+fn validate_manifest_sources(
+    manifest: &CatalogManifest,
+    counts: &CatalogCounts,
+) -> Result<(), CatalogError> {
+    if manifest.sources.len() != EXPECTED_SOURCE_SPECS.len() {
+        return Err(invalid("manifestのソース件数が不正です"));
+    }
+    let mut kinds = HashSet::new();
+    for source in &manifest.sources {
+        if !kinds.insert(source.kind.as_str()) {
+            return Err(invalid(format!(
+                "manifestのkindが重複しています: {}",
+                source.kind
+            )));
+        }
+        let expected = EXPECTED_SOURCE_SPECS
+            .iter()
+            .find(|(kind, _, _, _)| *kind == source.kind)
+            .ok_or_else(|| invalid(format!("manifestのkindが不正です: {}", source.kind)))?;
+        if source.file_name != expected.1 {
+            return Err(invalid(format!(
+                "manifestのfileNameが不正です: {}",
+                source.file_name
+            )));
+        }
+        let expected_count = match source.kind.as_str() {
+            "characters" => counts.characters,
+            "weapons" => counts.weapons,
+            "artifactSets" => counts.artifact_sets,
+            _ => unreachable!(),
+        };
+        if source.declared_count != expected_count || source.declared_count != expected.2 {
+            return Err(invalid(format!(
+                "manifestのdeclaredCountが不正です: {}",
+                source.kind
+            )));
+        }
+        if !is_lower_hex_sha256(&source.sha256) {
+            return Err(invalid(format!(
+                "manifestのsha256が不正です: {}",
+                source.kind
+            )));
+        }
+        if source.sha256 != expected.3 {
+            return Err(invalid(format!(
+                "manifestのソースSHA-256が不一致です: {}",
+                source.kind
+            )));
+        }
+    }
+    if kinds.len() != EXPECTED_SOURCE_SPECS.len() {
+        return Err(invalid("manifestのkindが不足しています"));
+    }
+    Ok(())
+}
+
+fn is_lower_hex_sha256(value: &str) -> bool {
+    value.len() == 64
+        && value
+            .bytes()
+            .all(|byte| byte.is_ascii_digit() || (b'a'..=b'f').contains(&byte))
 }
 
 fn validate_characters(characters: &[Character]) -> Result<(), CatalogError> {
@@ -260,9 +342,22 @@ fn validate_artifacts(artifacts: &[ArtifactSet]) -> Result<(), CatalogError> {
     Ok(())
 }
 
-fn validate_image_url(url: &str) -> Result<(), CatalogError> {
-    if !url.starts_with("https://") || url.chars().any(char::is_whitespace) {
-        return Err(invalid(format!("HTTPS画像URLが不正です: {url}")));
+pub fn validate_image_url(url: &str) -> Result<(), CatalogError> {
+    let parsed = Url::parse(url).map_err(|_| invalid(format!("画像URLを解析できません: {url}")))?;
+    let authority = url
+        .strip_prefix("https://")
+        .and_then(|rest| rest.split(['/', '?', '#']).next())
+        .unwrap_or_default();
+    if parsed.scheme() != "https"
+        || parsed.host_str() != Some("gi.yatta.moe")
+        || authority != "gi.yatta.moe"
+        || !parsed.username().is_empty()
+        || parsed.port().is_some()
+        || parsed.path().is_empty()
+        || parsed.path() == "/"
+        || url.chars().any(char::is_whitespace)
+    {
+        return Err(invalid(format!("許可されていない画像URLです: {url}")));
     }
     Ok(())
 }
@@ -341,14 +436,14 @@ mod tests {
                 element: "風".into(),
                 weapon_type: "片手剣".into(),
                 rarity: 5,
-                image_url: "https://example.com/traveler.png".into(),
+                image_url: "https://gi.yatta.moe/traveler.png".into(),
             }],
             weapons: vec![Weapon {
                 id: "11101".into(),
                 name: "無鋒の剣".into(),
                 weapon_type: "片手剣".into(),
                 rarity: 1,
-                image_url: "https://example.com/sword.png".into(),
+                image_url: "https://gi.yatta.moe/sword.png".into(),
             }],
             artifact_sets: vec![ArtifactSet {
                 id: "10001".into(),
@@ -357,14 +452,32 @@ mod tests {
                 two_piece_effect: "攻撃力+18%。".into(),
                 four_piece_effect: Some("重撃の会心率+30%。".into()),
                 piece_image_urls: PieceImageUrls {
-                    flower: "https://example.com/flower.png".into(),
-                    plume: "https://example.com/plume.png".into(),
-                    sands: "https://example.com/sands.png".into(),
-                    goblet: "https://example.com/goblet.png".into(),
-                    circlet: "https://example.com/circlet.png".into(),
+                    flower: "https://gi.yatta.moe/flower.png".into(),
+                    plume: "https://gi.yatta.moe/plume.png".into(),
+                    sands: "https://gi.yatta.moe/sands.png".into(),
+                    goblet: "https://gi.yatta.moe/goblet.png".into(),
+                    circlet: "https://gi.yatta.moe/circlet.png".into(),
                 },
             }],
         };
         validate_catalog(&catalog, None, b"{}").expect("最小fixtureを検証できること");
+    }
+
+    #[test]
+    fn validates_image_url_authority() {
+        assert!(validate_image_url("https://gi.yatta.moe/assets/icon.png").is_ok());
+        assert!(validate_image_url("https://example.com/assets/icon.png").is_err());
+        assert!(validate_image_url("https://user@gi.yatta.moe/assets/icon.png").is_err());
+        assert!(validate_image_url("https://gi.yatta.moe:443/assets/icon.png").is_err());
+        assert!(validate_image_url("https://gi.yatta.moe").is_err());
+    }
+
+    #[test]
+    fn manifestのソース改ざんを拒否する() {
+        let catalog: Catalog = serde_json::from_slice(CATALOG_JSON).expect("解析できること");
+        let mut manifest: CatalogManifest =
+            serde_json::from_slice(MANIFEST_JSON).expect("解析できること");
+        manifest.sources[0].sha256 = "0".repeat(64);
+        assert!(validate_catalog(&catalog, Some(&manifest), CATALOG_JSON).is_err());
     }
 }
