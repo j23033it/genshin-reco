@@ -1,4 +1,5 @@
 mod app_server;
+pub mod catalog;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -9,7 +10,8 @@ pub fn run() {
             app_server::start_codex_device_login,
             app_server::read_codex_login_status,
             app_server::cancel_codex_device_login,
-            app_server::run_codex_gate0_smoke
+            app_server::run_codex_gate0_smoke,
+            catalog::load_catalog
         ])
         .run(tauri::generate_context!())
         .expect("Tauriアプリケーションを起動できませんでした");

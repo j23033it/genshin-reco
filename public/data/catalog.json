@@ -1,0 +1,3623 @@
+{
+  "schemaVersion": "catalog-v1",
+  "gameVersion": "7.0",
+  "catalogUpdatedAt": "2026-08-24",
+  "characters": [
+    {
+      "id": "traveler-anemo",
+      "name": "旅人（風）",
+      "element": "風",
+      "weaponType": "片手剣",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_AvatarIcon_PlayerGirl.png"
+    },
+    {
+      "id": "traveler-geo",
+      "name": "旅人（岩）",
+      "element": "岩",
+      "weaponType": "片手剣",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_AvatarIcon_PlayerGirl.png"
+    },
+    {
+      "id": "traveler-electro",
+      "name": "旅人（雷）",
+      "element": "雷",
+      "weaponType": "片手剣",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_AvatarIcon_PlayerGirl.png"
+    },
+    {
+      "id": "traveler-dendro",
+      "name": "旅人（草）",
+      "element": "草",
+      "weaponType": "片手剣",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_AvatarIcon_PlayerGirl.png"
+    },
+    {
+      "id": "traveler-hydro",
+      "name": "旅人（水）",
+      "element": "水",
+      "weaponType": "片手剣",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_AvatarIcon_PlayerGirl.png"
+    },
+    {
+      "id": "traveler-pyro",
+      "name": "旅人（炎）",
+      "element": "炎",
+      "weaponType": "片手剣",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_AvatarIcon_PlayerGirl.png"
+    },
+    {
+      "id": "traveler-cryo",
+      "name": "旅人（氷）",
+      "element": "氷",
+      "weaponType": "片手剣",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_AvatarIcon_PlayerGirl.png"
+    },
+    {
+      "id": "dahlia",
+      "name": "ダリア",
+      "element": "水",
+      "weaponType": "片手剣",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Dahlia.png"
+    },
+    {
+      "id": "aether-doll",
+      "name": "ドール",
+      "element": "無",
+      "weaponType": "片手剣",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_AvatarIcon_MannequinBoy.png"
+    },
+    {
+      "id": "skirk",
+      "name": "スカーク",
+      "element": "氷",
+      "weaponType": "片手剣",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_AvatarIcon_SkirkNew.png"
+    },
+    {
+      "id": "nico",
+      "name": "ニコ",
+      "element": "炎",
+      "weaponType": "法器",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Nicole.png"
+    },
+    {
+      "id": "aloy",
+      "name": "アーロイ",
+      "element": "氷",
+      "weaponType": "弓",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Aloy.png"
+    },
+    {
+      "id": "durin",
+      "name": "ドゥリン",
+      "element": "炎",
+      "weaponType": "片手剣",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Durin.png"
+    },
+    {
+      "id": "jean",
+      "name": "ジン",
+      "element": "風",
+      "weaponType": "片手剣",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Qin.png"
+    },
+    {
+      "id": "albedo",
+      "name": "アルベド",
+      "element": "岩",
+      "weaponType": "片手剣",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Albedo.png"
+    },
+    {
+      "id": "diluc",
+      "name": "ディルック",
+      "element": "炎",
+      "weaponType": "両手剣",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Diluc.png"
+    },
+    {
+      "id": "varka",
+      "name": "ファルカ",
+      "element": "風",
+      "weaponType": "両手剣",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Varka.png"
+    },
+    {
+      "id": "eula",
+      "name": "エウルア",
+      "element": "氷",
+      "weaponType": "両手剣",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Eula.png"
+    },
+    {
+      "id": "roen",
+      "name": "ローエン",
+      "element": "氷",
+      "weaponType": "長柄武器",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Lohen.png"
+    },
+    {
+      "id": "klee",
+      "name": "クレー",
+      "element": "炎",
+      "weaponType": "法器",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Klee.png"
+    },
+    {
+      "id": "mona",
+      "name": "モナ",
+      "element": "水",
+      "weaponType": "法器",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Mona.png"
+    },
+    {
+      "id": "venti",
+      "name": "ウェンティ",
+      "element": "風",
+      "weaponType": "弓",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Venti.png"
+    },
+    {
+      "id": "bennett",
+      "name": "ベネット",
+      "element": "炎",
+      "weaponType": "片手剣",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Bennett.png"
+    },
+    {
+      "id": "kaeya",
+      "name": "ガイア",
+      "element": "氷",
+      "weaponType": "片手剣",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Kaeya.png"
+    },
+    {
+      "id": "razor",
+      "name": "レザー",
+      "element": "雷",
+      "weaponType": "両手剣",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Razor.png"
+    },
+    {
+      "id": "noelle",
+      "name": "ノエル",
+      "element": "岩",
+      "weaponType": "両手剣",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Noel.png"
+    },
+    {
+      "id": "rosaria",
+      "name": "ロサリア",
+      "element": "氷",
+      "weaponType": "長柄武器",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Rosaria.png"
+    },
+    {
+      "id": "mika",
+      "name": "ミカ",
+      "element": "氷",
+      "weaponType": "長柄武器",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Mika.png"
+    },
+    {
+      "id": "barbara",
+      "name": "バーバラ",
+      "element": "水",
+      "weaponType": "法器",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Barbara.png"
+    },
+    {
+      "id": "sucrose",
+      "name": "スクロース",
+      "element": "風",
+      "weaponType": "法器",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Sucrose.png"
+    },
+    {
+      "id": "plume",
+      "name": "プルーネ",
+      "element": "風",
+      "weaponType": "法器",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Prune.png"
+    },
+    {
+      "id": "lisa",
+      "name": "リサ",
+      "element": "雷",
+      "weaponType": "法器",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Lisa.png"
+    },
+    {
+      "id": "amber",
+      "name": "アンバー",
+      "element": "炎",
+      "weaponType": "弓",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Ambor.png"
+    },
+    {
+      "id": "fischl",
+      "name": "フィッシュル",
+      "element": "雷",
+      "weaponType": "弓",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Fischl.png"
+    },
+    {
+      "id": "diona",
+      "name": "ディオナ",
+      "element": "氷",
+      "weaponType": "弓",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Diona.png"
+    },
+    {
+      "id": "shihak",
+      "name": "兹白",
+      "element": "岩",
+      "weaponType": "片手剣",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Zibai.png"
+    },
+    {
+      "id": "hutao",
+      "name": "胡桃",
+      "element": "炎",
+      "weaponType": "長柄武器",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Hutao.png"
+    },
+    {
+      "id": "xiao",
+      "name": "魈",
+      "element": "風",
+      "weaponType": "長柄武器",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Xiao.png"
+    },
+    {
+      "id": "shenhe",
+      "name": "申鶴",
+      "element": "氷",
+      "weaponType": "長柄武器",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Shenhe.png"
+    },
+    {
+      "id": "zhongli",
+      "name": "鍾離",
+      "element": "岩",
+      "weaponType": "長柄武器",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Zhongli.png"
+    },
+    {
+      "id": "xianyun",
+      "name": "閑雲",
+      "element": "風",
+      "weaponType": "法器",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Liuyun.png"
+    },
+    {
+      "id": "baizhu",
+      "name": "白朮",
+      "element": "草",
+      "weaponType": "法器",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Baizhuer.png"
+    },
+    {
+      "id": "yelan",
+      "name": "夜蘭",
+      "element": "水",
+      "weaponType": "弓",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Yelan.png"
+    },
+    {
+      "id": "ganyu",
+      "name": "甘雨",
+      "element": "氷",
+      "weaponType": "弓",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Ganyu.png"
+    },
+    {
+      "id": "xingqiu",
+      "name": "行秋",
+      "element": "水",
+      "weaponType": "片手剣",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Xingqiu.png"
+    },
+    {
+      "id": "xinyan",
+      "name": "辛炎",
+      "element": "炎",
+      "weaponType": "両手剣",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Xinyan.png"
+    },
+    {
+      "id": "gaming",
+      "name": "嘉明",
+      "element": "炎",
+      "weaponType": "両手剣",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Gaming.png"
+    },
+    {
+      "id": "beidou",
+      "name": "北斗",
+      "element": "雷",
+      "weaponType": "両手剣",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Beidou.png"
+    },
+    {
+      "id": "chongyun",
+      "name": "重雲",
+      "element": "氷",
+      "weaponType": "両手剣",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Chongyun.png"
+    },
+    {
+      "id": "xiangling",
+      "name": "香菱",
+      "element": "炎",
+      "weaponType": "長柄武器",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Xiangling.png"
+    },
+    {
+      "id": "yaoyao",
+      "name": "ヨォーヨ",
+      "element": "草",
+      "weaponType": "長柄武器",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Yaoyao.png"
+    },
+    {
+      "id": "yunjin",
+      "name": "雲菫",
+      "element": "岩",
+      "weaponType": "長柄武器",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Yunjin.png"
+    },
+    {
+      "id": "yanfei",
+      "name": "煙緋",
+      "element": "炎",
+      "weaponType": "法器",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Feiyan.png"
+    },
+    {
+      "id": "lanyan",
+      "name": "藍硯",
+      "element": "風",
+      "weaponType": "法器",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Lanyan.png"
+    },
+    {
+      "id": "ningguang",
+      "name": "凝光",
+      "element": "岩",
+      "weaponType": "法器",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Ningguang.png"
+    },
+    {
+      "id": "keqing",
+      "name": "刻晴",
+      "element": "雷",
+      "weaponType": "片手剣",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Keqing.png"
+    },
+    {
+      "id": "qiqi",
+      "name": "七七",
+      "element": "氷",
+      "weaponType": "片手剣",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Qiqi.png"
+    },
+    {
+      "id": "ayato",
+      "name": "神里綾人",
+      "element": "水",
+      "weaponType": "片手剣",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Ayato.png"
+    },
+    {
+      "id": "kazuha",
+      "name": "楓原万葉",
+      "element": "風",
+      "weaponType": "片手剣",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Kazuha.png"
+    },
+    {
+      "id": "ayaka",
+      "name": "神里綾華",
+      "element": "氷",
+      "weaponType": "片手剣",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Ayaka.png"
+    },
+    {
+      "id": "chiori",
+      "name": "千織",
+      "element": "岩",
+      "weaponType": "片手剣",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Chiori.png"
+    },
+    {
+      "id": "itto",
+      "name": "荒瀧一斗",
+      "element": "岩",
+      "weaponType": "両手剣",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Itto.png"
+    },
+    {
+      "id": "raiden",
+      "name": "雷電将軍",
+      "element": "雷",
+      "weaponType": "長柄武器",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Shougun.png"
+    },
+    {
+      "id": "kokomi",
+      "name": "珊瑚宮心海",
+      "element": "水",
+      "weaponType": "法器",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Kokomi.png"
+    },
+    {
+      "id": "mizuki",
+      "name": "夢見月瑞希",
+      "element": "風",
+      "weaponType": "法器",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Mizuki.png"
+    },
+    {
+      "id": "yaemiko",
+      "name": "八重神子",
+      "element": "雷",
+      "weaponType": "法器",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Yae.png"
+    },
+    {
+      "id": "yoimiya",
+      "name": "宵宮",
+      "element": "炎",
+      "weaponType": "弓",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Yoimiya.png"
+    },
+    {
+      "id": "kuki",
+      "name": "久岐忍",
+      "element": "雷",
+      "weaponType": "片手剣",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Shinobu.png"
+    },
+    {
+      "id": "kirara",
+      "name": "綺良々",
+      "element": "草",
+      "weaponType": "片手剣",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Momoka.png"
+    },
+    {
+      "id": "sayu",
+      "name": "早柚",
+      "element": "風",
+      "weaponType": "両手剣",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Sayu.png"
+    },
+    {
+      "id": "thoma",
+      "name": "トーマ",
+      "element": "炎",
+      "weaponType": "長柄武器",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Tohma.png"
+    },
+    {
+      "id": "heizou",
+      "name": "鹿野院平蔵",
+      "element": "風",
+      "weaponType": "法器",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Heizo.png"
+    },
+    {
+      "id": "sara",
+      "name": "九条裟羅",
+      "element": "雷",
+      "weaponType": "弓",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Sara.png"
+    },
+    {
+      "id": "gorou",
+      "name": "ゴロー",
+      "element": "岩",
+      "weaponType": "弓",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Gorou.png"
+    },
+    {
+      "id": "layla",
+      "name": "レイラ",
+      "element": "氷",
+      "weaponType": "片手剣",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Layla.png"
+    },
+    {
+      "id": "nilou",
+      "name": "ニィロウ",
+      "element": "水",
+      "weaponType": "片手剣",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Nilou.png"
+    },
+    {
+      "id": "alhaitham",
+      "name": "アルハイゼン",
+      "element": "草",
+      "weaponType": "片手剣",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Alhatham.png"
+    },
+    {
+      "id": "dehya",
+      "name": "ディシア",
+      "element": "炎",
+      "weaponType": "両手剣",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Dehya.png"
+    },
+    {
+      "id": "cyno",
+      "name": "セノ",
+      "element": "雷",
+      "weaponType": "長柄武器",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Cyno.png"
+    },
+    {
+      "id": "wanderer",
+      "name": "放浪者",
+      "element": "風",
+      "weaponType": "法器",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Wanderer.png"
+    },
+    {
+      "id": "nahida",
+      "name": "ナヒーダ",
+      "element": "草",
+      "weaponType": "法器",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Nahida.png"
+    },
+    {
+      "id": "tighnari",
+      "name": "ティナリ",
+      "element": "草",
+      "weaponType": "弓",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Tighnari.png"
+    },
+    {
+      "id": "dori",
+      "name": "ドリー",
+      "element": "雷",
+      "weaponType": "両手剣",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Dori.png"
+    },
+    {
+      "id": "kaveh",
+      "name": "カーヴェ",
+      "element": "草",
+      "weaponType": "両手剣",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Kaveh.png"
+    },
+    {
+      "id": "candace",
+      "name": "キャンディス",
+      "element": "水",
+      "weaponType": "長柄武器",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Candace.png"
+    },
+    {
+      "id": "faruzan",
+      "name": "ファルザン",
+      "element": "風",
+      "weaponType": "弓",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Faruzan.png"
+    },
+    {
+      "id": "sethos",
+      "name": "セトス",
+      "element": "雷",
+      "weaponType": "弓",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Sethos.png"
+    },
+    {
+      "id": "collei",
+      "name": "コレイ",
+      "element": "草",
+      "weaponType": "弓",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Collei.png"
+    },
+    {
+      "id": "furina",
+      "name": "フリーナ",
+      "element": "水",
+      "weaponType": "片手剣",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Furina.png"
+    },
+    {
+      "id": "clorinde",
+      "name": "クロリンデ",
+      "element": "雷",
+      "weaponType": "片手剣",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Clorinde.png"
+    },
+    {
+      "id": "navia",
+      "name": "ナヴィア",
+      "element": "岩",
+      "weaponType": "両手剣",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Navia.png"
+    },
+    {
+      "id": "emilie",
+      "name": "エミリエ",
+      "element": "草",
+      "weaponType": "長柄武器",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Emilie.png"
+    },
+    {
+      "id": "escoffier",
+      "name": "エスコフィエ",
+      "element": "氷",
+      "weaponType": "長柄武器",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Escoffier.png"
+    },
+    {
+      "id": "neuvillette",
+      "name": "ヌヴィレット",
+      "element": "水",
+      "weaponType": "法器",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Neuvillette.png"
+    },
+    {
+      "id": "wrio",
+      "name": "リオセスリ",
+      "element": "氷",
+      "weaponType": "法器",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Wriothesley.png"
+    },
+    {
+      "id": "lyney",
+      "name": "リネ",
+      "element": "炎",
+      "weaponType": "弓",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Liney.png"
+    },
+    {
+      "id": "sigewinne",
+      "name": "シグウィン",
+      "element": "水",
+      "weaponType": "弓",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Sigewinne.png"
+    },
+    {
+      "id": "lynette",
+      "name": "リネット",
+      "element": "風",
+      "weaponType": "片手剣",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Linette.png"
+    },
+    {
+      "id": "freminet",
+      "name": "フレミネ",
+      "element": "氷",
+      "weaponType": "両手剣",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Freminet.png"
+    },
+    {
+      "id": "chevreuse",
+      "name": "シュヴルーズ",
+      "element": "炎",
+      "weaponType": "長柄武器",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Chevreuse.png"
+    },
+    {
+      "id": "charlotte",
+      "name": "シャルロット",
+      "element": "氷",
+      "weaponType": "法器",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Charlotte.png"
+    },
+    {
+      "id": "xilonen",
+      "name": "シロネン",
+      "element": "岩",
+      "weaponType": "片手剣",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Xilonen.png"
+    },
+    {
+      "id": "mavuika",
+      "name": "マーヴィカ",
+      "element": "炎",
+      "weaponType": "両手剣",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Mavuika.png"
+    },
+    {
+      "id": "kinich",
+      "name": "キィニチ",
+      "element": "草",
+      "weaponType": "両手剣",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Kinich.png"
+    },
+    {
+      "id": "mualani",
+      "name": "ムアラニ",
+      "element": "水",
+      "weaponType": "法器",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Mualani.png"
+    },
+    {
+      "id": "varesa",
+      "name": "ヴァレサ",
+      "element": "雷",
+      "weaponType": "法器",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Varesa.png"
+    },
+    {
+      "id": "citlali",
+      "name": "シトラリ",
+      "element": "氷",
+      "weaponType": "法器",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Citlali.png"
+    },
+    {
+      "id": "chasca",
+      "name": "チャスカ",
+      "element": "風",
+      "weaponType": "弓",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Chasca.png"
+    },
+    {
+      "id": "iansan",
+      "name": "イアンサ",
+      "element": "雷",
+      "weaponType": "長柄武器",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Iansan.png"
+    },
+    {
+      "id": "kachina",
+      "name": "カチーナ",
+      "element": "岩",
+      "weaponType": "長柄武器",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Kachina.png"
+    },
+    {
+      "id": "ifa",
+      "name": "イファ",
+      "element": "風",
+      "weaponType": "法器",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Ifa.png"
+    },
+    {
+      "id": "ororon",
+      "name": "オロルン",
+      "element": "雷",
+      "weaponType": "弓",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Olorun.png"
+    },
+    {
+      "id": "ineffa",
+      "name": "イネファ",
+      "element": "雷",
+      "weaponType": "長柄武器",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Ineffa.png"
+    },
+    {
+      "id": "flins",
+      "name": "フリンズ",
+      "element": "雷",
+      "weaponType": "長柄武器",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Flins.png"
+    },
+    {
+      "id": "columbina",
+      "name": "コロンビーナ",
+      "element": "水",
+      "weaponType": "法器",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Columbina.png"
+    },
+    {
+      "id": "lauma",
+      "name": "ラウマ",
+      "element": "草",
+      "weaponType": "法器",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Lauma.png"
+    },
+    {
+      "id": "nefer",
+      "name": "ネフェル",
+      "element": "草",
+      "weaponType": "法器",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Nefer.png"
+    },
+    {
+      "id": "linnea",
+      "name": "リンネア",
+      "element": "岩",
+      "weaponType": "弓",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Linnea.png"
+    },
+    {
+      "id": "aino",
+      "name": "アイノ",
+      "element": "水",
+      "weaponType": "両手剣",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Aino.png"
+    },
+    {
+      "id": "iruga",
+      "name": "イルーガ",
+      "element": "岩",
+      "weaponType": "長柄武器",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Illuga.png"
+    },
+    {
+      "id": "yafoda",
+      "name": "ヤフォダ",
+      "element": "風",
+      "weaponType": "弓",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Jahoda.png"
+    },
+    {
+      "id": "odette",
+      "name": "オデット",
+      "element": "氷",
+      "weaponType": "片手剣",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Odette.png"
+    },
+    {
+      "id": "sandrone",
+      "name": "サンドローネ",
+      "element": "氷",
+      "weaponType": "両手剣",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_AvatarIcon_MarionetteNew.png"
+    },
+    {
+      "id": "arlecchino",
+      "name": "アルレッキーノ",
+      "element": "炎",
+      "weaponType": "長柄武器",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Arlecchino.png"
+    },
+    {
+      "id": "tartaglia",
+      "name": "タルタリヤ",
+      "element": "水",
+      "weaponType": "弓",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Tartaglia.png"
+    },
+    {
+      "id": "alyosha",
+      "name": "アリョーシャ",
+      "element": "雷",
+      "weaponType": "長柄武器",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Alyosha.png"
+    }
+  ],
+  "weapons": [
+    {
+      "id": "11101",
+      "name": "無鋒の剣",
+      "weaponType": "片手剣",
+      "rarity": 1,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Sword_Blunt.png"
+    },
+    {
+      "id": "11201",
+      "name": "銀の剣",
+      "weaponType": "片手剣",
+      "rarity": 2,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Sword_Silver.png"
+    },
+    {
+      "id": "11301",
+      "name": "冷刃",
+      "weaponType": "片手剣",
+      "rarity": 3,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Sword_Steel.png"
+    },
+    {
+      "id": "11302",
+      "name": "黎明の神剣",
+      "weaponType": "片手剣",
+      "rarity": 3,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Sword_Dawn.png"
+    },
+    {
+      "id": "11303",
+      "name": "旅道の剣",
+      "weaponType": "片手剣",
+      "rarity": 3,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Sword_Traveler.png"
+    },
+    {
+      "id": "11304",
+      "name": "暗鉄剣",
+      "weaponType": "片手剣",
+      "rarity": 3,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Sword_Darker.png"
+    },
+    {
+      "id": "11305",
+      "name": "チ虎魚の刀",
+      "weaponType": "片手剣",
+      "rarity": 3,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Sword_Sashimi.png"
+    },
+    {
+      "id": "11306",
+      "name": "飛天御剣",
+      "weaponType": "片手剣",
+      "rarity": 3,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Sword_Mitsurugi.png"
+    },
+    {
+      "id": "11401",
+      "name": "西風剣",
+      "weaponType": "片手剣",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Sword_Zephyrus.png"
+    },
+    {
+      "id": "11402",
+      "name": "笛の剣",
+      "weaponType": "片手剣",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Sword_Troupe.png"
+    },
+    {
+      "id": "11403",
+      "name": "祭礼の剣",
+      "weaponType": "片手剣",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Sword_Fossil.png"
+    },
+    {
+      "id": "11404",
+      "name": "旧貴族長剣",
+      "weaponType": "片手剣",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Sword_Theocrat.png"
+    },
+    {
+      "id": "11405",
+      "name": "匣中龍吟",
+      "weaponType": "片手剣",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Sword_Rockkiller.png"
+    },
+    {
+      "id": "11406",
+      "name": "斬岩·試作",
+      "weaponType": "片手剣",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Sword_Proto.png"
+    },
+    {
+      "id": "11407",
+      "name": "鉄蜂の刺し",
+      "weaponType": "片手剣",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Sword_Exotic.png"
+    },
+    {
+      "id": "11408",
+      "name": "黒岩の長剣",
+      "weaponType": "片手剣",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Sword_Blackrock.png"
+    },
+    {
+      "id": "11409",
+      "name": "黒剣",
+      "weaponType": "片手剣",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Sword_Bloodstained.png"
+    },
+    {
+      "id": "11410",
+      "name": "ダークアレイの閃光",
+      "weaponType": "片手剣",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Sword_Outlaw.png"
+    },
+    {
+      "id": "11412",
+      "name": "降臨の剣",
+      "weaponType": "片手剣",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Sword_Psalmus.png"
+    },
+    {
+      "id": "11413",
+      "name": "腐植の剣",
+      "weaponType": "片手剣",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Sword_Magnum.png"
+    },
+    {
+      "id": "11414",
+      "name": "天目影打",
+      "weaponType": "片手剣",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Sword_Bakufu.png"
+    },
+    {
+      "id": "11415",
+      "name": "シナバースピンドル",
+      "weaponType": "片手剣",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Sword_Opus.png"
+    },
+    {
+      "id": "11416",
+      "name": "籠釣瓶一心",
+      "weaponType": "片手剣",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Sword_Youtou.png"
+    },
+    {
+      "id": "11417",
+      "name": "原木刀",
+      "weaponType": "片手剣",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Sword_Arakalari.png"
+    },
+    {
+      "id": "11418",
+      "name": "サイフォスの月明かり",
+      "weaponType": "片手剣",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Sword_Pleroma.png"
+    },
+    {
+      "id": "11422",
+      "name": "東花坊時雨",
+      "weaponType": "片手剣",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Sword_Kasabouzu.png"
+    },
+    {
+      "id": "11424",
+      "name": "狼牙",
+      "weaponType": "片手剣",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Sword_Boreas.png"
+    },
+    {
+      "id": "11425",
+      "name": "海淵のフィナーレ",
+      "weaponType": "片手剣",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Sword_Vorpal.png"
+    },
+    {
+      "id": "11426",
+      "name": "サーンドルの渡し守",
+      "weaponType": "片手剣",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Sword_Machination.png"
+    },
+    {
+      "id": "11427",
+      "name": "船渠剣",
+      "weaponType": "片手剣",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Sword_Mechanic.png"
+    },
+    {
+      "id": "11428",
+      "name": "水仙十字の剣",
+      "weaponType": "片手剣",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Sword_Purewill.png"
+    },
+    {
+      "id": "11430",
+      "name": "ストロング・ボーン",
+      "weaponType": "片手剣",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Sword_Umpakati.png"
+    },
+    {
+      "id": "11431",
+      "name": "エズピツァルの笛",
+      "weaponType": "片手剣",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Sword_Isikhulu.png"
+    },
+    {
+      "id": "11432",
+      "name": "厄水の災い",
+      "weaponType": "片手剣",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Sword_SacrificialNgombe.png"
+    },
+    {
+      "id": "11433",
+      "name": "静謐の笛",
+      "weaponType": "片手剣",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Sword_Ilmarinen.png"
+    },
+    {
+      "id": "11434",
+      "name": "月紡ぎの曙光",
+      "weaponType": "片手剣",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Sword_Miekka.png"
+    },
+    {
+      "id": "11435",
+      "name": "異端を狩る熔刃",
+      "weaponType": "片手剣",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Sword_SerpentTooth.png"
+    },
+    {
+      "id": "11436",
+      "name": "導炎の源",
+      "weaponType": "片手剣",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Sword_GlintstoneSword.png"
+    },
+    {
+      "id": "11501",
+      "name": "風鷹剣",
+      "weaponType": "片手剣",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Sword_Falcon.png"
+    },
+    {
+      "id": "11502",
+      "name": "天空の刃",
+      "weaponType": "片手剣",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Sword_Dvalin.png"
+    },
+    {
+      "id": "11503",
+      "name": "蒼古なる自由への誓い",
+      "weaponType": "片手剣",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Sword_Widsith.png"
+    },
+    {
+      "id": "11504",
+      "name": "斬山の刃",
+      "weaponType": "片手剣",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Sword_Kunwu.png"
+    },
+    {
+      "id": "11505",
+      "name": "磐岩結緑",
+      "weaponType": "片手剣",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Sword_Morax.png"
+    },
+    {
+      "id": "11509",
+      "name": "霧切の廻光",
+      "weaponType": "片手剣",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Sword_Narukami.png"
+    },
+    {
+      "id": "11510",
+      "name": "波乱月白経津",
+      "weaponType": "片手剣",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Sword_Amenoma.png"
+    },
+    {
+      "id": "11511",
+      "name": "聖顕の鍵",
+      "weaponType": "片手剣",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Sword_Deshret.png"
+    },
+    {
+      "id": "11512",
+      "name": "萃光の裁葉",
+      "weaponType": "片手剣",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Sword_Ayus.png"
+    },
+    {
+      "id": "11513",
+      "name": "静水流転の輝き",
+      "weaponType": "片手剣",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Sword_Regalis.png"
+    },
+    {
+      "id": "11514",
+      "name": "有楽御簾切",
+      "weaponType": "片手剣",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Sword_Needle.png"
+    },
+    {
+      "id": "11515",
+      "name": "赦罪",
+      "weaponType": "片手剣",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Sword_Estoc.png"
+    },
+    {
+      "id": "11516",
+      "name": "岩峰を巡る歌",
+      "weaponType": "片手剣",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Sword_XochitlsTube.png"
+    },
+    {
+      "id": "11517",
+      "name": "蒼耀",
+      "weaponType": "片手剣",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Sword_OuterSword.png"
+    },
+    {
+      "id": "11518",
+      "name": "黒蝕",
+      "weaponType": "片手剣",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Sword_Motsognir.png"
+    },
+    {
+      "id": "11519",
+      "name": "三日月の含光",
+      "weaponType": "片手剣",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Sword_SilverwareSaw.png"
+    },
+    {
+      "id": "11520",
+      "name": "白銀の湖を舞う翼",
+      "weaponType": "片手剣",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Sword_Swanlake.png"
+    },
+    {
+      "id": "11521",
+      "name": "星鋒の剣",
+      "weaponType": "片手剣",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Sword_WeaponQuestSnezhnaya.png"
+    },
+    {
+      "id": "12101",
+      "name": "訓練用大剣",
+      "weaponType": "両手剣",
+      "rarity": 1,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Claymore_Aniki.png"
+    },
+    {
+      "id": "12201",
+      "name": "傭兵の重剣",
+      "weaponType": "両手剣",
+      "rarity": 2,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Claymore_Oyaji.png"
+    },
+    {
+      "id": "12301",
+      "name": "鉄影段平",
+      "weaponType": "両手剣",
+      "rarity": 3,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Claymore_Glaive.png"
+    },
+    {
+      "id": "12302",
+      "name": "龍血を浴びた剣",
+      "weaponType": "両手剣",
+      "rarity": 3,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Claymore_Siegfry.png"
+    },
+    {
+      "id": "12303",
+      "name": "白鉄の大剣",
+      "weaponType": "両手剣",
+      "rarity": 3,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Claymore_Tin.png"
+    },
+    {
+      "id": "12305",
+      "name": "理屈責め",
+      "weaponType": "両手剣",
+      "rarity": 3,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Claymore_Reasoning.png"
+    },
+    {
+      "id": "12306",
+      "name": "飛天大御剣",
+      "weaponType": "両手剣",
+      "rarity": 3,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Claymore_Mitsurugi.png"
+    },
+    {
+      "id": "12401",
+      "name": "西風大剣",
+      "weaponType": "両手剣",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Claymore_Zephyrus.png"
+    },
+    {
+      "id": "12402",
+      "name": "鐘の剣",
+      "weaponType": "両手剣",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Claymore_Troupe.png"
+    },
+    {
+      "id": "12403",
+      "name": "祭礼の大剣",
+      "weaponType": "両手剣",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Claymore_Fossil.png"
+    },
+    {
+      "id": "12404",
+      "name": "旧貴族大剣",
+      "weaponType": "両手剣",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Claymore_Theocrat.png"
+    },
+    {
+      "id": "12405",
+      "name": "雨裁",
+      "weaponType": "両手剣",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Claymore_Perdue.png"
+    },
+    {
+      "id": "12406",
+      "name": "古華·試作",
+      "weaponType": "両手剣",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Claymore_Proto.png"
+    },
+    {
+      "id": "12407",
+      "name": "白影の剣",
+      "weaponType": "両手剣",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Claymore_Exotic.png"
+    },
+    {
+      "id": "12408",
+      "name": "黒岩の斬刀",
+      "weaponType": "両手剣",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Claymore_Blackrock.png"
+    },
+    {
+      "id": "12409",
+      "name": "螭龍の剣",
+      "weaponType": "両手剣",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Claymore_Kione.png"
+    },
+    {
+      "id": "12410",
+      "name": "千岩古剣",
+      "weaponType": "両手剣",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Claymore_Lapis.png"
+    },
+    {
+      "id": "12411",
+      "name": "雪葬の星銀",
+      "weaponType": "両手剣",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Claymore_Dragonfell.png"
+    },
+    {
+      "id": "12412",
+      "name": "銜玉の海皇",
+      "weaponType": "両手剣",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Claymore_MillenniaTuna.png"
+    },
+    {
+      "id": "12414",
+      "name": "桂木斬長正",
+      "weaponType": "両手剣",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Claymore_Bakufu.png"
+    },
+    {
+      "id": "12415",
+      "name": "マカイラの水色",
+      "weaponType": "両手剣",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Claymore_Pleroma.png"
+    },
+    {
+      "id": "12416",
+      "name": "惡王丸",
+      "weaponType": "両手剣",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Claymore_Maria.png"
+    },
+    {
+      "id": "12417",
+      "name": "森林のレガリア",
+      "weaponType": "両手剣",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Claymore_Arakalari.png"
+    },
+    {
+      "id": "12418",
+      "name": "鉄彩の花",
+      "weaponType": "両手剣",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Claymore_Fleurfair.png"
+    },
+    {
+      "id": "12424",
+      "name": "話死合い棒",
+      "weaponType": "両手剣",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Claymore_BeastTamer.png"
+    },
+    {
+      "id": "12425",
+      "name": "タイダル·シャドー",
+      "weaponType": "両手剣",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Claymore_Vorpal.png"
+    },
+    {
+      "id": "12426",
+      "name": "「スーパーアルティメット覇王魔剣」",
+      "weaponType": "両手剣",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Claymore_Champion.png"
+    },
+    {
+      "id": "12427",
+      "name": "携帯型チェーンソー",
+      "weaponType": "両手剣",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Claymore_Mechanic.png"
+    },
+    {
+      "id": "12430",
+      "name": "実りの鉤鉈",
+      "weaponType": "両手剣",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Claymore_Umpakati.png"
+    },
+    {
+      "id": "12431",
+      "name": "アースシェイカー",
+      "weaponType": "両手剣",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Claymore_Isikhulu.png"
+    },
+    {
+      "id": "12432",
+      "name": "知恵の溶炎",
+      "weaponType": "両手剣",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Claymore_Polilith.png"
+    },
+    {
+      "id": "12433",
+      "name": "万能の鍵",
+      "weaponType": "両手剣",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Claymore_Ilmarinen.png"
+    },
+    {
+      "id": "12435",
+      "name": "シンフォニーの鋳影",
+      "weaponType": "両手剣",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Claymore_EscapeWheel.png"
+    },
+    {
+      "id": "12436",
+      "name": "救済の剣",
+      "weaponType": "両手剣",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Claymore_GlintstoneClaymore.png"
+    },
+    {
+      "id": "12501",
+      "name": "天空の傲",
+      "weaponType": "両手剣",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Claymore_Dvalin.png"
+    },
+    {
+      "id": "12502",
+      "name": "狼の末路",
+      "weaponType": "両手剣",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Claymore_Wolfmound.png"
+    },
+    {
+      "id": "12503",
+      "name": "松韻の響く頃",
+      "weaponType": "両手剣",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Claymore_Widsith.png"
+    },
+    {
+      "id": "12504",
+      "name": "無工の剣",
+      "weaponType": "両手剣",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Claymore_Kunwu.png"
+    },
+    {
+      "id": "12510",
+      "name": "赤角石塵滅砕",
+      "weaponType": "両手剣",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Claymore_Itadorimaru.png"
+    },
+    {
+      "id": "12511",
+      "name": "葦海の標",
+      "weaponType": "両手剣",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Claymore_Deshret.png"
+    },
+    {
+      "id": "12512",
+      "name": "裁断",
+      "weaponType": "両手剣",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Claymore_GoldenVerdict.png"
+    },
+    {
+      "id": "12513",
+      "name": "山の王の長牙",
+      "weaponType": "両手剣",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Claymore_EmeraldSword.png"
+    },
+    {
+      "id": "12514",
+      "name": "千烈の日輪",
+      "weaponType": "両手剣",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Claymore_RadianceSword.png"
+    },
+    {
+      "id": "12515",
+      "name": "狼の武勲詩",
+      "weaponType": "両手剣",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Claymore_EnsisAquilonis.png"
+    },
+    {
+      "id": "12516",
+      "name": "超越の鍵",
+      "weaponType": "両手剣",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Claymore_CrystallineSword.png"
+    },
+    {
+      "id": "13101",
+      "name": "新米の長槍",
+      "weaponType": "長柄武器",
+      "rarity": 1,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Pole_Gewalt.png"
+    },
+    {
+      "id": "13201",
+      "name": "鉄尖槍",
+      "weaponType": "長柄武器",
+      "rarity": 2,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Pole_Rod.png"
+    },
+    {
+      "id": "13301",
+      "name": "白纓槍",
+      "weaponType": "長柄武器",
+      "rarity": 3,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Pole_Ruby.png"
+    },
+    {
+      "id": "13302",
+      "name": "鉾槍",
+      "weaponType": "長柄武器",
+      "rarity": 3,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Pole_Halberd.png"
+    },
+    {
+      "id": "13303",
+      "name": "黒纓槍",
+      "weaponType": "長柄武器",
+      "rarity": 3,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Pole_Noire.png"
+    },
+    {
+      "id": "13401",
+      "name": "匣中滅龍",
+      "weaponType": "長柄武器",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Pole_Stardust.png"
+    },
+    {
+      "id": "13402",
+      "name": "星鎌·試作",
+      "weaponType": "長柄武器",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Pole_Proto.png"
+    },
+    {
+      "id": "13403",
+      "name": "流月の針",
+      "weaponType": "長柄武器",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Pole_Exotic.png"
+    },
+    {
+      "id": "13404",
+      "name": "黒岩の突槍",
+      "weaponType": "長柄武器",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Pole_Blackrock.png"
+    },
+    {
+      "id": "13405",
+      "name": "死闘の槍",
+      "weaponType": "長柄武器",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Pole_Gladiator.png"
+    },
+    {
+      "id": "13406",
+      "name": "千岩長槍",
+      "weaponType": "長柄武器",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Pole_Lapis.png"
+    },
+    {
+      "id": "13407",
+      "name": "西風長槍",
+      "weaponType": "長柄武器",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Pole_Zephyrus.png"
+    },
+    {
+      "id": "13408",
+      "name": "旧貴族猟槍",
+      "weaponType": "長柄武器",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Pole_Theocrat.png"
+    },
+    {
+      "id": "13409",
+      "name": "ドラゴンスピア",
+      "weaponType": "長柄武器",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Pole_Everfrost.png"
+    },
+    {
+      "id": "13414",
+      "name": "喜多院十文字槍",
+      "weaponType": "長柄武器",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Pole_Bakufu.png"
+    },
+    {
+      "id": "13415",
+      "name": "「漁獲」",
+      "weaponType": "長柄武器",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Pole_Mori.png"
+    },
+    {
+      "id": "13416",
+      "name": "斬波のひれ長",
+      "weaponType": "長柄武器",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Pole_Maria.png"
+    },
+    {
+      "id": "13417",
+      "name": "ムーンピアサー",
+      "weaponType": "長柄武器",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Pole_Arakalari.png"
+    },
+    {
+      "id": "13419",
+      "name": "風信の矛",
+      "weaponType": "長柄武器",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Pole_Windvane.png"
+    },
+    {
+      "id": "13424",
+      "name": "フィヨルドの歌",
+      "weaponType": "長柄武器",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Pole_Shanty.png"
+    },
+    {
+      "id": "13425",
+      "name": "正義の報酬",
+      "weaponType": "長柄武器",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Pole_Vorpal.png"
+    },
+    {
+      "id": "13426",
+      "name": "砂中の賢者達の問答",
+      "weaponType": "長柄武器",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Pole_Caduceus.png"
+    },
+    {
+      "id": "13427",
+      "name": "プロスペクタードリル",
+      "weaponType": "長柄武器",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Pole_Mechanic.png"
+    },
+    {
+      "id": "13430",
+      "name": "鎮山の釘",
+      "weaponType": "長柄武器",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Pole_Umpakati.png"
+    },
+    {
+      "id": "13431",
+      "name": "虹の行方",
+      "weaponType": "長柄武器",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Pole_Isikhulu.png"
+    },
+    {
+      "id": "13432",
+      "name": "玉響停の御噺",
+      "weaponType": "長柄武器",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Pole_Aoandon.png"
+    },
+    {
+      "id": "13433",
+      "name": "金掘りのシャベル",
+      "weaponType": "長柄武器",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Pole_Ilmarinen.png"
+    },
+    {
+      "id": "13434",
+      "name": "聖祭者の輝杖",
+      "weaponType": "長柄武器",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Pole_Krivule.png"
+    },
+    {
+      "id": "13435",
+      "name": "氷の吐息",
+      "weaponType": "長柄武器",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Pole_FaesCrystalle.png"
+    },
+    {
+      "id": "13436",
+      "name": "遠望の歌",
+      "weaponType": "長柄武器",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Pole_GlintstonePolearm.png"
+    },
+    {
+      "id": "13501",
+      "name": "護摩の杖",
+      "weaponType": "長柄武器",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Pole_Homa.png"
+    },
+    {
+      "id": "13502",
+      "name": "天空の脊",
+      "weaponType": "長柄武器",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Pole_Dvalin.png"
+    },
+    {
+      "id": "13504",
+      "name": "破天の槍",
+      "weaponType": "長柄武器",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Pole_Kunwu.png"
+    },
+    {
+      "id": "13505",
+      "name": "和璞鳶",
+      "weaponType": "長柄武器",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Pole_Morax.png"
+    },
+    {
+      "id": "13507",
+      "name": "息災",
+      "weaponType": "長柄武器",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Pole_Santika.png"
+    },
+    {
+      "id": "13509",
+      "name": "草薙の稲光",
+      "weaponType": "長柄武器",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Pole_Narukami.png"
+    },
+    {
+      "id": "13511",
+      "name": "赤砂の杖",
+      "weaponType": "長柄武器",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Pole_Deshret.png"
+    },
+    {
+      "id": "13512",
+      "name": "赤月のシルエット",
+      "weaponType": "長柄武器",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Pole_BloodMoon.png"
+    },
+    {
+      "id": "13513",
+      "name": "ルミドゥースの挽歌",
+      "weaponType": "長柄武器",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Pole_Muguet.png"
+    },
+    {
+      "id": "13514",
+      "name": "香りのシンフォニスト",
+      "weaponType": "長柄武器",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Pole_Trident.png"
+    },
+    {
+      "id": "13515",
+      "name": "砕け散る光輪",
+      "weaponType": "長柄武器",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Pole_Perdix.png"
+    },
+    {
+      "id": "13516",
+      "name": "血染めの荒れ地",
+      "weaponType": "長柄武器",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Pole_TummaLyhty.png"
+    },
+    {
+      "id": "13517",
+      "name": "災憾",
+      "weaponType": "長柄武器",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Pole_Carbine.png"
+    },
+    {
+      "id": "14101",
+      "name": "生徒ノート",
+      "weaponType": "法器",
+      "rarity": 1,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Catalyst_Apprentice.png"
+    },
+    {
+      "id": "14201",
+      "name": "ポケット魔導書",
+      "weaponType": "法器",
+      "rarity": 2,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Catalyst_Pocket.png"
+    },
+    {
+      "id": "14301",
+      "name": "魔導緒論",
+      "weaponType": "法器",
+      "rarity": 3,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Catalyst_Intro.png"
+    },
+    {
+      "id": "14302",
+      "name": "龍殺しの英傑譚",
+      "weaponType": "法器",
+      "rarity": 3,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Catalyst_Pulpfic.png"
+    },
+    {
+      "id": "14303",
+      "name": "異世界旅行記",
+      "weaponType": "法器",
+      "rarity": 3,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Catalyst_Lightnov.png"
+    },
+    {
+      "id": "14304",
+      "name": "翡玉法珠",
+      "weaponType": "法器",
+      "rarity": 3,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Catalyst_Jade.png"
+    },
+    {
+      "id": "14305",
+      "name": "特級の宝玉",
+      "weaponType": "法器",
+      "rarity": 3,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Catalyst_Phoney.png"
+    },
+    {
+      "id": "14401",
+      "name": "西風秘典",
+      "weaponType": "法器",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Catalyst_Zephyrus.png"
+    },
+    {
+      "id": "14402",
+      "name": "流浪楽章",
+      "weaponType": "法器",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Catalyst_Troupe.png"
+    },
+    {
+      "id": "14403",
+      "name": "祭礼の断片",
+      "weaponType": "法器",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Catalyst_Fossil.png"
+    },
+    {
+      "id": "14404",
+      "name": "旧貴族秘法録",
+      "weaponType": "法器",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Catalyst_Theocrat.png"
+    },
+    {
+      "id": "14405",
+      "name": "匣中日月",
+      "weaponType": "法器",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Catalyst_Resurrection.png"
+    },
+    {
+      "id": "14406",
+      "name": "金珀·試作",
+      "weaponType": "法器",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Catalyst_Proto.png"
+    },
+    {
+      "id": "14407",
+      "name": "万国諸海の図譜",
+      "weaponType": "法器",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Catalyst_Exotic.png"
+    },
+    {
+      "id": "14408",
+      "name": "黒岩の緋玉",
+      "weaponType": "法器",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Catalyst_Blackrock.png"
+    },
+    {
+      "id": "14409",
+      "name": "昭心",
+      "weaponType": "法器",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Catalyst_Truelens.png"
+    },
+    {
+      "id": "14410",
+      "name": "ダークアレイの酒と詩",
+      "weaponType": "法器",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Catalyst_Outlaw.png"
+    },
+    {
+      "id": "14412",
+      "name": "冬忍びの実",
+      "weaponType": "法器",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Catalyst_Everfrost.png"
+    },
+    {
+      "id": "14413",
+      "name": "ドドコの物語",
+      "weaponType": "法器",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Catalyst_Ludiharpastum.png"
+    },
+    {
+      "id": "14414",
+      "name": "白辰の輪",
+      "weaponType": "法器",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Catalyst_Bakufu.png"
+    },
+    {
+      "id": "14415",
+      "name": "誓いの明瞳",
+      "weaponType": "法器",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Catalyst_Jyanome.png"
+    },
+    {
+      "id": "14416",
+      "name": "彷徨える星",
+      "weaponType": "法器",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Catalyst_Pleroma.png"
+    },
+    {
+      "id": "14417",
+      "name": "満悦の実",
+      "weaponType": "法器",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Catalyst_Arakalari.png"
+    },
+    {
+      "id": "14424",
+      "name": "古祠の瓏",
+      "weaponType": "法器",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Catalyst_Yue.png"
+    },
+    {
+      "id": "14425",
+      "name": "純水流華",
+      "weaponType": "法器",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Catalyst_Vorpal.png"
+    },
+    {
+      "id": "14426",
+      "name": "果てなき紺碧の唄",
+      "weaponType": "法器",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Catalyst_DandelionPoem.png"
+    },
+    {
+      "id": "14427",
+      "name": "蒼紋の角杯",
+      "weaponType": "法器",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Catalyst_ConchSprayer.png"
+    },
+    {
+      "id": "14430",
+      "name": "波乗りの旋回",
+      "weaponType": "法器",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Catalyst_Umpakati.png"
+    },
+    {
+      "id": "14431",
+      "name": "ヤシュチェの環",
+      "weaponType": "法器",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Catalyst_Isikhulu.png"
+    },
+    {
+      "id": "14432",
+      "name": "天光のリュート",
+      "weaponType": "法器",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Catalyst_SeeliesLute.png"
+    },
+    {
+      "id": "14433",
+      "name": "烏髄の孤灯",
+      "weaponType": "法器",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Catalyst_Ilmarinen.png"
+    },
+    {
+      "id": "14434",
+      "name": "霜辰",
+      "weaponType": "法器",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Catalyst_Ziedas.png"
+    },
+    {
+      "id": "14435",
+      "name": "諸王の対局",
+      "weaponType": "法器",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Catalyst_SandMemoria.png"
+    },
+    {
+      "id": "14436",
+      "name": "胸中の谺",
+      "weaponType": "法器",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Catalyst_GlintstoneCatalyst.png"
+    },
+    {
+      "id": "14501",
+      "name": "天空の巻",
+      "weaponType": "法器",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Catalyst_Dvalin.png"
+    },
+    {
+      "id": "14502",
+      "name": "四風原典",
+      "weaponType": "法器",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Catalyst_Fourwinds.png"
+    },
+    {
+      "id": "14504",
+      "name": "浮世の錠",
+      "weaponType": "法器",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Catalyst_Kunwu.png"
+    },
+    {
+      "id": "14505",
+      "name": "碧落の瓏",
+      "weaponType": "法器",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Catalyst_Morax.png"
+    },
+    {
+      "id": "14506",
+      "name": "不滅の月華",
+      "weaponType": "法器",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Catalyst_Kaleido.png"
+    },
+    {
+      "id": "14509",
+      "name": "神楽の真意",
+      "weaponType": "法器",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Catalyst_Narukami.png"
+    },
+    {
+      "id": "14511",
+      "name": "千夜に浮かぶ夢",
+      "weaponType": "法器",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Catalyst_Ayus.png"
+    },
+    {
+      "id": "14512",
+      "name": "トゥライトゥーラの記憶",
+      "weaponType": "法器",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Catalyst_Alaya.png"
+    },
+    {
+      "id": "14513",
+      "name": "凛流の監視者",
+      "weaponType": "法器",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Catalyst_Wheatley.png"
+    },
+    {
+      "id": "14514",
+      "name": "久遠流転の大典",
+      "weaponType": "法器",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Catalyst_Iudex.png"
+    },
+    {
+      "id": "14515",
+      "name": "鶴鳴の余韻",
+      "weaponType": "法器",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Catalyst_MountainGale.png"
+    },
+    {
+      "id": "14516",
+      "name": "サーフィンタイム",
+      "weaponType": "法器",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Catalyst_MechaPufferfish.png"
+    },
+    {
+      "id": "14517",
+      "name": "祭星者の眺め",
+      "weaponType": "法器",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Catalyst_Figurines.png"
+    },
+    {
+      "id": "14518",
+      "name": "寝正月の初晴",
+      "weaponType": "法器",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Catalyst_SakuraFan.png"
+    },
+    {
+      "id": "14519",
+      "name": "ヴィヴィッド・ハート",
+      "weaponType": "法器",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Catalyst_VaresaTransformer.png"
+    },
+    {
+      "id": "14520",
+      "name": "夜を紡ぐ天鏡",
+      "weaponType": "法器",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Catalyst_MenulisRing.png"
+    },
+    {
+      "id": "14521",
+      "name": "真言の匣",
+      "weaponType": "法器",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Catalyst_Sistrum.png"
+    },
+    {
+      "id": "14522",
+      "name": "帳の夜曲",
+      "weaponType": "法器",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Catalyst_Brisingamen.png"
+    },
+    {
+      "id": "14523",
+      "name": "塵と光の七つの誓約",
+      "weaponType": "法器",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Catalyst_FairyGarden.png"
+    },
+    {
+      "id": "15101",
+      "name": "狩猟弓",
+      "weaponType": "弓",
+      "rarity": 1,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Bow_Hunters.png"
+    },
+    {
+      "id": "15201",
+      "name": "歴戦の狩猟弓",
+      "weaponType": "弓",
+      "rarity": 2,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Bow_Old.png"
+    },
+    {
+      "id": "15301",
+      "name": "鴉羽の弓",
+      "weaponType": "弓",
+      "rarity": 3,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Bow_Crowfeather.png"
+    },
+    {
+      "id": "15302",
+      "name": "シャープシューターの誓い",
+      "weaponType": "弓",
+      "rarity": 3,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Bow_Arjuna.png"
+    },
+    {
+      "id": "15303",
+      "name": "リカーブボウ",
+      "weaponType": "弓",
+      "rarity": 3,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Bow_Curve.png"
+    },
+    {
+      "id": "15304",
+      "name": "弾弓",
+      "weaponType": "弓",
+      "rarity": 3,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Bow_Sling.png"
+    },
+    {
+      "id": "15305",
+      "name": "文使い",
+      "weaponType": "弓",
+      "rarity": 3,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Bow_Msg.png"
+    },
+    {
+      "id": "15401",
+      "name": "西風猟弓",
+      "weaponType": "弓",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Bow_Zephyrus.png"
+    },
+    {
+      "id": "15402",
+      "name": "絶弦",
+      "weaponType": "弓",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Bow_Troupe.png"
+    },
+    {
+      "id": "15403",
+      "name": "祭礼の弓",
+      "weaponType": "弓",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Bow_Fossil.png"
+    },
+    {
+      "id": "15404",
+      "name": "旧貴族長弓",
+      "weaponType": "弓",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Bow_Theocrat.png"
+    },
+    {
+      "id": "15405",
+      "name": "弓蔵",
+      "weaponType": "弓",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Bow_Recluse.png"
+    },
+    {
+      "id": "15406",
+      "name": "澹月·試作",
+      "weaponType": "弓",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Bow_Proto.png"
+    },
+    {
+      "id": "15407",
+      "name": "リングボウ",
+      "weaponType": "弓",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Bow_Exotic.png"
+    },
+    {
+      "id": "15408",
+      "name": "黒岩の戦弓",
+      "weaponType": "弓",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Bow_Blackrock.png"
+    },
+    {
+      "id": "15409",
+      "name": "蒼翠の狩猟弓",
+      "weaponType": "弓",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Bow_Viridescent.png"
+    },
+    {
+      "id": "15410",
+      "name": "ダークアレイの狩人",
+      "weaponType": "弓",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Bow_Outlaw.png"
+    },
+    {
+      "id": "15411",
+      "name": "落霞",
+      "weaponType": "弓",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Bow_Fallensun.png"
+    },
+    {
+      "id": "15412",
+      "name": "幽夜のワルツ",
+      "weaponType": "弓",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Bow_Nachtblind.png"
+    },
+    {
+      "id": "15413",
+      "name": "風花の頌歌",
+      "weaponType": "弓",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Bow_Fleurfair.png"
+    },
+    {
+      "id": "15414",
+      "name": "破魔の弓",
+      "weaponType": "弓",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Bow_Bakufu.png"
+    },
+    {
+      "id": "15415",
+      "name": "プレデター",
+      "weaponType": "弓",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Bow_Predator.png"
+    },
+    {
+      "id": "15416",
+      "name": "曚雲の月",
+      "weaponType": "弓",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Bow_Maria.png"
+    },
+    {
+      "id": "15417",
+      "name": "王の近侍",
+      "weaponType": "弓",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Bow_Arakalari.png"
+    },
+    {
+      "id": "15418",
+      "name": "竭沢",
+      "weaponType": "弓",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Bow_Fin.png"
+    },
+    {
+      "id": "15419",
+      "name": "トキの嘴",
+      "weaponType": "弓",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Bow_Ibis.png"
+    },
+    {
+      "id": "15424",
+      "name": "烈日の後嗣",
+      "weaponType": "弓",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Bow_Gurabad.png"
+    },
+    {
+      "id": "15425",
+      "name": "静寂の唄",
+      "weaponType": "弓",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Bow_Vorpal.png"
+    },
+    {
+      "id": "15426",
+      "name": "築雲",
+      "weaponType": "弓",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Bow_Ultimatum.png"
+    },
+    {
+      "id": "15427",
+      "name": "レンジゲージ",
+      "weaponType": "弓",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Bow_Mechanic.png"
+    },
+    {
+      "id": "15430",
+      "name": "花飾りの羽",
+      "weaponType": "弓",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Bow_Umpakati.png"
+    },
+    {
+      "id": "15431",
+      "name": "チェーンブレイカー",
+      "weaponType": "弓",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Bow_Isikhulu.png"
+    },
+    {
+      "id": "15432",
+      "name": "冷寂の音",
+      "weaponType": "弓",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Bow_Stinger.png"
+    },
+    {
+      "id": "15433",
+      "name": "羅網の針",
+      "weaponType": "弓",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Bow_Ilmarinen.png"
+    },
+    {
+      "id": "15434",
+      "name": "虹蛇の雨弦",
+      "weaponType": "弓",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Bow_ElegguaBow.png"
+    },
+    {
+      "id": "15435",
+      "name": "千鈞懸黎",
+      "weaponType": "弓",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Bow_ShatteredMirror.png"
+    },
+    {
+      "id": "15436",
+      "name": "霜雪の契",
+      "weaponType": "弓",
+      "rarity": 4,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Bow_GlintstoneBow.png"
+    },
+    {
+      "id": "15501",
+      "name": "天空の翼",
+      "weaponType": "弓",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Bow_Dvalin.png"
+    },
+    {
+      "id": "15502",
+      "name": "アモスの弓",
+      "weaponType": "弓",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Bow_Amos.png"
+    },
+    {
+      "id": "15503",
+      "name": "終焉を嘆く詩",
+      "weaponType": "弓",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Bow_Widsith.png"
+    },
+    {
+      "id": "15507",
+      "name": "冬極の白星",
+      "weaponType": "弓",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Bow_Worldbane.png"
+    },
+    {
+      "id": "15508",
+      "name": "若水",
+      "weaponType": "弓",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Bow_Kirin.png"
+    },
+    {
+      "id": "15509",
+      "name": "飛雷の鳴弦",
+      "weaponType": "弓",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Bow_Narukami.png"
+    },
+    {
+      "id": "15511",
+      "name": "狩人の道",
+      "weaponType": "弓",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Bow_Ayus.png"
+    },
+    {
+      "id": "15512",
+      "name": "始まりの大魔術",
+      "weaponType": "弓",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Bow_Pledge.png"
+    },
+    {
+      "id": "15513",
+      "name": "白雨心弦",
+      "weaponType": "弓",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Bow_Arcdange.png"
+    },
+    {
+      "id": "15514",
+      "name": "星鷲の紅き羽",
+      "weaponType": "弓",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Bow_Qoyllorsnova.png"
+    },
+    {
+      "id": "15515",
+      "name": "暁を告げる歴史",
+      "weaponType": "弓",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Bow_Arianna.png"
+    },
+    {
+      "id": "15516",
+      "name": "霜契の金枝",
+      "weaponType": "弓",
+      "rarity": 5,
+      "imageUrl": "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Bow_Alkonost.png"
+    }
+  ],
+  "artifactSets": [
+    {
+      "id": "10001",
+      "name": "旅人の心",
+      "teamBuffKey": null,
+      "twoPieceEffect": "攻撃力+18%。",
+      "fourPieceEffect": "重撃の会心率+30%。",
+      "pieceImageUrls": {
+        "flower": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_10001_4.png",
+        "plume": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_10001_2.png",
+        "sands": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_10001_5.png",
+        "goblet": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_10001_1.png",
+        "circlet": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_10001_3.png"
+      }
+    },
+    {
+      "id": "10002",
+      "name": "勇士の心",
+      "teamBuffKey": null,
+      "twoPieceEffect": "攻撃力+18%。",
+      "fourPieceEffect": "HPが50%以上の敵に対するダメージ+30%。",
+      "pieceImageUrls": {
+        "flower": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_10002_4.png",
+        "plume": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_10002_2.png",
+        "sands": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_10002_5.png",
+        "goblet": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_10002_1.png",
+        "circlet": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_10002_3.png"
+      }
+    },
+    {
+      "id": "10003",
+      "name": "守護の心",
+      "teamBuffKey": "artifact-team-buff:10003",
+      "twoPieceEffect": "防御力+30%。",
+      "fourPieceEffect": "チーム内の自身のキャラクターの元素タイプ1種類につき、自身にその元素の耐性+30%。",
+      "pieceImageUrls": {
+        "flower": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_10003_4.png",
+        "plume": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_10003_2.png",
+        "sands": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_10003_5.png",
+        "goblet": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_10003_1.png",
+        "circlet": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_10003_3.png"
+      }
+    },
+    {
+      "id": "10004",
+      "name": "奇跡",
+      "teamBuffKey": null,
+      "twoPieceEffect": "全ての元素耐性+20%。",
+      "fourPieceEffect": "元素ダメージを受けると、その元素の耐性+30%、継続時間10秒。10秒毎に1回のみ発動可能。",
+      "pieceImageUrls": {
+        "flower": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_10004_4.png",
+        "plume": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_10004_2.png",
+        "sands": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_10004_5.png",
+        "goblet": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_10004_1.png",
+        "circlet": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_10004_3.png"
+      }
+    },
+    {
+      "id": "10005",
+      "name": "狂戦士",
+      "teamBuffKey": null,
+      "twoPieceEffect": "会心率+12%。",
+      "fourPieceEffect": "HPが70%以下になると、会心率+24%。",
+      "pieceImageUrls": {
+        "flower": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_10005_4.png",
+        "plume": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_10005_2.png",
+        "sands": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_10005_5.png",
+        "goblet": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_10005_1.png",
+        "circlet": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_10005_3.png"
+      }
+    },
+    {
+      "id": "10006",
+      "name": "武人",
+      "teamBuffKey": null,
+      "twoPieceEffect": "通常攻撃と重擊ダメージ+15%。",
+      "fourPieceEffect": "元素スキル発動後、通常攻撃と重撃ダメージ+25%、継続時間8秒。",
+      "pieceImageUrls": {
+        "flower": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_10006_4.png",
+        "plume": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_10006_2.png",
+        "sands": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_10006_5.png",
+        "goblet": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_10006_1.png",
+        "circlet": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_10006_3.png"
+      }
+    },
+    {
+      "id": "10007",
+      "name": "教官",
+      "teamBuffKey": "artifact-team-buff:10007",
+      "twoPieceEffect": "元素熟知+80。",
+      "fourPieceEffect": "元素反応を引き起こした後、チーム全員の元素熟知+120、継続時間8秒。",
+      "pieceImageUrls": {
+        "flower": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_10007_4.png",
+        "plume": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_10007_2.png",
+        "sands": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_10007_5.png",
+        "goblet": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_10007_1.png",
+        "circlet": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_10007_3.png"
+      }
+    },
+    {
+      "id": "10008",
+      "name": "博徒",
+      "teamBuffKey": null,
+      "twoPieceEffect": "元素スキルのダメージ+20%。",
+      "fourPieceEffect": "敵を倒した時、100%の確率で元素スキルのクールタイムをリセットする。15秒に1回のみ発動可能。",
+      "pieceImageUrls": {
+        "flower": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_10008_4.png",
+        "plume": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_10008_2.png",
+        "sands": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_10008_5.png",
+        "goblet": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_10008_1.png",
+        "circlet": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_10008_3.png"
+      }
+    },
+    {
+      "id": "10009",
+      "name": "亡命者",
+      "teamBuffKey": "artifact-team-buff:10009",
+      "twoPieceEffect": "元素チャージ効率+20%。",
+      "fourPieceEffect": "元素爆発を発動すると、2秒毎にチーム全員（自分を除く）の元素エネルギーを2回復する、継続時間6秒。重ね掛け不可。",
+      "pieceImageUrls": {
+        "flower": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_10009_4.png",
+        "plume": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_10009_2.png",
+        "sands": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_10009_5.png",
+        "goblet": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_10009_1.png",
+        "circlet": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_10009_3.png"
+      }
+    },
+    {
+      "id": "10010",
+      "name": "冒険者",
+      "teamBuffKey": null,
+      "twoPieceEffect": "HP上限+1000。",
+      "fourPieceEffect": "宝箱を開けた後5秒間、HPの30%を徐々に回復する。",
+      "pieceImageUrls": {
+        "flower": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_10010_4.png",
+        "plume": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_10010_2.png",
+        "sands": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_10010_5.png",
+        "goblet": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_10010_1.png",
+        "circlet": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_10010_3.png"
+      }
+    },
+    {
+      "id": "10011",
+      "name": "幸運",
+      "teamBuffKey": null,
+      "twoPieceEffect": "防御力+100。",
+      "fourPieceEffect": "モラを拾得すると、HPを300回復する。",
+      "pieceImageUrls": {
+        "flower": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_10011_4.png",
+        "plume": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_10011_2.png",
+        "sands": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_10011_5.png",
+        "goblet": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_10011_1.png",
+        "circlet": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_10011_3.png"
+      }
+    },
+    {
+      "id": "10012",
+      "name": "学者",
+      "teamBuffKey": "artifact-team-buff:10012",
+      "twoPieceEffect": "元素チャージ効率+20%。",
+      "fourPieceEffect": "元素オーブまたは元素粒子を獲得した時、チーム内全ての弓と法器キャラの元素エネルギーが3回復する。3秒毎に1回のみ発動可能。",
+      "pieceImageUrls": {
+        "flower": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_10012_4.png",
+        "plume": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_10012_2.png",
+        "sands": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_10012_5.png",
+        "goblet": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_10012_1.png",
+        "circlet": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_10012_3.png"
+      }
+    },
+    {
+      "id": "10013",
+      "name": "医者",
+      "teamBuffKey": null,
+      "twoPieceEffect": "受ける治療効果+20%。",
+      "fourPieceEffect": "元素爆発を発動すると、HPを20%回復する。",
+      "pieceImageUrls": {
+        "flower": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_10013_4.png",
+        "plume": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_10013_2.png",
+        "sands": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_10013_5.png",
+        "goblet": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_10013_1.png",
+        "circlet": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_10013_3.png"
+      }
+    },
+    {
+      "id": "14001",
+      "name": "氷風を彷徨う勇士",
+      "teamBuffKey": null,
+      "twoPieceEffect": "氷元素ダメージ+15%。",
+      "fourPieceEffect": "氷元素の影響を受けている敵を攻撃した場合、会心率+20%。敵が凍結状態の場合、会心率は更に+20%。",
+      "pieceImageUrls": {
+        "flower": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_14001_4.png",
+        "plume": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_14001_2.png",
+        "sands": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_14001_5.png",
+        "goblet": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_14001_1.png",
+        "circlet": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_14001_3.png"
+      }
+    },
+    {
+      "id": "14002",
+      "name": "雷を鎮める尊者",
+      "teamBuffKey": null,
+      "twoPieceEffect": "雷元素耐性+40%。",
+      "fourPieceEffect": "雷元素の影響を受けた敵に対するダメージ+35%。",
+      "pieceImageUrls": {
+        "flower": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_14002_4.png",
+        "plume": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_14002_2.png",
+        "sands": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_14002_5.png",
+        "goblet": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_14002_1.png",
+        "circlet": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_14002_3.png"
+      }
+    },
+    {
+      "id": "14003",
+      "name": "烈火を渡る賢者",
+      "teamBuffKey": null,
+      "twoPieceEffect": "炎元素耐性+40%。",
+      "fourPieceEffect": "炎元素の影響を受けた敵に対するダメージ+35%。",
+      "pieceImageUrls": {
+        "flower": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_14003_4.png",
+        "plume": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_14003_2.png",
+        "sands": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_14003_5.png",
+        "goblet": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_14003_1.png",
+        "circlet": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_14003_3.png"
+      }
+    },
+    {
+      "id": "14004",
+      "name": "愛される少女",
+      "teamBuffKey": "artifact-team-buff:14004",
+      "twoPieceEffect": "与える治療効果+15%。",
+      "fourPieceEffect": "元素スキルまたは元素爆発を発動した後10秒間、チーム全員の受ける治療効果+20%。",
+      "pieceImageUrls": {
+        "flower": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_14004_4.png",
+        "plume": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_14004_2.png",
+        "sands": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_14004_5.png",
+        "goblet": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_14004_1.png",
+        "circlet": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_14004_3.png"
+      }
+    },
+    {
+      "id": "15001",
+      "name": "剣闘士のフィナーレ",
+      "teamBuffKey": null,
+      "twoPieceEffect": "攻撃力+18%。",
+      "fourPieceEffect": "該当聖遺物セットを装備したキャラが片手剣、両手剣、長柄武器キャラの場合、通常攻撃ダメージ+35%。",
+      "pieceImageUrls": {
+        "flower": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15001_4.png",
+        "plume": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15001_2.png",
+        "sands": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15001_5.png",
+        "goblet": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15001_1.png",
+        "circlet": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15001_3.png"
+      }
+    },
+    {
+      "id": "15002",
+      "name": "翠緑の影",
+      "teamBuffKey": null,
+      "twoPieceEffect": "風元素ダメージ+15%。",
+      "fourPieceEffect": "拡散反応によるダメージ+60%、星拡散反応によるダメージ+20%。拡散された元素タイプに応じて、影響を受けた敵の当該元素耐性-40%。継続時間10秒。敵に対して星拡散反応を起こした時も、その氷元素耐性-40%。同じ元素タイプの耐性ダウン効果は重ね掛けできない。",
+      "pieceImageUrls": {
+        "flower": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15002_4.png",
+        "plume": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15002_2.png",
+        "sands": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15002_5.png",
+        "goblet": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15002_1.png",
+        "circlet": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15002_3.png"
+      }
+    },
+    {
+      "id": "15003",
+      "name": "大地を流浪する楽団",
+      "teamBuffKey": null,
+      "twoPieceEffect": "元素熟知+80。",
+      "fourPieceEffect": "該当聖遺物セットを装備したキャラが法器、弓キャラの場合、キャラの重撃ダメージ+35%。",
+      "pieceImageUrls": {
+        "flower": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15003_4.png",
+        "plume": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15003_2.png",
+        "sands": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15003_5.png",
+        "goblet": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15003_1.png",
+        "circlet": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15003_3.png"
+      }
+    },
+    {
+      "id": "15005",
+      "name": "雷のような怒り",
+      "teamBuffKey": null,
+      "twoPieceEffect": "雷元素ダメージ+15%。",
+      "fourPieceEffect": "過負荷、感電、超電導、超開花反応によるダメージ+40%、超激化反応によるダメージアップ効果+20%、月感電、星電導反応によるダメージ+20%。上記元素反応または原激化反応を起こすと、元素スキルのクールタイム-1秒。0.8秒毎に最大1回のみ発動可能。",
+      "pieceImageUrls": {
+        "flower": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15005_4.png",
+        "plume": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15005_2.png",
+        "sands": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15005_5.png",
+        "goblet": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15005_1.png",
+        "circlet": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15005_3.png"
+      }
+    },
+    {
+      "id": "15006",
+      "name": "燃え盛る炎の魔女",
+      "teamBuffKey": null,
+      "twoPieceEffect": "炎元素ダメージ+15%。",
+      "fourPieceEffect": "過負荷、燃焼、烈開花反応によるダメージ+40%。蒸発、溶解反応による加算効果+15%。元素スキルを発動した10秒間、2セットの効果が50%アップし、最大3重まで。",
+      "pieceImageUrls": {
+        "flower": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15006_4.png",
+        "plume": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15006_2.png",
+        "sands": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15006_5.png",
+        "goblet": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15006_1.png",
+        "circlet": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15006_3.png"
+      }
+    },
+    {
+      "id": "15007",
+      "name": "旧貴族のしつけ",
+      "teamBuffKey": "artifact-team-buff:15007",
+      "twoPieceEffect": "元素爆発のダメージ+20%。",
+      "fourPieceEffect": "元素爆発を発動すると、チーム全員の攻撃力+20%、継続時間12秒、重ねがけ不可。",
+      "pieceImageUrls": {
+        "flower": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15007_4.png",
+        "plume": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15007_2.png",
+        "sands": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15007_5.png",
+        "goblet": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15007_1.png",
+        "circlet": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15007_3.png"
+      }
+    },
+    {
+      "id": "15008",
+      "name": "血染めの騎士道",
+      "teamBuffKey": null,
+      "twoPieceEffect": "物理ダメージ+25%。",
+      "fourPieceEffect": "敵を倒した後の10秒間、重撃の際にスタミナを消費しない。また、重撃のダメージ+50%。",
+      "pieceImageUrls": {
+        "flower": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15008_4.png",
+        "plume": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15008_2.png",
+        "sands": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15008_5.png",
+        "goblet": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15008_1.png",
+        "circlet": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15008_3.png"
+      }
+    },
+    {
+      "id": "15009",
+      "name": "火祭りの人",
+      "teamBuffKey": null,
+      "twoPieceEffect": "受けた炎元素付着の効果継続時間-40%。",
+      "fourPieceEffect": null,
+      "pieceImageUrls": {
+        "flower": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15009_3.png",
+        "plume": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15009_3.png",
+        "sands": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15009_3.png",
+        "goblet": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15009_3.png",
+        "circlet": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15009_3.png"
+      }
+    },
+    {
+      "id": "15010",
+      "name": "水祭りの人",
+      "teamBuffKey": null,
+      "twoPieceEffect": "受けた水元素付着の効果継続時間-40%。",
+      "fourPieceEffect": null,
+      "pieceImageUrls": {
+        "flower": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15010_3.png",
+        "plume": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15010_3.png",
+        "sands": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15010_3.png",
+        "goblet": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15010_3.png",
+        "circlet": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15010_3.png"
+      }
+    },
+    {
+      "id": "15011",
+      "name": "雷祭りの人",
+      "teamBuffKey": null,
+      "twoPieceEffect": "受けた雷元素付着の効果継続時間-40%。",
+      "fourPieceEffect": null,
+      "pieceImageUrls": {
+        "flower": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15011_3.png",
+        "plume": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15011_3.png",
+        "sands": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15011_3.png",
+        "goblet": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15011_3.png",
+        "circlet": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15011_3.png"
+      }
+    },
+    {
+      "id": "15013",
+      "name": "氷祭りの人",
+      "teamBuffKey": null,
+      "twoPieceEffect": "受けた氷元素付着の効果継続時間-40%。",
+      "fourPieceEffect": null,
+      "pieceImageUrls": {
+        "flower": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15013_3.png",
+        "plume": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15013_3.png",
+        "sands": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15013_3.png",
+        "goblet": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15013_3.png",
+        "circlet": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15013_3.png"
+      }
+    },
+    {
+      "id": "15014",
+      "name": "悠久の磐岩",
+      "teamBuffKey": "artifact-team-buff:15014",
+      "twoPieceEffect": "岩元素ダメージ+15%。",
+      "fourPieceEffect": "結晶反応で形成された欠片を獲得、または月結晶反応を起こすと、チーム全員の該当元素ダメージ+35%、継続時間10秒。元素ダメージアップは1種類のみ獲得可能。",
+      "pieceImageUrls": {
+        "flower": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15014_4.png",
+        "plume": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15014_2.png",
+        "sands": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15014_5.png",
+        "goblet": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15014_1.png",
+        "circlet": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15014_3.png"
+      }
+    },
+    {
+      "id": "15015",
+      "name": "逆飛びの流星",
+      "teamBuffKey": null,
+      "twoPieceEffect": "シールド強化+35%",
+      "fourPieceEffect": "シールド状態の時、通常攻撃と重撃ダメージ+40%。",
+      "pieceImageUrls": {
+        "flower": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15015_4.png",
+        "plume": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15015_2.png",
+        "sands": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15015_5.png",
+        "goblet": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15015_1.png",
+        "circlet": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15015_3.png"
+      }
+    },
+    {
+      "id": "15016",
+      "name": "沈淪の心",
+      "teamBuffKey": null,
+      "twoPieceEffect": "水元素ダメージ+15%。",
+      "fourPieceEffect": "元素スキルを発動した後の15秒間、通常攻撃と重撃のダメージ+30%。",
+      "pieceImageUrls": {
+        "flower": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15016_4.png",
+        "plume": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15016_2.png",
+        "sands": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15016_5.png",
+        "goblet": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15016_1.png",
+        "circlet": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15016_3.png"
+      }
+    },
+    {
+      "id": "15017",
+      "name": "千岩牢固",
+      "teamBuffKey": "artifact-team-buff:15017",
+      "twoPieceEffect": "HP+20%。",
+      "fourPieceEffect": "元素スキルが敵に命中すると、周囲のチーム全員の攻撃力+20%、シールド強化+30%、持続時間3秒。この効果は0.5秒毎に1回のみ発動可能。この聖遺物セットを装備したキャラクターが待機している場合にも効果を発動できる。",
+      "pieceImageUrls": {
+        "flower": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15017_4.png",
+        "plume": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15017_2.png",
+        "sands": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15017_5.png",
+        "goblet": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15017_1.png",
+        "circlet": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15017_3.png"
+      }
+    },
+    {
+      "id": "15018",
+      "name": "蒼白の炎",
+      "teamBuffKey": null,
+      "twoPieceEffect": "物理ダメージ+25%。",
+      "fourPieceEffect": "元素スキルが敵に命中すると、攻撃力+9%。持続時間7秒、最大2重まで、0.3秒毎に1回のみ発動可能。2重まで重ねると、2セットの効果が2倍になる。",
+      "pieceImageUrls": {
+        "flower": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15018_4.png",
+        "plume": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15018_2.png",
+        "sands": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15018_5.png",
+        "goblet": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15018_1.png",
+        "circlet": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15018_3.png"
+      }
+    },
+    {
+      "id": "15019",
+      "name": "追憶のしめ縄",
+      "teamBuffKey": null,
+      "twoPieceEffect": "攻撃力+18%。",
+      "fourPieceEffect": "元素スキルを発動した時、キャラクターの元素エネルギーが15以上の場合、元素エネルギーを15消費し、次の10秒間通常攻撃、重撃、落下攻撃ダメージ+50%。継続時間中この効果は再発動できない。",
+      "pieceImageUrls": {
+        "flower": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15019_4.png",
+        "plume": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15019_2.png",
+        "sands": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15019_5.png",
+        "goblet": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15019_1.png",
+        "circlet": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15019_3.png"
+      }
+    },
+    {
+      "id": "15020",
+      "name": "絶縁の旗印",
+      "teamBuffKey": null,
+      "twoPieceEffect": "元素チャージ効率+20%。",
+      "fourPieceEffect": "元素チャージ効率の25%を基準に、元素爆発ダメージがアップする。この方法でアップできるダメージは最大75%まで。",
+      "pieceImageUrls": {
+        "flower": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15020_4.png",
+        "plume": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15020_2.png",
+        "sands": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15020_5.png",
+        "goblet": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15020_1.png",
+        "circlet": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15020_3.png"
+      }
+    },
+    {
+      "id": "15021",
+      "name": "華館夢醒形骸記",
+      "teamBuffKey": null,
+      "twoPieceEffect": "防御力+30%。",
+      "fourPieceEffect": "この聖遺物セットを装備したキャラクターは、以下の状況において「問答」効果を獲得する。「問答」効果：フィールド上で岩元素攻撃を敵に命中した後に1層獲得、0.3秒毎に1層のみ獲得できる。待機中の時は、3秒毎に自動で1層獲得する。重ね掛けできる「問答」は最大4層までとなり、1層につき防御力+6%、岩元素ダメージ+6%。6秒毎に「問答」効果を獲得していない場合は、1層失う。",
+      "pieceImageUrls": {
+        "flower": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15021_4.png",
+        "plume": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15021_2.png",
+        "sands": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15021_5.png",
+        "goblet": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15021_1.png",
+        "circlet": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15021_3.png"
+      }
+    },
+    {
+      "id": "15022",
+      "name": "海染硨磲",
+      "teamBuffKey": "artifact-team-buff:15022",
+      "twoPieceEffect": "与える治療効果+15%。",
+      "fourPieceEffect": "この聖遺物セットを装備したキャラクターがチーム内のキャラクターに治療を行うと、治療によるHP回復量（HP上限を超えた回復量も含む）を記録する海染の泡を生成する。海染の泡は3秒継続する。継続時間終了時、海染の泡は破裂し、周囲の敵に記録した回復量の90%分のダメージを与える（このダメージは感電や超電導などの元素反応と同じように計算されるが、元素熟知、キャラクターLv、または元素反応のダメージアップ効果の影響は受けない）。海染の泡は3.5秒毎に1回のみ生成可能。海染の泡が記録できる回復量は最大30000までとなり、HP上限超過分の回復量を含む。自身のチーム内に、海染の泡は1つのみ存在可能。この聖遺物セットを装備したキャラクターは待機中でも、この効果を発動できる。",
+      "pieceImageUrls": {
+        "flower": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15022_4.png",
+        "plume": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15022_2.png",
+        "sands": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15022_5.png",
+        "goblet": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15022_1.png",
+        "circlet": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15022_3.png"
+      }
+    },
+    {
+      "id": "15023",
+      "name": "辰砂往生録",
+      "teamBuffKey": null,
+      "twoPieceEffect": "攻撃力+18%。",
+      "fourPieceEffect": "元素爆発を発動すると、継続時間16秒の「潜光」効果が発動する。「潜光」：攻撃力+8%、キャラクターがHPを失うたびに攻撃力がさらに10%アップする。HPの損失による攻撃力アップ効果は0.8秒毎に1回のみ発動でき、最大4回重ね掛けできる。「潜光」効果はキャラクターが戦闘不能、または退場する時に解除される。「潜光」効果の継続時間中に再び元素爆発を発動すると、既存の「潜光」効果が先にクリアされる。",
+      "pieceImageUrls": {
+        "flower": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15023_4.png",
+        "plume": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15023_2.png",
+        "sands": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15023_5.png",
+        "goblet": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15023_1.png",
+        "circlet": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15023_3.png"
+      }
+    },
+    {
+      "id": "15024",
+      "name": "来歆の余響",
+      "teamBuffKey": null,
+      "twoPieceEffect": "攻撃力+18%。",
+      "fourPieceEffect": "通常攻撃が敵に命中すると、36%の確率で「幽谷祭祀」が発動する。「幽谷祭祀」：通常攻撃ダメージが攻撃力70%分アップする。この効果は通常攻撃でダメージを与えた0.05秒後にクリアされる。通常攻撃後に「幽谷祭祀」が発動しなかった場合、次回の発動確率+20%。発動判定は0.2秒毎に1回のみ行われる。",
+      "pieceImageUrls": {
+        "flower": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15024_4.png",
+        "plume": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15024_2.png",
+        "sands": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15024_5.png",
+        "goblet": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15024_1.png",
+        "circlet": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15024_3.png"
+      }
+    },
+    {
+      "id": "15025",
+      "name": "深林の記憶",
+      "teamBuffKey": null,
+      "twoPieceEffect": "草元素ダメージ+15%。",
+      "fourPieceEffect": "元素スキルまたは元素爆発が敵に命中すると、その敵の草元素耐性-30%、継続時間8秒。装備したキャラクターが待機している場合にも効果を発動できる。",
+      "pieceImageUrls": {
+        "flower": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15025_4.png",
+        "plume": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15025_2.png",
+        "sands": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15025_5.png",
+        "goblet": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15025_1.png",
+        "circlet": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15025_3.png"
+      }
+    },
+    {
+      "id": "15026",
+      "name": "金メッキの夢",
+      "teamBuffKey": "artifact-team-buff:15026",
+      "twoPieceEffect": "元素熟知+80。",
+      "fourPieceEffect": "元素反応を起こした後の8秒間、装備キャラクターは、チーム内自身以外のキャラクターの元素タイプに応じて強化効果を獲得する。チームに装備キャラクターと同じ元素タイプのキャラクターが1名存在する毎に攻撃力+14%、異なる元素タイプのキャラクターが1名存在する毎に元素熟知+50。上記効果は、それぞれ最大でキャラクター3名までカウントされる。この効果は8秒毎に1回のみ発動可能。装備したキャラクターが待機している場合にも効果を発動できる。",
+      "pieceImageUrls": {
+        "flower": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15026_4.png",
+        "plume": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15026_2.png",
+        "sands": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15026_5.png",
+        "goblet": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15026_1.png",
+        "circlet": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15026_3.png"
+      }
+    },
+    {
+      "id": "15027",
+      "name": "砂上の楼閣の史話",
+      "teamBuffKey": null,
+      "twoPieceEffect": "風元素ダメージ+15%。",
+      "fourPieceEffect": "重撃が敵に命中すると、該当キャラクターの通常攻撃の攻撃速度+10%、通常攻撃、重撃および落下攻撃ダメージ+40%、継続時間15秒。",
+      "pieceImageUrls": {
+        "flower": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15027_4.png",
+        "plume": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15027_2.png",
+        "sands": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15027_5.png",
+        "goblet": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15027_1.png",
+        "circlet": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15027_3.png"
+      }
+    },
+    {
+      "id": "15028",
+      "name": "楽園の絶花",
+      "teamBuffKey": null,
+      "twoPieceEffect": "元素熟知+80。",
+      "fourPieceEffect": "開花、超開花、烈開花反応によるダメージ+40%、月開花反応によるダメージ+10%。また、装備者自身が開花、超開花、烈開花、または月開花を起こした後、上記強化効果が25%アップする。継続時間10秒、最大4層まで重ねられ、1秒毎に最大1回のみ発動可能。装備したキャラクターが待機している場合にも効果を発動できる。",
+      "pieceImageUrls": {
+        "flower": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15028_4.png",
+        "plume": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15028_2.png",
+        "sands": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15028_5.png",
+        "goblet": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15028_1.png",
+        "circlet": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15028_3.png"
+      }
+    },
+    {
+      "id": "15029",
+      "name": "水仙の夢",
+      "teamBuffKey": null,
+      "twoPieceEffect": "水元素ダメージ+15%。",
+      "fourPieceEffect": "通常攻撃、重撃、落下攻撃、元素スキル、または元素爆発が敵に命中すると、8秒間継続する「鏡中の水仙」効果を1層獲得する。1/2/3層以上の「鏡中の水仙」効果を持つ時、それぞれ攻撃力+7%/16%/25%、水元素ダメージ+4%/9%/15%。通常攻撃、重撃、落下攻撃、元素スキル、元素爆発による「鏡中の水仙」効果はそれぞれ独立してカウントされる。",
+      "pieceImageUrls": {
+        "flower": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15029_4.png",
+        "plume": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15029_2.png",
+        "sands": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15029_5.png",
+        "goblet": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15029_1.png",
+        "circlet": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15029_3.png"
+      }
+    },
+    {
+      "id": "15030",
+      "name": "花海甘露の光",
+      "teamBuffKey": null,
+      "twoPieceEffect": "HP+20%。",
+      "fourPieceEffect": "元素スキルと元素爆発のダメージ+10%。装備者がダメージを受けた後の5秒間、上記強化効果が80%アップする。最大5層まで重ね掛け可能。継続時間は層ごとに独立してカウントされる。装備したキャラクターが待機している場合にも効果を発動できる。",
+      "pieceImageUrls": {
+        "flower": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15030_4.png",
+        "plume": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15030_2.png",
+        "sands": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15030_5.png",
+        "goblet": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15030_1.png",
+        "circlet": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15030_3.png"
+      }
+    },
+    {
+      "id": "15031",
+      "name": "ファントムハンター",
+      "teamBuffKey": null,
+      "twoPieceEffect": "通常攻撃と重擊ダメージ+15%。",
+      "fourPieceEffect": "現在HPが増減する時、会心率+12%、継続時間5秒、最大3層まで重ね掛け可能。",
+      "pieceImageUrls": {
+        "flower": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15031_4.png",
+        "plume": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15031_2.png",
+        "sands": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15031_5.png",
+        "goblet": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15031_1.png",
+        "circlet": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15031_3.png"
+      }
+    },
+    {
+      "id": "15032",
+      "name": "黄金の劇団",
+      "teamBuffKey": null,
+      "twoPieceEffect": "元素スキルのダメージ+20%。",
+      "fourPieceEffect": "元素スキルのダメージ+25%。また、装備者が待機中の時、元素スキルのダメージがさらに+25%。この効果は装備キャラクターが登場してから2秒後に解除される。",
+      "pieceImageUrls": {
+        "flower": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15032_4.png",
+        "plume": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15032_2.png",
+        "sands": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15032_5.png",
+        "goblet": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15032_1.png",
+        "circlet": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15032_3.png"
+      }
+    },
+    {
+      "id": "15033",
+      "name": "在りし日の歌",
+      "teamBuffKey": "artifact-team-buff:15033",
+      "twoPieceEffect": "与える治療効果+15%。",
+      "fourPieceEffect": "装備者がチームにいるキャラクターのHPを回復した時、継続時間6秒の「渇望」効果が発動し、HP回復量（HP上限を超えた回復量も含む）を記録する。継続時間終了時、「渇望」効果は「かの時の潮」効果に変化する。「かの時の潮」効果発動中、フィールド上にいるチーム内の自身キャラクターの通常攻撃、重撃、落下攻撃、元素スキル、元素爆発が敵に命中すると、「渇望」効果で記録した回復量の8%分を基に与えるダメージをアップする。「かの時の潮」効果は、5回発動、または10秒後にクリアされる。1回の「渇望」効果が記録する回復量は最大15000ポイントまで。なお、「渇望」は1つのみ存在でき、複数の装備者の与える回復量を記録可能。装備したキャラクターが待機している場合にも効果を発動できる。",
+      "pieceImageUrls": {
+        "flower": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15033_4.png",
+        "plume": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15033_2.png",
+        "sands": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15033_5.png",
+        "goblet": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15033_1.png",
+        "circlet": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15033_3.png"
+      }
+    },
+    {
+      "id": "15034",
+      "name": "残響の森で囁かれる夜話",
+      "teamBuffKey": "artifact-team-buff:15034",
+      "twoPieceEffect": "攻撃力+18%。",
+      "fourPieceEffect": "元素スキルを発動した後の10秒間、岩元素ダメージ+20%。結晶反応によるシールド状態にある時、または周囲に月結晶反応で生成された月籠が存在する時、上記強化効果が150%アップする。追加された効果量は、条件を満たさなくなった1秒後に解除される。",
+      "pieceImageUrls": {
+        "flower": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15034_4.png",
+        "plume": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15034_2.png",
+        "sands": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15034_5.png",
+        "goblet": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15034_1.png",
+        "circlet": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15034_3.png"
+      }
+    },
+    {
+      "id": "15035",
+      "name": "諧律奇想の断章",
+      "teamBuffKey": null,
+      "twoPieceEffect": "攻撃力+18%。",
+      "fourPieceEffect": "命の契約の数値が増減する時、キャラクターの与えるダメージ+18%、継続時間6秒、最大3層まで重ね掛け可能。",
+      "pieceImageUrls": {
+        "flower": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15035_4.png",
+        "plume": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15035_2.png",
+        "sands": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15035_5.png",
+        "goblet": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15035_1.png",
+        "circlet": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15035_3.png"
+      }
+    },
+    {
+      "id": "15036",
+      "name": "遂げられなかった想い",
+      "teamBuffKey": null,
+      "twoPieceEffect": "攻撃力+18%。",
+      "fourPieceEffect": "戦闘状態が解除されてから3秒経過すると、与えるダメージ+50%。戦闘状態にある時、近くに燃焼状態の敵が存在しないまま6秒以上経過すると、上記強化効果の効果量は0%になるまで1秒毎に10%減少する。一方、燃焼状態の敵が存在する場合、50%になるまで1秒毎に10%増加する。この聖遺物セットを装備したキャラクターが待機している場合にも、効果を発動できる。",
+      "pieceImageUrls": {
+        "flower": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15036_4.png",
+        "plume": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15036_2.png",
+        "sands": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15036_5.png",
+        "goblet": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15036_1.png",
+        "circlet": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15036_3.png"
+      }
+    },
+    {
+      "id": "15037",
+      "name": "灰燼の都に立つ英雄の絵巻",
+      "teamBuffKey": "artifact-team-buff:15037",
+      "twoPieceEffect": "付近にいるチーム内キャラクターが「夜魂バースト」を起こすと、装備者は元素エネルギーを6ポイント回復する。",
+      "fourPieceEffect": "装備者が自身の元素タイプの関連元素反応を起こした後、周囲のチーム全員の、該当元素反応の関連元素タイプのダメージ+12%、継続時間15秒。この効果を発動した時に、装備者が「夜魂の加護」状態にあった場合、周囲チーム全員の前述の元素タイプのダメージがさらに+28%、継続時間20秒。装備者が待機中でも、上記効果を発動できる。同名の聖遺物セットによるダメージアップ効果は重ね掛け不可。",
+      "pieceImageUrls": {
+        "flower": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15037_4.png",
+        "plume": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15037_2.png",
+        "sands": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15037_5.png",
+        "goblet": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15037_1.png",
+        "circlet": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15037_3.png"
+      }
+    },
+    {
+      "id": "15038",
+      "name": "黒曜の秘典",
+      "teamBuffKey": null,
+      "twoPieceEffect": "装備者が夜魂の加護状態にあり、かつフィールド上にいる時、与えるダメージ+15%。",
+      "fourPieceEffect": "装備者がフィールド上で夜魂値を1消費すると、会心率+40%、継続時間6秒。この効果は1秒毎に1回のみ発動可能。",
+      "pieceImageUrls": {
+        "flower": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15038_4.png",
+        "plume": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15038_2.png",
+        "sands": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15038_5.png",
+        "goblet": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15038_1.png",
+        "circlet": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15038_3.png"
+      }
+    },
+    {
+      "id": "15039",
+      "name": "長き夜の誓い",
+      "teamBuffKey": null,
+      "twoPieceEffect": "落下攻撃の与えるダメージ+25%。",
+      "fourPieceEffect": "装備者の落下攻撃/重撃/元素スキルが敵に命中した後、「永遠に輝く流光」効果を1/2/2層獲得する。落下攻撃、重撃、または元素スキルによるこの効果はそれぞれ1秒毎に1回のみ発動可能。「永遠に輝く流光」：落下攻撃ダメージ+15%、継続時間6秒、最大5層まで重ね掛け可能。継続時間は層ごとに独立してカウントされる。",
+      "pieceImageUrls": {
+        "flower": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15039_4.png",
+        "plume": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15039_2.png",
+        "sands": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15039_5.png",
+        "goblet": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15039_1.png",
+        "circlet": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15039_3.png"
+      }
+    },
+    {
+      "id": "15040",
+      "name": "深廊の終曲",
+      "teamBuffKey": null,
+      "twoPieceEffect": "氷元素ダメージ+15%。",
+      "fourPieceEffect": "装備者の元素エネルギーが0の時、通常攻撃ダメージ+60%、元素爆発ダメージ+60%。装備者の通常攻撃がダメージを与えた後、上記元素爆発ダメージアップ効果は6秒間無効になる。装備者の元素爆発がダメージを与えた後、上記通常攻撃ダメージアップ効果は6秒間無効になる。キャラクターが待機中でも発動できる。",
+      "pieceImageUrls": {
+        "flower": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15040_4.png",
+        "plume": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15040_2.png",
+        "sands": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15040_5.png",
+        "goblet": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15040_1.png",
+        "circlet": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15040_3.png"
+      }
+    },
+    {
+      "id": "15041",
+      "name": "天穹の顕現せし夜",
+      "teamBuffKey": "artifact-team-buff:15041",
+      "twoPieceEffect": "元素熟知+80。",
+      "fourPieceEffect": "付近にいるチーム内キャラクターが月反応を起こした時に装備者がフィールドにいる場合、4秒間継続する「月輝明光・蓄念」効果を獲得する。「月輝明光・蓄念」：チームの月兆が初照/満照の時、会心率+15%/30%。チーム内キャラクターの「月輝明光」効果が1種類存在するごとに、チーム内キャラクターが起こす月反応のダメージ+10%。「月輝明光」によって生じた効果は重ね掛け不可。",
+      "pieceImageUrls": {
+        "flower": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15041_4.png",
+        "plume": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15041_2.png",
+        "sands": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15041_5.png",
+        "goblet": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15041_1.png",
+        "circlet": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15041_3.png"
+      }
+    },
+    {
+      "id": "15042",
+      "name": "月を紡ぐ夜の歌",
+      "teamBuffKey": "artifact-team-buff:15042",
+      "twoPieceEffect": "元素チャージ効率+20%。",
+      "fourPieceEffect": "元素ダメージを与えた時、8秒間継続する「月輝明光・崇拝」効果を獲得する。「月輝明光・崇拝」：チームの月兆が初照/満照の時、チーム全員の元素熟知+60/120。装備者が待機中でも、上記効果を発動できる。チーム内キャラクターの「月輝明光」効果が1種類存在するごとに、チーム内キャラクターが起こす月反応のダメージ+10%。「月輝明光」によって生じた効果は重ね掛け不可。",
+      "pieceImageUrls": {
+        "flower": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15042_4.png",
+        "plume": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15042_2.png",
+        "sands": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15042_5.png",
+        "goblet": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15042_1.png",
+        "circlet": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15042_3.png"
+      }
+    },
+    {
+      "id": "15043",
+      "name": "暁の星と月の歌",
+      "teamBuffKey": "artifact-team-buff:15043",
+      "twoPieceEffect": "元素熟知+80。",
+      "fourPieceEffect": "装備者が待機中の時、与える月反応のダメージ+20%。チーム全体の月兆レベルが満照以上の時、与える月反応のダメージがさらに+40%。上記効果は装備者がフィールド上に3秒間滞在すると解除される。",
+      "pieceImageUrls": {
+        "flower": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15043_4.png",
+        "plume": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15043_2.png",
+        "sands": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15043_5.png",
+        "goblet": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15043_1.png",
+        "circlet": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15043_3.png"
+      }
+    },
+    {
+      "id": "15044",
+      "name": "風立ちの日",
+      "teamBuffKey": null,
+      "twoPieceEffect": "攻撃力+18%。",
+      "fourPieceEffect": "通常攻撃、重撃、元素スキル、または元素爆発が敵に命中すると、継続時間6秒の「風と牧歌の寵愛」を獲得する。「風と牧歌の寵愛」：攻撃力+25%。装備者が「魔女の課題」をクリアしている場合、「風と牧歌の寵愛」は「風と牧歌の決意」に強化され、「魔女の課題」をクリアした装備者の会心率+20%。装備したキャラクターが待機している場合にも効果を発動できる。",
+      "pieceImageUrls": {
+        "flower": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15044_4.png",
+        "plume": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15044_2.png",
+        "sands": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15044_5.png",
+        "goblet": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15044_1.png",
+        "circlet": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15044_3.png"
+      }
+    },
+    {
+      "id": "15045",
+      "name": "天からの贈り物",
+      "teamBuffKey": "artifact-team-buff:15045",
+      "twoPieceEffect": "元素チャージ効率+20%。",
+      "fourPieceEffect": "装備者が「魔女の課題」をクリアしている場合、元素スキルを発動すると、「天光の導き」効果を獲得する。この効果は装備者の元素タイプに基づき、付近にいるチーム全員に当該元素ダメージ+20%のバフを付与する。継続時間20秒。装備者が待機中でも発動可能。同じ聖遺物セットによるダメージアップ効果は重ね掛けできない。\n・チームが「魔導秘儀」効果を持っている時、「天光の導き」効果は「浮世の頌歌」に強化される。装備者の元素タイプに加え、フィールド上にいる自身のキャラクターの元素タイプに基づき、周囲のチーム全員に当該元素のダメージアップ効果を付与する。さらに、上記2種類の元素ダメージアップ効果は40%までアップする。同じ元素タイプの元素ダメージアップ効果は重ね掛けできない。",
+      "pieceImageUrls": {
+        "flower": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15045_4.png",
+        "plume": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15045_2.png",
+        "sands": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15045_5.png",
+        "goblet": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15045_1.png",
+        "circlet": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15045_3.png"
+      }
+    },
+    {
+      "id": "15046",
+      "name": "影に沈む幻",
+      "teamBuffKey": null,
+      "twoPieceEffect": "攻撃力+18%。",
+      "fourPieceEffect": "超電導反応によるダメージ+80%、星電導反応によるダメージ+40%。装備者が超電導または星電導反応の影響を受けた敵を攻撃する時、その攻撃の会心率+16%。",
+      "pieceImageUrls": {
+        "flower": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15046_4.png",
+        "plume": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15046_2.png",
+        "sands": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15046_5.png",
+        "goblet": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15046_1.png",
+        "circlet": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15046_3.png"
+      }
+    },
+    {
+      "id": "15047",
+      "name": "紅血の証",
+      "teamBuffKey": null,
+      "twoPieceEffect": "攻撃力+18%。",
+      "fourPieceEffect": "装備者が星拡散反応を起こした後の10秒間、会心率+16%、星拡散反応ダメージ+40%。",
+      "pieceImageUrls": {
+        "flower": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15047_4.png",
+        "plume": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15047_2.png",
+        "sands": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15047_5.png",
+        "goblet": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15047_1.png",
+        "circlet": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15047_3.png"
+      }
+    },
+    {
+      "id": "15048",
+      "name": "炉炎溶錬の心",
+      "teamBuffKey": "artifact-team-buff:15048",
+      "twoPieceEffect": "攻撃力+18%。",
+      "fourPieceEffect": "装備者が星反応を起こす、または星反応ダメージを与えた後の12秒間、攻撃力+12%、近くにいるチーム内のすべてのキャラクターが与える星反応ダメージ+50%。装備したキャラクターが待機している場合にも効果を発動できる。同じ名前の聖遺物セットによるダメージアップ効果は重ね掛けできない。",
+      "pieceImageUrls": {
+        "flower": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15048_4.png",
+        "plume": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15048_2.png",
+        "sands": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15048_5.png",
+        "goblet": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15048_1.png",
+        "circlet": "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15048_3.png"
+      }
+    }
+  ]
+}

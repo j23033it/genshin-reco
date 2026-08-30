@@ -1,0 +1,31 @@
+{
+  "schemaVersion": "catalog-manifest-v1",
+  "gameVersion": "7.0",
+  "catalogUpdatedAt": "2026-08-24",
+  "counts": {
+    "characters": 126,
+    "weapons": 246,
+    "artifactSets": 63
+  },
+  "catalogSha256": "62e8446d27e4f9a7660b3e5b338360b9c990914b43765b434d769eeb6ff50d2f",
+  "sources": [
+    {
+      "kind": "characters",
+      "fileName": "キャラクターカタログ.md",
+      "declaredCount": 126,
+      "sha256": "ffaa6467e0e02fd5af1ad8403e76a273f2477a2921746e12e7ad0a482f2a0e4b"
+    },
+    {
+      "kind": "weapons",
+      "fileName": "武器カタログ.md",
+      "declaredCount": 246,
+      "sha256": "848fdd6deb2c5075812fdb43ebf9e6f6389145ee8dc3edd3fba8de8b43fc94ba"
+    },
+    {
+      "kind": "artifactSets",
+      "fileName": "聖遺物セットカタログ.md",
+      "declaredCount": 63,
+      "sha256": "23e046452c203f81ff572485203ef60e99ce4f83441b18fd5377034958751888"
+    }
+  ]
+}
