@@ -1,9 +1,8 @@
 use crate::domain::{
-    AnalysisInput, CharacterResearchOutput, validate_analysis_input,
-    validate_character_research_output,
+    AnalysisInput, CharacterResearchOutput, character_research_output_schema,
+    validate_analysis_input, validate_character_research_output,
 };
 use crate::source_policy::{is_direct_content_url, normalize_source_url};
-use schemars::schema_for;
 use semver::Version;
 use serde::Serialize;
 use serde_json::{Value, json};
@@ -870,7 +869,7 @@ async fn run_character_research_attempt(
             ));
         }
         let prompt = build_character_research_prompt(analysis_input, character_id)?;
-        let output_schema = character_research_output_schema()?;
+        let output_schema = character_research_output_schema();
         let turn_result = supervised_request(
             app,
             slot,
@@ -932,76 +931,6 @@ fn build_character_research_prompt(
     Ok(format!(
         "分析入力JSONに含まれるキャラクター `{character_id}` の聖遺物ビルドを調査してください。許可された3サイトの個別本文ページを実際に開き、聖遺物構成・メインステータス一式・サブステータス優先度を直接支える根拠を集めてください。各sourceのgameVersionは分析入力のgameVersionと完全一致させてください。条件付き推奨はconditionsへ型付きで記録してください。URLやIDを推測せず、確認できなければ候補を作らないでください。分析入力JSON: {input}"
     ))
-}
-
-fn character_research_output_schema() -> Result<Value, AppServerError> {
-    let mut schema = serde_json::to_value(schema_for!(CharacterResearchOutput))?;
-    sanitize_structured_output_schema(&mut schema);
-    Ok(schema)
-}
-
-fn sanitize_structured_output_schema(value: &mut Value) {
-    match value {
-        Value::Array(values) => {
-            for value in values {
-                sanitize_structured_output_schema(value);
-            }
-        }
-        Value::Object(object) => {
-            let is_schema_node = [
-                "$ref",
-                "allOf",
-                "anyOf",
-                "const",
-                "enum",
-                "oneOf",
-                "properties",
-                "type",
-            ]
-            .iter()
-            .any(|key| object.contains_key(*key));
-            if is_schema_node {
-                if let Some(constant) = object.remove("const") {
-                    object.insert("enum".into(), Value::Array(vec![constant]));
-                }
-                if let Some(one_of) = object.remove("oneOf") {
-                    object.insert("anyOf".into(), one_of);
-                }
-                object.remove("$schema");
-                object.remove("title");
-                for unsupported in [
-                    "default",
-                    "examples",
-                    "format",
-                    "maximum",
-                    "minimum",
-                    "maxItems",
-                    "minItems",
-                    "maxLength",
-                    "minLength",
-                    "pattern",
-                    "uniqueItems",
-                ] {
-                    object.remove(unsupported);
-                }
-                if let Some(property_names) = object
-                    .get("properties")
-                    .and_then(Value::as_object)
-                    .map(|properties| properties.keys().cloned().collect::<Vec<_>>())
-                {
-                    object.insert(
-                        "required".into(),
-                        Value::Array(property_names.into_iter().map(Value::String).collect()),
-                    );
-                    object.insert("additionalProperties".into(), Value::Bool(false));
-                }
-            }
-            for value in object.values_mut() {
-                sanitize_structured_output_schema(value);
-            }
-        }
-        _ => {}
-    }
 }
 
 fn validate_research_turn_completion(completion: &Value) -> Result<(), AppServerError> {
@@ -2014,11 +1943,11 @@ mod tests {
 
     #[test]
     fn 調査schemaから非対応constを除去する() {
-        let schema = character_research_output_schema().expect("Schemaを生成できること");
+        let schema = character_research_output_schema();
         let serialized = serde_json::to_string(&schema).expect("SchemaをJSON化できること");
         assert!(!serialized.contains("\"const\""));
         assert!(!serialized.contains("\"oneOf\""));
-        assert!(!serialized.contains("\"minItems\""));
+        assert!(serialized.contains("\"minItems\""));
         assert!(serialized.contains("character-research-v1"));
         assert_all_object_properties_are_required(&schema);
     }

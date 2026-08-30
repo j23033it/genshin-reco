@@ -614,36 +614,53 @@ fn make_strict_output_schema(value: &mut serde_json::Value) {
             }
         }
         serde_json::Value::Object(object) => {
-            object.remove("format");
+            let is_schema_node = [
+                "$ref",
+                "allOf",
+                "anyOf",
+                "const",
+                "enum",
+                "oneOf",
+                "properties",
+                "type",
+            ]
+            .iter()
+            .any(|key| object.contains_key(*key));
+            if is_schema_node {
+                if let Some(variants) = object.remove("oneOf") {
+                    object.insert("anyOf".into(), variants);
+                }
+                if let Some(constant) = object.remove("const") {
+                    object.insert("enum".into(), serde_json::Value::Array(vec![constant]));
+                }
+                object.remove("$schema");
+                object.remove("title");
+                for unsupported in ["default", "examples", "format"] {
+                    object.remove(unsupported);
+                }
+
+                let property_names = object
+                    .get("properties")
+                    .and_then(serde_json::Value::as_object)
+                    .map(|properties| properties.keys().cloned().collect::<Vec<_>>());
+                if let Some(property_names) = property_names {
+                    object.insert(
+                        "required".into(),
+                        serde_json::Value::Array(
+                            property_names
+                                .into_iter()
+                                .map(serde_json::Value::String)
+                                .collect(),
+                        ),
+                    );
+                    object.insert(
+                        "additionalProperties".into(),
+                        serde_json::Value::Bool(false),
+                    );
+                }
+            }
             for child in object.values_mut() {
                 make_strict_output_schema(child);
-            }
-
-            if let Some(variants) = object.remove("oneOf") {
-                object.insert("anyOf".into(), variants);
-            }
-            if let Some(constant) = object.remove("const") {
-                object.insert("enum".into(), serde_json::Value::Array(vec![constant]));
-            }
-
-            let property_names = object
-                .get("properties")
-                .and_then(serde_json::Value::as_object)
-                .map(|properties| properties.keys().cloned().collect::<Vec<_>>());
-            if let Some(property_names) = property_names {
-                object.insert(
-                    "required".into(),
-                    serde_json::Value::Array(
-                        property_names
-                            .into_iter()
-                            .map(serde_json::Value::String)
-                            .collect(),
-                    ),
-                );
-                object.insert(
-                    "additionalProperties".into(),
-                    serde_json::Value::Bool(false),
-                );
             }
         }
         _ => {}
