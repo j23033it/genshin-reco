@@ -1,4 +1,5 @@
 mod app_server;
+pub mod candidate_validation;
 pub mod catalog;
 pub mod domain;
 pub mod hashing;
