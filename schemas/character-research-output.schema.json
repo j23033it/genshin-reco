@@ -223,7 +223,8 @@
           "items": {
             "$ref": "#/$defs/TargetStatRange"
           },
-          "maxItems": 16,
+          "maxItems": 8,
+          "minItems": 2,
           "type": "array"
         }
       },
@@ -597,9 +598,39 @@
       ],
       "type": "string"
     },
+    "TargetStatBonus": {
+      "additionalProperties": false,
+      "properties": {
+        "amount": {
+          "type": "number"
+        },
+        "condition": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "source": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "amount",
+        "condition",
+        "source"
+      ],
+      "type": "object"
+    },
     "TargetStatRange": {
       "additionalProperties": false,
       "properties": {
+        "includedBonuses": {
+          "items": {
+            "$ref": "#/$defs/TargetStatBonus"
+          },
+          "maxItems": 16,
+          "type": "array"
+        },
         "maximum": {
           "type": [
             "number",
@@ -629,6 +660,7 @@
         }
       },
       "required": [
+        "includedBonuses",
         "maximum",
         "minimum",
         "note",

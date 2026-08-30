@@ -27,9 +27,9 @@ use tauri::{Emitter, State};
 use tokio::sync::Mutex;
 
 const SOURCE_POLICY_VERSION: &str = "source-policy-v1";
-const PROMPT_VERSION: &str = "prompt-v3";
+const PROMPT_VERSION: &str = "prompt-v4";
 const RESEARCH_SCHEMA_VERSION: &str = "character-research-v1";
-const RECONCILER_VERSION: &str = "reconciler-v2";
+const RECONCILER_VERSION: &str = "reconciler-v3";
 const SOLVER_VERSION: &str = "solver-v2";
 const ANALYSIS_PROGRESS_EVENT: &str = "analysis-progress";
 

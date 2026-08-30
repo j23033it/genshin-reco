@@ -101,7 +101,14 @@ export interface TargetStatRange {
   maximum: number | null;
   unit: "flat" | "percent";
   scope: TargetScope;
+  includedBonuses: TargetStatBonus[];
   note: string | null;
+}
+
+export interface TargetStatBonus {
+  source: string;
+  amount: number;
+  condition: string | null;
 }
 
 export interface MainStatPackage {

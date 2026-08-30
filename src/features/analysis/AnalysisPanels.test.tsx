@@ -74,6 +74,7 @@ const mainStatPackage: MainStatPackage = {
       maximum: null,
       unit: "percent",
       scope: "in_combat_conditional",
+      includedBonuses: [],
       note: "爆発を毎回使う条件",
     },
   ],
@@ -174,6 +175,7 @@ describe("TeamResultPanel", () => {
     expect(screen.getAllByText("燃え盛る炎の魔女").length).toBeGreaterThan(0);
     expect(screen.getAllByText(/砂：元素チャージ効率/).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/優先サブ：会心ダメージ > 会心率/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/戦闘中・条件付き/).length).toBeGreaterThan(0);
     expect(screen.queryByText(/set-crimson/)).not.toBeInTheDocument();
     expect(screen.queryByText(/4セット/)).not.toBeInTheDocument();
     expect(screen.queryByText(/EvidenceGrade|verification|根拠|推薦理由/)).not.toBeInTheDocument();
@@ -224,7 +226,7 @@ describe("TeamResultPanel", () => {
     packageToLocalize.sands = "energy_recharge";
     packageToLocalize.substatPriority = [{ stat: "crit_rate", rank: 1 }];
     packageToLocalize.targetStats = [
-      { stat: "attack_percent", minimum: 180, maximum: null, unit: "percent", scope: "character_sheet_unbuffed", note: null },
+      { stat: "attack_percent", minimum: 180, maximum: null, unit: "percent", scope: "character_sheet_unbuffed", includedBonuses: [], note: null },
     ];
 
     render(<TeamResultPanel catalog={catalog} party={party} resolution={resolution} validity="current" />);
@@ -234,6 +236,17 @@ describe("TeamResultPanel", () => {
     expect(within(characterOneCard).getByText(/優先サブ：会心率/)).toBeInTheDocument();
     expect(within(characterOneCard).getByText(/攻撃力%/)).toBeInTheDocument();
     expect(within(characterOneCard).queryByText(/energy_recharge|crit_rate|attack_percent/)).not.toBeInTheDocument();
+  });
+
+  it("旧結果に目標値がない場合は再分析が必要だと表示する", () => {
+    const resolution = structuredClone(createResolution("resolved", "character-1-variant-a"));
+    resolution.members[0].alternatives[0].mainStatPackage.targetStats[0].minimum = null;
+    resolution.members[0].alternatives[0].mainStatPackage.targetStats[0].maximum = null;
+
+    render(<TeamResultPanel catalog={catalog} party={party} resolution={resolution} validity="current" />);
+
+    const characterOneCard = screen.getByRole("article", { name: "キャラクター1の分析結果" });
+    expect(within(characterOneCard).getByText("未算出（再分析が必要です）")).toBeInTheDocument();
   });
 
   it("未解決状態を日本語で表示し警告を残す", () => {
@@ -252,6 +265,9 @@ describe("AnalysisNotesPanel", () => {
       { field: "energy", operator: "gte", value: 180, description: "元素チャージ効率を満たす" },
     ];
     resolution.members[0].alternatives[0].mainStatPackage.targetStats[0].note = "爆発を毎回使う条件";
+    resolution.members[0].alternatives[0].mainStatPackage.targetStats[0].includedBonuses = [
+      { source: "氷共鳴", amount: 15, condition: "氷元素付着中" },
+    ];
     resolution.members[0].alternatives[0].mainStatPackage.conditions = [
       { field: "weapon", operator: "equals", value: "weapon-1", description: "装備武器を固定する" },
     ];
@@ -262,6 +278,7 @@ describe("AnalysisNotesPanel", () => {
     expect(screen.getByTestId("analysis-notes-panel")).toHaveTextContent("適用条件：元素チャージ効率を満たす");
     expect(screen.getByTestId("analysis-notes-panel")).toHaveTextContent("メインステータス条件：装備武器を固定する");
     expect(screen.getByTestId("analysis-notes-panel")).toHaveTextContent("目標値の注記（元素チャージ効率）：爆発を毎回使う条件");
+    expect(screen.getByTestId("analysis-notes-panel")).toHaveTextContent("目標値に含める効果（元素チャージ効率）：氷共鳴 +15%（氷元素付着中）");
     expect(screen.getByTestId("analysis-notes-panel")).toHaveTextContent("古い分析結果です");
     expect(screen.getAllByText("キャラクター1：条件を確認してください。")).toHaveLength(1);
   });

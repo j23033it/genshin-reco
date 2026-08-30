@@ -348,14 +348,30 @@ mod tests {
                 stat: "会心率".to_string(),
                 rank: 1,
             }],
-            target_stats: vec![TargetStatRange {
-                stat: "攻撃力".to_string(),
-                minimum: Some(1000.0),
-                maximum: None,
-                unit: StatUnit::Flat,
-                scope: TargetScope::CharacterSheetUnbuffed,
-                note: None,
-            }],
+            target_stats: vec![
+                TargetStatRange {
+                    stat: "攻撃力".to_string(),
+                    minimum: Some(1000.0),
+                    maximum: None,
+                    unit: StatUnit::Flat,
+                    scope: TargetScope::CharacterSheetUnbuffed,
+                    included_bonuses: vec![],
+                    note: Some("会心との配分を考慮した下限".to_string()),
+                },
+                TargetStatRange {
+                    stat: "会心率".to_string(),
+                    minimum: Some(60.0),
+                    maximum: Some(85.0),
+                    unit: StatUnit::Percent,
+                    scope: TargetScope::CharacterSheetUnbuffed,
+                    included_bonuses: vec![crate::domain::TargetStatBonus {
+                        source: "氷共鳴".to_string(),
+                        amount: 15.0,
+                        condition: Some("氷元素付着中".to_string()),
+                    }],
+                    note: Some("戦闘中の加算込みで100%以下".to_string()),
+                },
+            ],
         };
         let evidence = ResearchEvidence {
             source_url: source_url.clone(),
@@ -390,6 +406,22 @@ mod tests {
                 claim_type: EvidenceClaimType::SubstatPriority,
                 normalized_value: NormalizedClaimValue::SubstatPriority {
                     value: package.substat_priority.clone(),
+                },
+                conditions: Vec::new(),
+                evidence: evidence.clone(),
+            },
+            ResearchClaim {
+                claim_type: EvidenceClaimType::TargetStat,
+                normalized_value: NormalizedClaimValue::TargetStat {
+                    value: package.target_stats[0].clone(),
+                },
+                conditions: Vec::new(),
+                evidence: evidence.clone(),
+            },
+            ResearchClaim {
+                claim_type: EvidenceClaimType::TargetStat,
+                normalized_value: NormalizedClaimValue::TargetStat {
+                    value: package.target_stats[1].clone(),
                 },
                 conditions: Vec::new(),
                 evidence,

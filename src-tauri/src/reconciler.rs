@@ -123,6 +123,7 @@ pub fn reconcile_character_research(
                     domain::EvidenceClaimType::ArtifactPlan
                         | domain::EvidenceClaimType::MainStatPackage
                         | domain::EvidenceClaimType::SubstatPriority
+                        | domain::EvidenceClaimType::TargetStat
                 );
                 let mut conditions_hold = true;
                 for condition in &claim.conditions {
@@ -165,6 +166,7 @@ pub fn reconcile_character_research(
                 domain::EvidenceClaimType::ArtifactPlan,
                 domain::EvidenceClaimType::MainStatPackage,
                 domain::EvidenceClaimType::SubstatPriority,
+                domain::EvidenceClaimType::TargetStat,
             ];
             if required_claim_types
                 .iter()
@@ -288,8 +290,10 @@ fn claim_conflicts_with_variant(
         domain::NormalizedClaimValue::SubstatPriority { value } => {
             value != &variant.main_stat_package.substat_priority
         }
-        domain::NormalizedClaimValue::TargetStat { .. }
-        | domain::NormalizedClaimValue::Role { .. }
+        domain::NormalizedClaimValue::TargetStat { value } => {
+            !variant.main_stat_package.target_stats.contains(value)
+        }
+        domain::NormalizedClaimValue::Role { .. }
         | domain::NormalizedClaimValue::TeamInteraction { .. } => false,
     }
 }
@@ -308,6 +312,33 @@ mod tests {
         }
     }
 
+    fn target_stats() -> Vec<domain::TargetStatRange> {
+        vec![
+            domain::TargetStatRange {
+                stat: "会心率".to_owned(),
+                minimum: Some(60.0),
+                maximum: Some(85.0),
+                unit: domain::StatUnit::Percent,
+                scope: domain::TargetScope::CharacterSheetUnbuffed,
+                included_bonuses: vec![domain::TargetStatBonus {
+                    source: "氷共鳴".to_owned(),
+                    amount: 15.0,
+                    condition: Some("氷元素付着中".to_owned()),
+                }],
+                note: Some("戦闘中の会心率加算込みで100%以下".to_owned()),
+            },
+            domain::TargetStatRange {
+                stat: "会心ダメージ".to_owned(),
+                minimum: Some(120.0),
+                maximum: Some(170.0),
+                unit: domain::StatUnit::Percent,
+                scope: domain::TargetScope::CharacterSheetUnbuffed,
+                included_bonuses: vec![],
+                note: Some("会心率との均衡を取る".to_owned()),
+            },
+        ]
+    }
+
     fn package(sands: &str) -> domain::MainStatPackage {
         domain::MainStatPackage {
             id: "package-1".to_owned(),
@@ -319,7 +350,7 @@ mod tests {
                 stat: "会心率".to_owned(),
                 rank: 1,
             }],
-            target_stats: Vec::new(),
+            target_stats: target_stats(),
         }
     }
 
@@ -384,7 +415,7 @@ mod tests {
     fn required_claims(url: &str) -> Vec<domain::ResearchClaim> {
         let plan = artifact_plan("set-a");
         let main = package("攻撃力%");
-        vec![
+        let mut claims = vec![
             claim(
                 domain::EvidenceClaimType::ArtifactPlan,
                 domain::NormalizedClaimValue::ArtifactPlan { value: plan },
@@ -405,7 +436,15 @@ mod tests {
                 },
                 url,
             ),
-        ]
+        ];
+        claims.extend(target_stats().into_iter().map(|value| {
+            claim(
+                domain::EvidenceClaimType::TargetStat,
+                domain::NormalizedClaimValue::TargetStat { value },
+                url,
+            )
+        }));
+        claims
     }
 
     fn page(
@@ -552,7 +591,7 @@ mod tests {
     }
 
     #[test]
-    fn 必須三項目を支える独立familyを数える() {
+    fn 必須四項目を支える独立familyを数える() {
         let mut claims = required_claims(URL_ONE);
         claims.extend(required_claims(URL_THREE));
         let output = output_with_claims(claims);
@@ -623,7 +662,7 @@ mod tests {
     }
 
     #[test]
-    fn 候補本体と三種類のclaim差分を矛盾として拒否する() {
+    fn 候補本体と必須claimの差分を矛盾として拒否する() {
         let mut claims = required_claims(URL_ONE);
         claims[0].normalized_value = domain::NormalizedClaimValue::ArtifactPlan {
             value: artifact_plan("set-b"),

@@ -35,6 +35,12 @@ const OPERATOR_LABELS: Record<BuildCondition["operator"], string> = {
   lte: "以下",
 };
 
+const TARGET_SCOPE_LABELS: Record<TargetStatRange["scope"], string> = {
+  character_sheet_unbuffed: "戦闘前",
+  character_sheet_with_static_team_effects: "固定チーム効果込み",
+  in_combat_conditional: "戦闘中・条件付き",
+};
+
 const STAT_LABELS: Record<string, string> = {
   atk: "攻撃力",
   attack: "攻撃力",
@@ -81,6 +87,12 @@ function formatTargetRange(target: TargetStatRange) {
   if (minimum) return `${minimum}以上`;
   if (maximum) return `${maximum}以下`;
   return "指定なし";
+}
+
+function formatIncludedBonus(target: TargetStatRange) {
+  return target.includedBonuses
+    .map((bonus) => `${bonus.source} +${formatNumber(bonus.amount)}%${bonus.condition ? `（${bonus.condition}）` : ""}`)
+    .join(" ／ ");
 }
 
 function formatConditionValue(value: BuildCondition["value"]) {
@@ -151,19 +163,24 @@ function SubstatSummary({ priorities }: { priorities: StatPriority[] }) {
 }
 
 function TargetSummary({ targets }: { targets: TargetStatRange[] }) {
+  const calculatedTargets = targets.filter((target) => target.minimum !== null || target.maximum !== null);
   return (
     <div className="min-w-0">
       <p className="text-sm font-semibold text-slate-200">目標ステータス</p>
-      {targets.length > 0 ? (
+      {calculatedTargets.length > 0 ? (
         <ul className="mt-1 space-y-1 text-pretty text-sm text-slate-300">
-          {targets.map((target) => (
+          {calculatedTargets.map((target) => (
             <li key={`${target.stat}-${target.minimum}-${target.maximum}`} className="break-words">
               {localizeStatLabel(target.stat)}：<span className="tabular-nums">{formatTargetRange(target)}</span>
+              <span className="ml-2 text-xs text-slate-400">（{TARGET_SCOPE_LABELS[target.scope]}）</span>
             </li>
           ))}
+          {calculatedTargets.length < targets.length ? (
+            <li className="text-amber-200">一部未算出（再分析が必要です）</li>
+          ) : null}
         </ul>
       ) : (
-        <p className="mt-1 text-pretty text-sm text-slate-400">指定なし</p>
+        <p className="mt-1 text-pretty text-sm text-amber-200">未算出（再分析が必要です）</p>
       )}
     </div>
   );
@@ -452,6 +469,9 @@ export function AnalysisNotesPanel({ catalog, resolution, validity }: AnalysisNo
       variant?.mainStatPackage.conditions.forEach((condition) => add(`メインステータス条件：${formatCondition(condition)}`));
       variant?.mainStatPackage.targetStats.forEach((target) => {
         if (target.note) add(`目標値の注記（${localizeStatLabel(target.stat)}）：${target.note}`);
+        if (target.includedBonuses.length > 0) {
+          add(`目標値に含める効果（${localizeStatLabel(target.stat)}）：${formatIncludedBonus(target)}`);
+        }
       });
     });
     const validityNote = VALIDITY_NOTES[validity];

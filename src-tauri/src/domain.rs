@@ -213,12 +213,23 @@ pub struct StatPriority {
 
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema, PartialEq)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct TargetStatBonus {
+    pub source: String,
+    pub amount: f64,
+    pub condition: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema, PartialEq)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct TargetStatRange {
     pub stat: String,
     pub minimum: Option<f64>,
     pub maximum: Option<f64>,
     pub unit: StatUnit,
     pub scope: TargetScope,
+    #[serde(default)]
+    #[schemars(length(max = 16))]
+    pub included_bonuses: Vec<TargetStatBonus>,
     pub note: Option<String>,
 }
 
@@ -233,7 +244,7 @@ pub struct MainStatPackage {
     pub conditions: Vec<BuildCondition>,
     #[schemars(length(min = 1, max = 32))]
     pub substat_priority: Vec<StatPriority>,
-    #[schemars(length(max = 16))]
+    #[schemars(length(min = 2, max = 8))]
     pub target_stats: Vec<TargetStatRange>,
 }
 
@@ -529,10 +540,24 @@ pub fn validate_character_research_output(
             EvidenceClaimType::ArtifactPlan,
             EvidenceClaimType::MainStatPackage,
             EvidenceClaimType::SubstatPriority,
+            EvidenceClaimType::TargetStat,
         ] {
             if !required_claims.contains(&required) {
                 return Err(invalid(
-                    "候補に聖遺物・メイン・サブステの必須根拠がありません",
+                    "候補に聖遺物・メイン・サブステ・目標値の必須根拠がありません",
+                ));
+            }
+        }
+        for target in &variant.main_stat_package.target_stats {
+            let has_matching_claim = variant.claims.iter().any(|claim| {
+                matches!(
+                    &claim.normalized_value,
+                    NormalizedClaimValue::TargetStat { value } if value == target
+                )
+            });
+            if !has_matching_claim {
+                return Err(invalid(
+                    "各目標ステータスに一致するtarget_stat claimが必要です",
                 ));
             }
         }
@@ -586,11 +611,61 @@ fn validate_main_stat_package(package: &MainStatPackage) -> Result<(), DomainVal
             return Err(invalid("サブステ優先順位は空でない一意の正整数が必要です"));
         }
     }
+    if !(2..=8).contains(&package.target_stats.len()) {
+        return Err(invalid(
+            "目標ステータスは2件以上8件以下である必要があります",
+        ));
+    }
+
+    let mut target_keys = HashSet::new();
     for target in &package.target_stats {
+        let normalized_stat = target.stat.trim().to_lowercase().replace([' ', '-'], "_");
+        let has_invalid_number = target
+            .minimum
+            .into_iter()
+            .chain(target.maximum)
+            .any(|value| !value.is_finite() || value < 0.0);
+        let note_is_missing = target
+            .note
+            .as_deref()
+            .is_none_or(|note| note.trim().is_empty());
+        let mut bonus_sources = HashSet::new();
+        let mut bonus_total = 0.0;
+        for bonus in &target.included_bonuses {
+            let normalized_source = bonus.source.trim().to_lowercase();
+            if normalized_source.is_empty()
+                || !bonus_sources.insert(normalized_source)
+                || !bonus.amount.is_finite()
+                || bonus.amount < 0.0
+                || bonus
+                    .condition
+                    .as_deref()
+                    .is_some_and(|condition| condition.trim().is_empty())
+            {
+                return Err(invalid("目標ステータスへ含める効果が不正です"));
+            }
+            bonus_total += bonus.amount;
+        }
         if target.stat.trim().is_empty()
+            || !target_keys.insert((normalized_stat.clone(), target.scope))
+            || (target.minimum.is_none() && target.maximum.is_none())
+            || has_invalid_number
+            || note_is_missing
             || matches!((target.minimum, target.maximum), (Some(min), Some(max)) if min > max)
         {
             return Err(invalid("目標ステータスの範囲が不正です"));
+        }
+        if matches!(
+            normalized_stat.as_str(),
+            "会心率" | "crit_rate" | "critical_rate"
+        ) && (target.scope != TargetScope::CharacterSheetUnbuffed
+            || target
+                .maximum
+                .is_none_or(|maximum| maximum + bonus_total > 100.0 + f64::EPSILON))
+        {
+            return Err(invalid(
+                "会心率は戦闘前上限と適用可能な加算の合計を100%以下にする必要があります",
+            ));
         }
     }
     Ok(())
@@ -815,6 +890,26 @@ mod tests {
 
     #[test]
     fn codex出力の必須根拠と参照urlを検証する() {
+        let target_stats = json!([
+            {
+                "stat": "会心率",
+                "minimum": 60.0,
+                "maximum": 85.0,
+                "unit": "percent",
+                "scope": "character_sheet_unbuffed",
+                "includedBonuses": [{ "source": "氷共鳴", "amount": 15.0, "condition": "氷元素付着中" }],
+                "note": "氷共鳴などの加算込みで100%以下"
+            },
+            {
+                "stat": "会心ダメージ",
+                "minimum": 120.0,
+                "maximum": 170.0,
+                "unit": "percent",
+                "scope": "character_sheet_unbuffed",
+                "includedBonuses": [],
+                "note": "会心率との均衡を取る"
+            }
+        ]);
         let package = json!({
             "id": "main-1",
             "sands": "攻撃力%",
@@ -822,7 +917,7 @@ mod tests {
             "circlet": "会心率",
             "conditions": [],
             "substatPriority": [{ "stat": "会心率", "rank": 1 }],
-            "targetStats": []
+            "targetStats": target_stats.clone()
         });
         let evidence = json!({
             "sourceUrl": "https://wikiwiki.jp/genshinwiki/example",
@@ -869,6 +964,18 @@ mod tests {
                             "value": [{ "stat": "会心率", "rank": 1 }]
                         },
                         "conditions": [],
+                        "evidence": evidence.clone()
+                    },
+                    {
+                        "claimType": "target_stat",
+                        "normalizedValue": { "kind": "target_stat", "value": target_stats[0].clone() },
+                        "conditions": [],
+                        "evidence": evidence.clone()
+                    },
+                    {
+                        "claimType": "target_stat",
+                        "normalizedValue": { "kind": "target_stat", "value": target_stats[1].clone() },
+                        "conditions": [],
                         "evidence": evidence
                     }
                 ]
@@ -897,6 +1004,55 @@ mod tests {
             validate_character_research_output(&duplicated, "char-a", "7.0"),
             Err(DomainValidationError::Invalid(message)) if message.contains("重複登録")
         ));
+    }
+
+    #[test]
+    fn 目標ステータスの数値と会心率上限を検証する() {
+        let valid = MainStatPackage {
+            id: "main".into(),
+            sands: "攻撃力%".into(),
+            goblet: "元素ダメージ".into(),
+            circlet: "会心率".into(),
+            conditions: vec![],
+            substat_priority: vec![StatPriority {
+                stat: "会心率".into(),
+                rank: 1,
+            }],
+            target_stats: vec![
+                TargetStatRange {
+                    stat: "会心率".into(),
+                    minimum: Some(60.0),
+                    maximum: Some(85.0),
+                    unit: StatUnit::Percent,
+                    scope: TargetScope::CharacterSheetUnbuffed,
+                    included_bonuses: vec![TargetStatBonus {
+                        source: "氷共鳴".into(),
+                        amount: 15.0,
+                        condition: Some("氷元素付着中".into()),
+                    }],
+                    note: Some("戦闘中の加算込みで100%以下".into()),
+                },
+                TargetStatRange {
+                    stat: "会心ダメージ".into(),
+                    minimum: Some(120.0),
+                    maximum: Some(170.0),
+                    unit: StatUnit::Percent,
+                    scope: TargetScope::CharacterSheetUnbuffed,
+                    included_bonuses: vec![],
+                    note: Some("会心率との均衡を取る".into()),
+                },
+            ],
+        };
+        assert_eq!(validate_main_stat_package(&valid), Ok(()));
+
+        let mut over_cap = valid.clone();
+        over_cap.target_stats[0].maximum = Some(86.0);
+        assert!(validate_main_stat_package(&over_cap).is_err());
+
+        let mut missing_bounds = valid.clone();
+        missing_bounds.target_stats[1].minimum = None;
+        missing_bounds.target_stats[1].maximum = None;
+        assert!(validate_main_stat_package(&missing_bounds).is_err());
     }
 
     #[test]
