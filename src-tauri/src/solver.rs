@@ -119,13 +119,7 @@ pub fn solve_team_builds(
                         .map(|index| character_candidates[*index].clone())
                         .collect()
                 } else {
-                    character_candidates
-                        .iter()
-                        .enumerate()
-                        .filter_map(|(index, candidate)| {
-                            (index != selected_index).then_some(candidate.clone())
-                        })
-                        .collect()
+                    character_candidates.clone()
                 },
                 reason: if ambiguous {
                     "数値評価が同点のため、自動決定せずユーザー選択を待っています。".into()
@@ -440,15 +434,21 @@ mod tests {
     }
 
     #[test]
-    fn 正常系は4人を選択し候補なしのalternativesを返す() {
+    fn 正常系は選択候補を表示用候補一覧にも保持する() {
         let result = solve_team_builds(team()).unwrap();
         assert_eq!(result.status, ResolutionStatus::Resolved);
         assert_eq!(result.members.len(), 4);
-        assert!(
-            result.members.iter().all(
-                |member| member.selected_variant_id.is_some() && member.alternatives.is_empty()
-            )
-        );
+        assert!(result.members.iter().all(|member| {
+            member
+                .selected_variant_id
+                .as_ref()
+                .is_some_and(|selected_id| {
+                    member
+                        .alternatives
+                        .iter()
+                        .any(|variant| &variant.id == selected_id)
+                })
+        }));
     }
 
     #[test]
