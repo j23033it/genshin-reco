@@ -73,6 +73,7 @@ pub struct ArtifactSet {
     pub id: String,
     pub name: String,
     pub team_buff_key: Option<String>,
+    pub two_piece_effect_group_id: String,
     pub two_piece_effect: String,
     pub four_piece_effect: Option<String>,
     pub piece_image_urls: PieceImageUrls,
@@ -132,8 +133,8 @@ pub fn validate_catalog(
     manifest: Option<&CatalogManifest>,
     catalog_bytes: &[u8],
 ) -> Result<(), CatalogError> {
-    if catalog.schema_version != "catalog-v1" {
-        return Err(invalid("schemaVersionがcatalog-v1ではありません"));
+    if catalog.schema_version != "catalog-v2" {
+        return Err(invalid("schemaVersionがcatalog-v2ではありません"));
     }
     if catalog.game_version.trim().is_empty() || catalog.catalog_updated_at.trim().is_empty() {
         return Err(invalid("ゲーム版または更新日が空です"));
@@ -143,7 +144,7 @@ pub fn validate_catalog(
     validate_artifacts(&catalog.artifact_sets)?;
 
     if let Some(manifest) = manifest {
-        if manifest.schema_version != "catalog-manifest-v1" {
+        if manifest.schema_version != "catalog-manifest-v2" {
             return Err(invalid("manifestのschemaVersionが不正です"));
         }
         if manifest.game_version != catalog.game_version
@@ -310,6 +311,7 @@ fn validate_weapons(weapons: &[Weapon]) -> Result<(), CatalogError> {
 
 fn validate_artifacts(artifacts: &[ArtifactSet]) -> Result<(), CatalogError> {
     let mut ids = HashSet::new();
+    let mut effect_groups = std::collections::HashMap::new();
     for artifact in artifacts {
         if !ids.insert(&artifact.id) {
             return Err(invalid(format!(
@@ -319,9 +321,24 @@ fn validate_artifacts(artifacts: &[ArtifactSet]) -> Result<(), CatalogError> {
         }
         if artifact.id.trim().is_empty()
             || artifact.name.trim().is_empty()
+            || artifact.two_piece_effect_group_id.trim().is_empty()
             || artifact.two_piece_effect.trim().is_empty()
         {
             return Err(invalid("聖遺物セットの必須項目が空です"));
+        }
+        let expected_group = two_piece_effect_group_id(&artifact.two_piece_effect);
+        if artifact.two_piece_effect_group_id != expected_group {
+            return Err(invalid(format!(
+                "2セット効果group IDが効果本文と一致しません: {}",
+                artifact.id
+            )));
+        }
+        if let Some(previous_effect) = effect_groups.insert(
+            artifact.two_piece_effect_group_id.as_str(),
+            artifact.two_piece_effect.as_str(),
+        ) && previous_effect != artifact.two_piece_effect
+        {
+            return Err(invalid("異なる2セット効果が同じgroup IDを共有しています"));
         }
         if let Some(key) = &artifact.team_buff_key
             && key.trim().is_empty()
@@ -340,6 +357,11 @@ fn validate_artifacts(artifacts: &[ArtifactSet]) -> Result<(), CatalogError> {
         validate_image_url(&artifact.piece_image_urls.circlet)?;
     }
     Ok(())
+}
+
+pub fn two_piece_effect_group_id(effect: &str) -> String {
+    let normalized = effect.trim().replace("\r\n", "\n").replace('\r', "\n");
+    format!("two-piece-{}", hex_digest(normalized.as_bytes()))
 }
 
 pub fn validate_image_url(url: &str) -> Result<(), CatalogError> {
@@ -427,7 +449,7 @@ mod tests {
     #[test]
     fn 最小カタログfixtureを検証できる() {
         let catalog = Catalog {
-            schema_version: "catalog-v1".into(),
+            schema_version: "catalog-v2".into(),
             game_version: "7.0".into(),
             catalog_updated_at: "2026-08-24".into(),
             characters: vec![Character {
@@ -449,6 +471,7 @@ mod tests {
                 id: "10001".into(),
                 name: "旅人の心".into(),
                 team_buff_key: None,
+                two_piece_effect_group_id: two_piece_effect_group_id("攻撃力+18%。"),
                 two_piece_effect: "攻撃力+18%。".into(),
                 four_piece_effect: Some("重撃の会心率+30%。".into()),
                 piece_image_urls: PieceImageUrls {

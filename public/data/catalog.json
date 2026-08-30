@@ -1,5 +1,5 @@
 {
-  "schemaVersion": "catalog-v1",
+  "schemaVersion": "catalog-v2",
   "gameVersion": "7.0",
   "catalogUpdatedAt": "2026-08-24",
   "characters": [
@@ -2741,6 +2741,7 @@
       "id": "10001",
       "name": "旅人の心",
       "teamBuffKey": null,
+      "twoPieceEffectGroupId": "two-piece-e891584881b88dc7b3d43b3d13c95c52d1cb915f7ce5f17fcfe42510a7b83bde",
       "twoPieceEffect": "攻撃力+18%。",
       "fourPieceEffect": "重撃の会心率+30%。",
       "pieceImageUrls": {
@@ -2755,6 +2756,7 @@
       "id": "10002",
       "name": "勇士の心",
       "teamBuffKey": null,
+      "twoPieceEffectGroupId": "two-piece-e891584881b88dc7b3d43b3d13c95c52d1cb915f7ce5f17fcfe42510a7b83bde",
       "twoPieceEffect": "攻撃力+18%。",
       "fourPieceEffect": "HPが50%以上の敵に対するダメージ+30%。",
       "pieceImageUrls": {
@@ -2769,6 +2771,7 @@
       "id": "10003",
       "name": "守護の心",
       "teamBuffKey": "artifact-team-buff:10003",
+      "twoPieceEffectGroupId": "two-piece-eedcea96ed6985238e1cd5dfb95b84f01a6adad85b7ff12af8df29d7f9407c03",
       "twoPieceEffect": "防御力+30%。",
       "fourPieceEffect": "チーム内の自身のキャラクターの元素タイプ1種類につき、自身にその元素の耐性+30%。",
       "pieceImageUrls": {
@@ -2783,6 +2786,7 @@
       "id": "10004",
       "name": "奇跡",
       "teamBuffKey": null,
+      "twoPieceEffectGroupId": "two-piece-52bcea7aca6f4cd0d9f00a9f53bd37bbe2099ed29d88f61d50c1a58e865538a3",
       "twoPieceEffect": "全ての元素耐性+20%。",
       "fourPieceEffect": "元素ダメージを受けると、その元素の耐性+30%、継続時間10秒。10秒毎に1回のみ発動可能。",
       "pieceImageUrls": {
@@ -2797,6 +2801,7 @@
       "id": "10005",
       "name": "狂戦士",
       "teamBuffKey": null,
+      "twoPieceEffectGroupId": "two-piece-1c7ba4a06a725006492d0e02ad3bbaae0f6b8f7e7235944f365991a10cf8a69e",
       "twoPieceEffect": "会心率+12%。",
       "fourPieceEffect": "HPが70%以下になると、会心率+24%。",
       "pieceImageUrls": {
@@ -2811,6 +2816,7 @@
       "id": "10006",
       "name": "武人",
       "teamBuffKey": null,
+      "twoPieceEffectGroupId": "two-piece-21e73e9f7fd04e2aa5e857c91fe5daf8719fffb7d80e6ce724e1da6324c6ad26",
       "twoPieceEffect": "通常攻撃と重擊ダメージ+15%。",
       "fourPieceEffect": "元素スキル発動後、通常攻撃と重撃ダメージ+25%、継続時間8秒。",
       "pieceImageUrls": {
@@ -2825,6 +2831,7 @@
       "id": "10007",
       "name": "教官",
       "teamBuffKey": "artifact-team-buff:10007",
+      "twoPieceEffectGroupId": "two-piece-11790518b834aa31d46aa05bf8f104228c212e0b7b6f2d3ce876e7c4236f6150",
       "twoPieceEffect": "元素熟知+80。",
       "fourPieceEffect": "元素反応を引き起こした後、チーム全員の元素熟知+120、継続時間8秒。",
       "pieceImageUrls": {
@@ -2839,6 +2846,7 @@
       "id": "10008",
       "name": "博徒",
       "teamBuffKey": null,
+      "twoPieceEffectGroupId": "two-piece-7b369abc30d6e0bf9c02e6a85466d283655bb265bbb7d514c69cad58d7d00118",
       "twoPieceEffect": "元素スキルのダメージ+20%。",
       "fourPieceEffect": "敵を倒した時、100%の確率で元素スキルのクールタイムをリセットする。15秒に1回のみ発動可能。",
       "pieceImageUrls": {
@@ -2853,6 +2861,7 @@
       "id": "10009",
       "name": "亡命者",
       "teamBuffKey": "artifact-team-buff:10009",
+      "twoPieceEffectGroupId": "two-piece-6151731d26a813534b026b590465547a1c450b7531b8a5160c760e91d19de83c",
       "twoPieceEffect": "元素チャージ効率+20%。",
       "fourPieceEffect": "元素爆発を発動すると、2秒毎にチーム全員（自分を除く）の元素エネルギーを2回復する、継続時間6秒。重ね掛け不可。",
       "pieceImageUrls": {
@@ -2867,6 +2876,7 @@
       "id": "10010",
       "name": "冒険者",
       "teamBuffKey": null,
+      "twoPieceEffectGroupId": "two-piece-6ddb26cee44ac370dc3592ed8286d997df577ee15be7468198171e53be32d903",
       "twoPieceEffect": "HP上限+1000。",
       "fourPieceEffect": "宝箱を開けた後5秒間、HPの30%を徐々に回復する。",
       "pieceImageUrls": {
@@ -2881,6 +2891,7 @@
       "id": "10011",
       "name": "幸運",
       "teamBuffKey": null,
+      "twoPieceEffectGroupId": "two-piece-b112644a408be7610721af425c6238a6bd5fdb361fa6eda36e68e4b1057ac15b",
       "twoPieceEffect": "防御力+100。",
       "fourPieceEffect": "モラを拾得すると、HPを300回復する。",
       "pieceImageUrls": {
@@ -2895,6 +2906,7 @@
       "id": "10012",
       "name": "学者",
       "teamBuffKey": "artifact-team-buff:10012",
+      "twoPieceEffectGroupId": "two-piece-6151731d26a813534b026b590465547a1c450b7531b8a5160c760e91d19de83c",
       "twoPieceEffect": "元素チャージ効率+20%。",
       "fourPieceEffect": "元素オーブまたは元素粒子を獲得した時、チーム内全ての弓と法器キャラの元素エネルギーが3回復する。3秒毎に1回のみ発動可能。",
       "pieceImageUrls": {
@@ -2909,6 +2921,7 @@
       "id": "10013",
       "name": "医者",
       "teamBuffKey": null,
+      "twoPieceEffectGroupId": "two-piece-994f88b5897ecbb8a5a93e4e27825a28ee5a44711c9079c0780c3729fd3eb905",
       "twoPieceEffect": "受ける治療効果+20%。",
       "fourPieceEffect": "元素爆発を発動すると、HPを20%回復する。",
       "pieceImageUrls": {
@@ -2923,6 +2936,7 @@
       "id": "14001",
       "name": "氷風を彷徨う勇士",
       "teamBuffKey": null,
+      "twoPieceEffectGroupId": "two-piece-75b45dbef01119644d16df1b999d590514e67205cbd9d54a79b8061265b37475",
       "twoPieceEffect": "氷元素ダメージ+15%。",
       "fourPieceEffect": "氷元素の影響を受けている敵を攻撃した場合、会心率+20%。敵が凍結状態の場合、会心率は更に+20%。",
       "pieceImageUrls": {
@@ -2937,6 +2951,7 @@
       "id": "14002",
       "name": "雷を鎮める尊者",
       "teamBuffKey": null,
+      "twoPieceEffectGroupId": "two-piece-91a997a2abd2d5560fdb28518bf02a402e47c518a84ad6973e459a02c046b8d6",
       "twoPieceEffect": "雷元素耐性+40%。",
       "fourPieceEffect": "雷元素の影響を受けた敵に対するダメージ+35%。",
       "pieceImageUrls": {
@@ -2951,6 +2966,7 @@
       "id": "14003",
       "name": "烈火を渡る賢者",
       "teamBuffKey": null,
+      "twoPieceEffectGroupId": "two-piece-4e0f87dfb1a1868ea621c88e1c8352b5d1627bf26dc167859387f9fa9d13ce84",
       "twoPieceEffect": "炎元素耐性+40%。",
       "fourPieceEffect": "炎元素の影響を受けた敵に対するダメージ+35%。",
       "pieceImageUrls": {
@@ -2965,6 +2981,7 @@
       "id": "14004",
       "name": "愛される少女",
       "teamBuffKey": "artifact-team-buff:14004",
+      "twoPieceEffectGroupId": "two-piece-26bf93034103f8ca31bb388be183da0cb9d11974f40cb5fe7f507d639d7f13f8",
       "twoPieceEffect": "与える治療効果+15%。",
       "fourPieceEffect": "元素スキルまたは元素爆発を発動した後10秒間、チーム全員の受ける治療効果+20%。",
       "pieceImageUrls": {
@@ -2979,6 +2996,7 @@
       "id": "15001",
       "name": "剣闘士のフィナーレ",
       "teamBuffKey": null,
+      "twoPieceEffectGroupId": "two-piece-e891584881b88dc7b3d43b3d13c95c52d1cb915f7ce5f17fcfe42510a7b83bde",
       "twoPieceEffect": "攻撃力+18%。",
       "fourPieceEffect": "該当聖遺物セットを装備したキャラが片手剣、両手剣、長柄武器キャラの場合、通常攻撃ダメージ+35%。",
       "pieceImageUrls": {
@@ -2993,6 +3011,7 @@
       "id": "15002",
       "name": "翠緑の影",
       "teamBuffKey": null,
+      "twoPieceEffectGroupId": "two-piece-d77c5c587bb0afed6746c8bce5e9f4bd0acf2134ebdb908a1996e5d7fd89b132",
       "twoPieceEffect": "風元素ダメージ+15%。",
       "fourPieceEffect": "拡散反応によるダメージ+60%、星拡散反応によるダメージ+20%。拡散された元素タイプに応じて、影響を受けた敵の当該元素耐性-40%。継続時間10秒。敵に対して星拡散反応を起こした時も、その氷元素耐性-40%。同じ元素タイプの耐性ダウン効果は重ね掛けできない。",
       "pieceImageUrls": {
@@ -3007,6 +3026,7 @@
       "id": "15003",
       "name": "大地を流浪する楽団",
       "teamBuffKey": null,
+      "twoPieceEffectGroupId": "two-piece-11790518b834aa31d46aa05bf8f104228c212e0b7b6f2d3ce876e7c4236f6150",
       "twoPieceEffect": "元素熟知+80。",
       "fourPieceEffect": "該当聖遺物セットを装備したキャラが法器、弓キャラの場合、キャラの重撃ダメージ+35%。",
       "pieceImageUrls": {
@@ -3021,6 +3041,7 @@
       "id": "15005",
       "name": "雷のような怒り",
       "teamBuffKey": null,
+      "twoPieceEffectGroupId": "two-piece-cb2c583dd571284f85fa11e30748e43b72c3c4e17858edee57499b489ac27b6c",
       "twoPieceEffect": "雷元素ダメージ+15%。",
       "fourPieceEffect": "過負荷、感電、超電導、超開花反応によるダメージ+40%、超激化反応によるダメージアップ効果+20%、月感電、星電導反応によるダメージ+20%。上記元素反応または原激化反応を起こすと、元素スキルのクールタイム-1秒。0.8秒毎に最大1回のみ発動可能。",
       "pieceImageUrls": {
@@ -3035,6 +3056,7 @@
       "id": "15006",
       "name": "燃え盛る炎の魔女",
       "teamBuffKey": null,
+      "twoPieceEffectGroupId": "two-piece-9aa9733a114673156f53dcbb8f30b922a30669d4acac532b51f1a097f8791f3d",
       "twoPieceEffect": "炎元素ダメージ+15%。",
       "fourPieceEffect": "過負荷、燃焼、烈開花反応によるダメージ+40%。蒸発、溶解反応による加算効果+15%。元素スキルを発動した10秒間、2セットの効果が50%アップし、最大3重まで。",
       "pieceImageUrls": {
@@ -3049,6 +3071,7 @@
       "id": "15007",
       "name": "旧貴族のしつけ",
       "teamBuffKey": "artifact-team-buff:15007",
+      "twoPieceEffectGroupId": "two-piece-a5bbd4e7ae1da63e02096b3fec14a0b820db8803aa361cc923c49235df32ddf4",
       "twoPieceEffect": "元素爆発のダメージ+20%。",
       "fourPieceEffect": "元素爆発を発動すると、チーム全員の攻撃力+20%、継続時間12秒、重ねがけ不可。",
       "pieceImageUrls": {
@@ -3063,6 +3086,7 @@
       "id": "15008",
       "name": "血染めの騎士道",
       "teamBuffKey": null,
+      "twoPieceEffectGroupId": "two-piece-37eb4c787f51b431feaf783afda2f534df3af47e7481627a58ff08f7141e4ce5",
       "twoPieceEffect": "物理ダメージ+25%。",
       "fourPieceEffect": "敵を倒した後の10秒間、重撃の際にスタミナを消費しない。また、重撃のダメージ+50%。",
       "pieceImageUrls": {
@@ -3077,6 +3101,7 @@
       "id": "15009",
       "name": "火祭りの人",
       "teamBuffKey": null,
+      "twoPieceEffectGroupId": "two-piece-3654f3dfd2f4c6762f19191c158993051d9d6c373cc5ab96f755272389d08499",
       "twoPieceEffect": "受けた炎元素付着の効果継続時間-40%。",
       "fourPieceEffect": null,
       "pieceImageUrls": {
@@ -3091,6 +3116,7 @@
       "id": "15010",
       "name": "水祭りの人",
       "teamBuffKey": null,
+      "twoPieceEffectGroupId": "two-piece-16469202bb5ae579e757906d23a113e53d0e2e3ee0d7879c65abeaacf3a3e1fa",
       "twoPieceEffect": "受けた水元素付着の効果継続時間-40%。",
       "fourPieceEffect": null,
       "pieceImageUrls": {
@@ -3105,6 +3131,7 @@
       "id": "15011",
       "name": "雷祭りの人",
       "teamBuffKey": null,
+      "twoPieceEffectGroupId": "two-piece-f1469c5e9bc23282917bc049602812cfd7ffab80a6d50253c08739c64409a931",
       "twoPieceEffect": "受けた雷元素付着の効果継続時間-40%。",
       "fourPieceEffect": null,
       "pieceImageUrls": {
@@ -3119,6 +3146,7 @@
       "id": "15013",
       "name": "氷祭りの人",
       "teamBuffKey": null,
+      "twoPieceEffectGroupId": "two-piece-2eb4e1c9f1b0d0c46a9c53e47892118c802c4dd8b187715bb1b497f591c346b3",
       "twoPieceEffect": "受けた氷元素付着の効果継続時間-40%。",
       "fourPieceEffect": null,
       "pieceImageUrls": {
@@ -3133,6 +3161,7 @@
       "id": "15014",
       "name": "悠久の磐岩",
       "teamBuffKey": "artifact-team-buff:15014",
+      "twoPieceEffectGroupId": "two-piece-1d2f59c305364fc0462c50336a06e50cfe36202ed81967d419ca0211ef5a6c62",
       "twoPieceEffect": "岩元素ダメージ+15%。",
       "fourPieceEffect": "結晶反応で形成された欠片を獲得、または月結晶反応を起こすと、チーム全員の該当元素ダメージ+35%、継続時間10秒。元素ダメージアップは1種類のみ獲得可能。",
       "pieceImageUrls": {
@@ -3147,6 +3176,7 @@
       "id": "15015",
       "name": "逆飛びの流星",
       "teamBuffKey": null,
+      "twoPieceEffectGroupId": "two-piece-b039846b2819f25eeebf8dfabae0f1e9b8ebbe72612a0ae9294b55ed8f867b1d",
       "twoPieceEffect": "シールド強化+35%",
       "fourPieceEffect": "シールド状態の時、通常攻撃と重撃ダメージ+40%。",
       "pieceImageUrls": {
@@ -3161,6 +3191,7 @@
       "id": "15016",
       "name": "沈淪の心",
       "teamBuffKey": null,
+      "twoPieceEffectGroupId": "two-piece-8bbdb7452a74bcabdbf86a8a688b93385334fda6caf07a62c50b9130faafe387",
       "twoPieceEffect": "水元素ダメージ+15%。",
       "fourPieceEffect": "元素スキルを発動した後の15秒間、通常攻撃と重撃のダメージ+30%。",
       "pieceImageUrls": {
@@ -3175,6 +3206,7 @@
       "id": "15017",
       "name": "千岩牢固",
       "teamBuffKey": "artifact-team-buff:15017",
+      "twoPieceEffectGroupId": "two-piece-6b39669ecbe4c46b85f4de8efab18ebc3620bf60573507e29f95ffbee5b28fe6",
       "twoPieceEffect": "HP+20%。",
       "fourPieceEffect": "元素スキルが敵に命中すると、周囲のチーム全員の攻撃力+20%、シールド強化+30%、持続時間3秒。この効果は0.5秒毎に1回のみ発動可能。この聖遺物セットを装備したキャラクターが待機している場合にも効果を発動できる。",
       "pieceImageUrls": {
@@ -3189,6 +3221,7 @@
       "id": "15018",
       "name": "蒼白の炎",
       "teamBuffKey": null,
+      "twoPieceEffectGroupId": "two-piece-37eb4c787f51b431feaf783afda2f534df3af47e7481627a58ff08f7141e4ce5",
       "twoPieceEffect": "物理ダメージ+25%。",
       "fourPieceEffect": "元素スキルが敵に命中すると、攻撃力+9%。持続時間7秒、最大2重まで、0.3秒毎に1回のみ発動可能。2重まで重ねると、2セットの効果が2倍になる。",
       "pieceImageUrls": {
@@ -3203,6 +3236,7 @@
       "id": "15019",
       "name": "追憶のしめ縄",
       "teamBuffKey": null,
+      "twoPieceEffectGroupId": "two-piece-e891584881b88dc7b3d43b3d13c95c52d1cb915f7ce5f17fcfe42510a7b83bde",
       "twoPieceEffect": "攻撃力+18%。",
       "fourPieceEffect": "元素スキルを発動した時、キャラクターの元素エネルギーが15以上の場合、元素エネルギーを15消費し、次の10秒間通常攻撃、重撃、落下攻撃ダメージ+50%。継続時間中この効果は再発動できない。",
       "pieceImageUrls": {
@@ -3217,6 +3251,7 @@
       "id": "15020",
       "name": "絶縁の旗印",
       "teamBuffKey": null,
+      "twoPieceEffectGroupId": "two-piece-6151731d26a813534b026b590465547a1c450b7531b8a5160c760e91d19de83c",
       "twoPieceEffect": "元素チャージ効率+20%。",
       "fourPieceEffect": "元素チャージ効率の25%を基準に、元素爆発ダメージがアップする。この方法でアップできるダメージは最大75%まで。",
       "pieceImageUrls": {
@@ -3231,6 +3266,7 @@
       "id": "15021",
       "name": "華館夢醒形骸記",
       "teamBuffKey": null,
+      "twoPieceEffectGroupId": "two-piece-eedcea96ed6985238e1cd5dfb95b84f01a6adad85b7ff12af8df29d7f9407c03",
       "twoPieceEffect": "防御力+30%。",
       "fourPieceEffect": "この聖遺物セットを装備したキャラクターは、以下の状況において「問答」効果を獲得する。「問答」効果：フィールド上で岩元素攻撃を敵に命中した後に1層獲得、0.3秒毎に1層のみ獲得できる。待機中の時は、3秒毎に自動で1層獲得する。重ね掛けできる「問答」は最大4層までとなり、1層につき防御力+6%、岩元素ダメージ+6%。6秒毎に「問答」効果を獲得していない場合は、1層失う。",
       "pieceImageUrls": {
@@ -3245,6 +3281,7 @@
       "id": "15022",
       "name": "海染硨磲",
       "teamBuffKey": "artifact-team-buff:15022",
+      "twoPieceEffectGroupId": "two-piece-26bf93034103f8ca31bb388be183da0cb9d11974f40cb5fe7f507d639d7f13f8",
       "twoPieceEffect": "与える治療効果+15%。",
       "fourPieceEffect": "この聖遺物セットを装備したキャラクターがチーム内のキャラクターに治療を行うと、治療によるHP回復量（HP上限を超えた回復量も含む）を記録する海染の泡を生成する。海染の泡は3秒継続する。継続時間終了時、海染の泡は破裂し、周囲の敵に記録した回復量の90%分のダメージを与える（このダメージは感電や超電導などの元素反応と同じように計算されるが、元素熟知、キャラクターLv、または元素反応のダメージアップ効果の影響は受けない）。海染の泡は3.5秒毎に1回のみ生成可能。海染の泡が記録できる回復量は最大30000までとなり、HP上限超過分の回復量を含む。自身のチーム内に、海染の泡は1つのみ存在可能。この聖遺物セットを装備したキャラクターは待機中でも、この効果を発動できる。",
       "pieceImageUrls": {
@@ -3259,6 +3296,7 @@
       "id": "15023",
       "name": "辰砂往生録",
       "teamBuffKey": null,
+      "twoPieceEffectGroupId": "two-piece-e891584881b88dc7b3d43b3d13c95c52d1cb915f7ce5f17fcfe42510a7b83bde",
       "twoPieceEffect": "攻撃力+18%。",
       "fourPieceEffect": "元素爆発を発動すると、継続時間16秒の「潜光」効果が発動する。「潜光」：攻撃力+8%、キャラクターがHPを失うたびに攻撃力がさらに10%アップする。HPの損失による攻撃力アップ効果は0.8秒毎に1回のみ発動でき、最大4回重ね掛けできる。「潜光」効果はキャラクターが戦闘不能、または退場する時に解除される。「潜光」効果の継続時間中に再び元素爆発を発動すると、既存の「潜光」効果が先にクリアされる。",
       "pieceImageUrls": {
@@ -3273,6 +3311,7 @@
       "id": "15024",
       "name": "来歆の余響",
       "teamBuffKey": null,
+      "twoPieceEffectGroupId": "two-piece-e891584881b88dc7b3d43b3d13c95c52d1cb915f7ce5f17fcfe42510a7b83bde",
       "twoPieceEffect": "攻撃力+18%。",
       "fourPieceEffect": "通常攻撃が敵に命中すると、36%の確率で「幽谷祭祀」が発動する。「幽谷祭祀」：通常攻撃ダメージが攻撃力70%分アップする。この効果は通常攻撃でダメージを与えた0.05秒後にクリアされる。通常攻撃後に「幽谷祭祀」が発動しなかった場合、次回の発動確率+20%。発動判定は0.2秒毎に1回のみ行われる。",
       "pieceImageUrls": {
@@ -3287,6 +3326,7 @@
       "id": "15025",
       "name": "深林の記憶",
       "teamBuffKey": null,
+      "twoPieceEffectGroupId": "two-piece-603beffcee541deeae09a05c684745def5e5298ecf8b5eaffe46933b2666e858",
       "twoPieceEffect": "草元素ダメージ+15%。",
       "fourPieceEffect": "元素スキルまたは元素爆発が敵に命中すると、その敵の草元素耐性-30%、継続時間8秒。装備したキャラクターが待機している場合にも効果を発動できる。",
       "pieceImageUrls": {
@@ -3301,6 +3341,7 @@
       "id": "15026",
       "name": "金メッキの夢",
       "teamBuffKey": "artifact-team-buff:15026",
+      "twoPieceEffectGroupId": "two-piece-11790518b834aa31d46aa05bf8f104228c212e0b7b6f2d3ce876e7c4236f6150",
       "twoPieceEffect": "元素熟知+80。",
       "fourPieceEffect": "元素反応を起こした後の8秒間、装備キャラクターは、チーム内自身以外のキャラクターの元素タイプに応じて強化効果を獲得する。チームに装備キャラクターと同じ元素タイプのキャラクターが1名存在する毎に攻撃力+14%、異なる元素タイプのキャラクターが1名存在する毎に元素熟知+50。上記効果は、それぞれ最大でキャラクター3名までカウントされる。この効果は8秒毎に1回のみ発動可能。装備したキャラクターが待機している場合にも効果を発動できる。",
       "pieceImageUrls": {
@@ -3315,6 +3356,7 @@
       "id": "15027",
       "name": "砂上の楼閣の史話",
       "teamBuffKey": null,
+      "twoPieceEffectGroupId": "two-piece-d77c5c587bb0afed6746c8bce5e9f4bd0acf2134ebdb908a1996e5d7fd89b132",
       "twoPieceEffect": "風元素ダメージ+15%。",
       "fourPieceEffect": "重撃が敵に命中すると、該当キャラクターの通常攻撃の攻撃速度+10%、通常攻撃、重撃および落下攻撃ダメージ+40%、継続時間15秒。",
       "pieceImageUrls": {
@@ -3329,6 +3371,7 @@
       "id": "15028",
       "name": "楽園の絶花",
       "teamBuffKey": null,
+      "twoPieceEffectGroupId": "two-piece-11790518b834aa31d46aa05bf8f104228c212e0b7b6f2d3ce876e7c4236f6150",
       "twoPieceEffect": "元素熟知+80。",
       "fourPieceEffect": "開花、超開花、烈開花反応によるダメージ+40%、月開花反応によるダメージ+10%。また、装備者自身が開花、超開花、烈開花、または月開花を起こした後、上記強化効果が25%アップする。継続時間10秒、最大4層まで重ねられ、1秒毎に最大1回のみ発動可能。装備したキャラクターが待機している場合にも効果を発動できる。",
       "pieceImageUrls": {
@@ -3343,6 +3386,7 @@
       "id": "15029",
       "name": "水仙の夢",
       "teamBuffKey": null,
+      "twoPieceEffectGroupId": "two-piece-8bbdb7452a74bcabdbf86a8a688b93385334fda6caf07a62c50b9130faafe387",
       "twoPieceEffect": "水元素ダメージ+15%。",
       "fourPieceEffect": "通常攻撃、重撃、落下攻撃、元素スキル、または元素爆発が敵に命中すると、8秒間継続する「鏡中の水仙」効果を1層獲得する。1/2/3層以上の「鏡中の水仙」効果を持つ時、それぞれ攻撃力+7%/16%/25%、水元素ダメージ+4%/9%/15%。通常攻撃、重撃、落下攻撃、元素スキル、元素爆発による「鏡中の水仙」効果はそれぞれ独立してカウントされる。",
       "pieceImageUrls": {
@@ -3357,6 +3401,7 @@
       "id": "15030",
       "name": "花海甘露の光",
       "teamBuffKey": null,
+      "twoPieceEffectGroupId": "two-piece-6b39669ecbe4c46b85f4de8efab18ebc3620bf60573507e29f95ffbee5b28fe6",
       "twoPieceEffect": "HP+20%。",
       "fourPieceEffect": "元素スキルと元素爆発のダメージ+10%。装備者がダメージを受けた後の5秒間、上記強化効果が80%アップする。最大5層まで重ね掛け可能。継続時間は層ごとに独立してカウントされる。装備したキャラクターが待機している場合にも効果を発動できる。",
       "pieceImageUrls": {
@@ -3371,6 +3416,7 @@
       "id": "15031",
       "name": "ファントムハンター",
       "teamBuffKey": null,
+      "twoPieceEffectGroupId": "two-piece-21e73e9f7fd04e2aa5e857c91fe5daf8719fffb7d80e6ce724e1da6324c6ad26",
       "twoPieceEffect": "通常攻撃と重擊ダメージ+15%。",
       "fourPieceEffect": "現在HPが増減する時、会心率+12%、継続時間5秒、最大3層まで重ね掛け可能。",
       "pieceImageUrls": {
@@ -3385,6 +3431,7 @@
       "id": "15032",
       "name": "黄金の劇団",
       "teamBuffKey": null,
+      "twoPieceEffectGroupId": "two-piece-7b369abc30d6e0bf9c02e6a85466d283655bb265bbb7d514c69cad58d7d00118",
       "twoPieceEffect": "元素スキルのダメージ+20%。",
       "fourPieceEffect": "元素スキルのダメージ+25%。また、装備者が待機中の時、元素スキルのダメージがさらに+25%。この効果は装備キャラクターが登場してから2秒後に解除される。",
       "pieceImageUrls": {
@@ -3399,6 +3446,7 @@
       "id": "15033",
       "name": "在りし日の歌",
       "teamBuffKey": "artifact-team-buff:15033",
+      "twoPieceEffectGroupId": "two-piece-26bf93034103f8ca31bb388be183da0cb9d11974f40cb5fe7f507d639d7f13f8",
       "twoPieceEffect": "与える治療効果+15%。",
       "fourPieceEffect": "装備者がチームにいるキャラクターのHPを回復した時、継続時間6秒の「渇望」効果が発動し、HP回復量（HP上限を超えた回復量も含む）を記録する。継続時間終了時、「渇望」効果は「かの時の潮」効果に変化する。「かの時の潮」効果発動中、フィールド上にいるチーム内の自身キャラクターの通常攻撃、重撃、落下攻撃、元素スキル、元素爆発が敵に命中すると、「渇望」効果で記録した回復量の8%分を基に与えるダメージをアップする。「かの時の潮」効果は、5回発動、または10秒後にクリアされる。1回の「渇望」効果が記録する回復量は最大15000ポイントまで。なお、「渇望」は1つのみ存在でき、複数の装備者の与える回復量を記録可能。装備したキャラクターが待機している場合にも効果を発動できる。",
       "pieceImageUrls": {
@@ -3413,6 +3461,7 @@
       "id": "15034",
       "name": "残響の森で囁かれる夜話",
       "teamBuffKey": "artifact-team-buff:15034",
+      "twoPieceEffectGroupId": "two-piece-e891584881b88dc7b3d43b3d13c95c52d1cb915f7ce5f17fcfe42510a7b83bde",
       "twoPieceEffect": "攻撃力+18%。",
       "fourPieceEffect": "元素スキルを発動した後の10秒間、岩元素ダメージ+20%。結晶反応によるシールド状態にある時、または周囲に月結晶反応で生成された月籠が存在する時、上記強化効果が150%アップする。追加された効果量は、条件を満たさなくなった1秒後に解除される。",
       "pieceImageUrls": {
@@ -3427,6 +3476,7 @@
       "id": "15035",
       "name": "諧律奇想の断章",
       "teamBuffKey": null,
+      "twoPieceEffectGroupId": "two-piece-e891584881b88dc7b3d43b3d13c95c52d1cb915f7ce5f17fcfe42510a7b83bde",
       "twoPieceEffect": "攻撃力+18%。",
       "fourPieceEffect": "命の契約の数値が増減する時、キャラクターの与えるダメージ+18%、継続時間6秒、最大3層まで重ね掛け可能。",
       "pieceImageUrls": {
@@ -3441,6 +3491,7 @@
       "id": "15036",
       "name": "遂げられなかった想い",
       "teamBuffKey": null,
+      "twoPieceEffectGroupId": "two-piece-e891584881b88dc7b3d43b3d13c95c52d1cb915f7ce5f17fcfe42510a7b83bde",
       "twoPieceEffect": "攻撃力+18%。",
       "fourPieceEffect": "戦闘状態が解除されてから3秒経過すると、与えるダメージ+50%。戦闘状態にある時、近くに燃焼状態の敵が存在しないまま6秒以上経過すると、上記強化効果の効果量は0%になるまで1秒毎に10%減少する。一方、燃焼状態の敵が存在する場合、50%になるまで1秒毎に10%増加する。この聖遺物セットを装備したキャラクターが待機している場合にも、効果を発動できる。",
       "pieceImageUrls": {
@@ -3455,6 +3506,7 @@
       "id": "15037",
       "name": "灰燼の都に立つ英雄の絵巻",
       "teamBuffKey": "artifact-team-buff:15037",
+      "twoPieceEffectGroupId": "two-piece-78a08bdd1215110a14fa3245c6afeba572bfbcd2e469e6ed4a55e101c9af3926",
       "twoPieceEffect": "付近にいるチーム内キャラクターが「夜魂バースト」を起こすと、装備者は元素エネルギーを6ポイント回復する。",
       "fourPieceEffect": "装備者が自身の元素タイプの関連元素反応を起こした後、周囲のチーム全員の、該当元素反応の関連元素タイプのダメージ+12%、継続時間15秒。この効果を発動した時に、装備者が「夜魂の加護」状態にあった場合、周囲チーム全員の前述の元素タイプのダメージがさらに+28%、継続時間20秒。装備者が待機中でも、上記効果を発動できる。同名の聖遺物セットによるダメージアップ効果は重ね掛け不可。",
       "pieceImageUrls": {
@@ -3469,6 +3521,7 @@
       "id": "15038",
       "name": "黒曜の秘典",
       "teamBuffKey": null,
+      "twoPieceEffectGroupId": "two-piece-64e0e7834286dd24117de9157f4fcd35f9f56abab53b86bba66b480e614441c6",
       "twoPieceEffect": "装備者が夜魂の加護状態にあり、かつフィールド上にいる時、与えるダメージ+15%。",
       "fourPieceEffect": "装備者がフィールド上で夜魂値を1消費すると、会心率+40%、継続時間6秒。この効果は1秒毎に1回のみ発動可能。",
       "pieceImageUrls": {
@@ -3483,6 +3536,7 @@
       "id": "15039",
       "name": "長き夜の誓い",
       "teamBuffKey": null,
+      "twoPieceEffectGroupId": "two-piece-0eef5892c2a2dd6b7d9febd0fca894ea9afd0342afbeaf839b1f1ae3803fd820",
       "twoPieceEffect": "落下攻撃の与えるダメージ+25%。",
       "fourPieceEffect": "装備者の落下攻撃/重撃/元素スキルが敵に命中した後、「永遠に輝く流光」効果を1/2/2層獲得する。落下攻撃、重撃、または元素スキルによるこの効果はそれぞれ1秒毎に1回のみ発動可能。「永遠に輝く流光」：落下攻撃ダメージ+15%、継続時間6秒、最大5層まで重ね掛け可能。継続時間は層ごとに独立してカウントされる。",
       "pieceImageUrls": {
@@ -3497,6 +3551,7 @@
       "id": "15040",
       "name": "深廊の終曲",
       "teamBuffKey": null,
+      "twoPieceEffectGroupId": "two-piece-75b45dbef01119644d16df1b999d590514e67205cbd9d54a79b8061265b37475",
       "twoPieceEffect": "氷元素ダメージ+15%。",
       "fourPieceEffect": "装備者の元素エネルギーが0の時、通常攻撃ダメージ+60%、元素爆発ダメージ+60%。装備者の通常攻撃がダメージを与えた後、上記元素爆発ダメージアップ効果は6秒間無効になる。装備者の元素爆発がダメージを与えた後、上記通常攻撃ダメージアップ効果は6秒間無効になる。キャラクターが待機中でも発動できる。",
       "pieceImageUrls": {
@@ -3511,6 +3566,7 @@
       "id": "15041",
       "name": "天穹の顕現せし夜",
       "teamBuffKey": "artifact-team-buff:15041",
+      "twoPieceEffectGroupId": "two-piece-11790518b834aa31d46aa05bf8f104228c212e0b7b6f2d3ce876e7c4236f6150",
       "twoPieceEffect": "元素熟知+80。",
       "fourPieceEffect": "付近にいるチーム内キャラクターが月反応を起こした時に装備者がフィールドにいる場合、4秒間継続する「月輝明光・蓄念」効果を獲得する。「月輝明光・蓄念」：チームの月兆が初照/満照の時、会心率+15%/30%。チーム内キャラクターの「月輝明光」効果が1種類存在するごとに、チーム内キャラクターが起こす月反応のダメージ+10%。「月輝明光」によって生じた効果は重ね掛け不可。",
       "pieceImageUrls": {
@@ -3525,6 +3581,7 @@
       "id": "15042",
       "name": "月を紡ぐ夜の歌",
       "teamBuffKey": "artifact-team-buff:15042",
+      "twoPieceEffectGroupId": "two-piece-6151731d26a813534b026b590465547a1c450b7531b8a5160c760e91d19de83c",
       "twoPieceEffect": "元素チャージ効率+20%。",
       "fourPieceEffect": "元素ダメージを与えた時、8秒間継続する「月輝明光・崇拝」効果を獲得する。「月輝明光・崇拝」：チームの月兆が初照/満照の時、チーム全員の元素熟知+60/120。装備者が待機中でも、上記効果を発動できる。チーム内キャラクターの「月輝明光」効果が1種類存在するごとに、チーム内キャラクターが起こす月反応のダメージ+10%。「月輝明光」によって生じた効果は重ね掛け不可。",
       "pieceImageUrls": {
@@ -3539,6 +3596,7 @@
       "id": "15043",
       "name": "暁の星と月の歌",
       "teamBuffKey": "artifact-team-buff:15043",
+      "twoPieceEffectGroupId": "two-piece-11790518b834aa31d46aa05bf8f104228c212e0b7b6f2d3ce876e7c4236f6150",
       "twoPieceEffect": "元素熟知+80。",
       "fourPieceEffect": "装備者が待機中の時、与える月反応のダメージ+20%。チーム全体の月兆レベルが満照以上の時、与える月反応のダメージがさらに+40%。上記効果は装備者がフィールド上に3秒間滞在すると解除される。",
       "pieceImageUrls": {
@@ -3553,6 +3611,7 @@
       "id": "15044",
       "name": "風立ちの日",
       "teamBuffKey": null,
+      "twoPieceEffectGroupId": "two-piece-e891584881b88dc7b3d43b3d13c95c52d1cb915f7ce5f17fcfe42510a7b83bde",
       "twoPieceEffect": "攻撃力+18%。",
       "fourPieceEffect": "通常攻撃、重撃、元素スキル、または元素爆発が敵に命中すると、継続時間6秒の「風と牧歌の寵愛」を獲得する。「風と牧歌の寵愛」：攻撃力+25%。装備者が「魔女の課題」をクリアしている場合、「風と牧歌の寵愛」は「風と牧歌の決意」に強化され、「魔女の課題」をクリアした装備者の会心率+20%。装備したキャラクターが待機している場合にも効果を発動できる。",
       "pieceImageUrls": {
@@ -3567,6 +3626,7 @@
       "id": "15045",
       "name": "天からの贈り物",
       "teamBuffKey": "artifact-team-buff:15045",
+      "twoPieceEffectGroupId": "two-piece-6151731d26a813534b026b590465547a1c450b7531b8a5160c760e91d19de83c",
       "twoPieceEffect": "元素チャージ効率+20%。",
       "fourPieceEffect": "装備者が「魔女の課題」をクリアしている場合、元素スキルを発動すると、「天光の導き」効果を獲得する。この効果は装備者の元素タイプに基づき、付近にいるチーム全員に当該元素ダメージ+20%のバフを付与する。継続時間20秒。装備者が待機中でも発動可能。同じ聖遺物セットによるダメージアップ効果は重ね掛けできない。\n・チームが「魔導秘儀」効果を持っている時、「天光の導き」効果は「浮世の頌歌」に強化される。装備者の元素タイプに加え、フィールド上にいる自身のキャラクターの元素タイプに基づき、周囲のチーム全員に当該元素のダメージアップ効果を付与する。さらに、上記2種類の元素ダメージアップ効果は40%までアップする。同じ元素タイプの元素ダメージアップ効果は重ね掛けできない。",
       "pieceImageUrls": {
@@ -3581,6 +3641,7 @@
       "id": "15046",
       "name": "影に沈む幻",
       "teamBuffKey": null,
+      "twoPieceEffectGroupId": "two-piece-e891584881b88dc7b3d43b3d13c95c52d1cb915f7ce5f17fcfe42510a7b83bde",
       "twoPieceEffect": "攻撃力+18%。",
       "fourPieceEffect": "超電導反応によるダメージ+80%、星電導反応によるダメージ+40%。装備者が超電導または星電導反応の影響を受けた敵を攻撃する時、その攻撃の会心率+16%。",
       "pieceImageUrls": {
@@ -3595,6 +3656,7 @@
       "id": "15047",
       "name": "紅血の証",
       "teamBuffKey": null,
+      "twoPieceEffectGroupId": "two-piece-e891584881b88dc7b3d43b3d13c95c52d1cb915f7ce5f17fcfe42510a7b83bde",
       "twoPieceEffect": "攻撃力+18%。",
       "fourPieceEffect": "装備者が星拡散反応を起こした後の10秒間、会心率+16%、星拡散反応ダメージ+40%。",
       "pieceImageUrls": {
@@ -3609,6 +3671,7 @@
       "id": "15048",
       "name": "炉炎溶錬の心",
       "teamBuffKey": "artifact-team-buff:15048",
+      "twoPieceEffectGroupId": "two-piece-e891584881b88dc7b3d43b3d13c95c52d1cb915f7ce5f17fcfe42510a7b83bde",
       "twoPieceEffect": "攻撃力+18%。",
       "fourPieceEffect": "装備者が星反応を起こす、または星反応ダメージを与えた後の12秒間、攻撃力+12%、近くにいるチーム内のすべてのキャラクターが与える星反応ダメージ+50%。装備したキャラクターが待機している場合にも効果を発動できる。同じ名前の聖遺物セットによるダメージアップ効果は重ね掛けできない。",
       "pieceImageUrls": {

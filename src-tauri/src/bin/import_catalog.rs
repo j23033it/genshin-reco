@@ -1,6 +1,6 @@
 use genshin_reco_lib::catalog::{
     ArtifactSet, Catalog, CatalogCounts, CatalogManifest, CatalogSource, Character, PieceImageUrls,
-    Weapon, hex_digest, validate_catalog, validate_image_url,
+    Weapon, hex_digest, two_piece_effect_group_id, validate_catalog, validate_image_url,
 };
 use std::{env, fs, path::Path};
 
@@ -66,7 +66,7 @@ fn run() -> Result<(), String> {
         }
     }
     let catalog = Catalog {
-        schema_version: "catalog-v1".into(),
+        schema_version: "catalog-v2".into(),
         game_version: character_metadata.game_version.clone(),
         catalog_updated_at: character_metadata.updated_at.clone(),
         characters,
@@ -80,7 +80,7 @@ fn run() -> Result<(), String> {
     );
     let catalog_bytes = catalog_json.as_bytes();
     let manifest = CatalogManifest {
-        schema_version: "catalog-manifest-v1".into(),
+        schema_version: "catalog-manifest-v2".into(),
         game_version: catalog.game_version.clone(),
         catalog_updated_at: catalog.catalog_updated_at.clone(),
         counts: CatalogCounts {
@@ -282,6 +282,7 @@ fn parse_artifacts(source: &str) -> Result<Vec<ArtifactSet>, String> {
                 id: row[0].clone(),
                 name: row[1].clone(),
                 team_buff_key: nullable(&row[2]),
+                two_piece_effect_group_id: two_piece_effect_group_id(&row[3]),
                 two_piece_effect: row[3].clone(),
                 four_piece_effect: nullable(&row[4]),
                 piece_image_urls: PieceImageUrls {

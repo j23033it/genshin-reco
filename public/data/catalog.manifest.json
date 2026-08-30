@@ -1,5 +1,5 @@
 {
-  "schemaVersion": "catalog-manifest-v1",
+  "schemaVersion": "catalog-manifest-v2",
   "gameVersion": "7.0",
   "catalogUpdatedAt": "2026-08-24",
   "counts": {
@@ -7,7 +7,7 @@
     "weapons": 246,
     "artifactSets": 63
   },
-  "catalogSha256": "62e8446d27e4f9a7660b3e5b338360b9c990914b43765b434d769eeb6ff50d2f",
+  "catalogSha256": "1b4c2a0fb87843eeb51734db6c878faede8b4729e3b9b7fa5bfd539b4f82b32f",
   "sources": [
     {
       "kind": "characters",
