@@ -174,6 +174,10 @@ function Workspace({ catalog }: { catalog: Catalog }) {
     setResultValidity(null);
     setResultError(null);
     setResultLoading(true);
+    if (!ACTIVE_ANALYSIS_STATUSES.has(analysisStatus)) {
+      setSteps([]);
+      setAnalysisError(null);
+    }
     try {
       const current = await loadCurrentAnalysisResult(partyId);
       if (resultLoadGeneration.current !== generation) return;
@@ -196,11 +200,12 @@ function Workspace({ catalog }: { catalog: Catalog }) {
   }, [savedParties, search]);
 
   const handleSave = async (next: PartyDraft) => {
-    resultLoadGeneration.current += 1;
     const partyId = getPartyId(next) ?? createPartyId();
     const saved = { ...next, partyId, id: partyId };
     try {
       await savePartyDraft(saved);
+      resultLoadGeneration.current += 1;
+      setResultLoading(false);
       setDraft(createEmptyParty(createPartyId()));
       setSavedParties((current) => {
         const remaining = current.filter((party) => (party.partyId ?? party.id) !== partyId);
@@ -213,7 +218,6 @@ function Workspace({ catalog }: { catalog: Catalog }) {
   };
 
   const handleAnalyze = async (next: PartyDraft) => {
-    resultLoadGeneration.current += 1;
     const characterById = new Map(catalog.characters.map((character) => [character.id, character]));
     const partyId = getPartyId(next) ?? createPartyId();
     const saved = { ...next, partyId, id: partyId };
@@ -223,11 +227,17 @@ function Workspace({ catalog }: { catalog: Catalog }) {
       await savePartyDraft(saved);
 
       // 入力保存が成功した時点で、作成フォームを新規状態へ切り替える。
+      resultLoadGeneration.current += 1;
+      setResultLoading(false);
       setDraft(createEmptyParty(createPartyId()));
-      setResultParty(saved);
-      setSelectedPartyId(partyId);
-      setResolution(null);
-      setResultValidity(null);
+      if (resolution === null || resultParty === null) {
+        setResultParty(saved);
+        setSelectedPartyId(partyId);
+        setResolution(null);
+        setResultValidity(null);
+      } else {
+        setResultValidity("soft_stale");
+      }
       setAnalysisStatus("queued");
       setAnalysisError(null);
       setResultError(null);
@@ -276,8 +286,12 @@ function Workspace({ catalog }: { catalog: Catalog }) {
         }
       });
       const completed = await startAnalysis(input);
+      resultLoadGeneration.current += 1;
+      setResultLoading(false);
+      setResultError(null);
       setResolution(completed.resolution);
       setResultParty(saved);
+      setSelectedPartyId(partyId);
       setResultValidity("current");
       setAnalysisStatus("succeeded");
       setNotice("検証済みの分析結果を保存しました。");
@@ -293,6 +307,8 @@ function Workspace({ catalog }: { catalog: Catalog }) {
 
   const handleNewParty = () => {
     resultLoadGeneration.current += 1;
+    setResultLoading(false);
+    setResultError(null);
     setDraft(createEmptyParty(createPartyId()));
     setNotice("新しい編成を開きました。");
     setView("party");
@@ -381,10 +397,12 @@ function Workspace({ catalog }: { catalog: Catalog }) {
                       type="button"
                       className={cn(
                         "w-full rounded-lg px-3 py-2 text-left text-sm hover:bg-slate-800 hover:text-slate-100",
-                        selectedPartyId === partyId ? "bg-slate-800 text-amber-300" : "text-slate-300",
+                        view === "analysis" && selectedPartyId === partyId
+                          ? "bg-slate-800 text-amber-300"
+                          : "text-slate-300",
                       )}
                       onClick={() => void loadResultForParty(party)}
-                      aria-current={selectedPartyId === partyId ? "page" : undefined}
+                      aria-current={view === "analysis" && selectedPartyId === partyId ? "page" : undefined}
                     >
                       {party.name}
                     </button>
@@ -417,21 +435,23 @@ function Workspace({ catalog }: { catalog: Catalog }) {
           ) : null}
           {view === "analysis" ? (
             <div className="space-y-9">
-              <AnalysisProgressPanel
-                status={analysisStatus}
-                characterSteps={steps}
-                lastResultValidity={resultValidity === "current" ? null : resultValidity}
-                error={analysisError}
-                onCancel={
-                  ACTIVE_ANALYSIS_STATUSES.has(analysisStatus) && steps.length > 0
-                    ? () => {
-                        void cancelAnalysis().catch((error: unknown) => {
-                          setAnalysisError(error instanceof Error ? error.message : String(error));
-                        });
-                      }
-                    : undefined
-                }
-              />
+              {steps.length > 0 || analysisError ? (
+                <AnalysisProgressPanel
+                  status={analysisStatus}
+                  characterSteps={steps}
+                  lastResultValidity={resultValidity === "current" ? null : resultValidity}
+                  error={analysisError}
+                  onCancel={
+                    ACTIVE_ANALYSIS_STATUSES.has(analysisStatus) && steps.length > 0
+                      ? () => {
+                          void cancelAnalysis().catch((error: unknown) => {
+                            setAnalysisError(error instanceof Error ? error.message : String(error));
+                          });
+                        }
+                      : undefined
+                  }
+                />
+              ) : null}
               {resultLoading ? (
                 <p className="text-sm text-slate-400" role="status" aria-live="polite">
                   分析結果を読み込み中です。
@@ -442,25 +462,31 @@ function Workspace({ catalog }: { catalog: Catalog }) {
                   {resultError}
                 </p>
               ) : null}
-              <TeamResultPanel
-                catalog={catalog}
-                party={resultParty}
-                resolution={resolution}
-                validity={resultValidity ?? "current"}
-                onChooseVariant={(characterId, variantId) => {
-                  const partyId = resultParty ? getPartyId(resultParty) : undefined;
-                  if (!partyId) return;
-                  void saveAnalysisVariantSelection(partyId, characterId, variantId)
-                    .then((selected) => {
-                      setResolution(selected);
-                      setResultValidity("current");
-                      setNotice("候補の選択を保存しました。");
-                    })
-                    .catch((error: unknown) => {
-                      setNotice(error instanceof Error ? error.message : String(error));
-                    });
-                }}
-              />
+              {!resultLoading &&
+              !resultError &&
+              !(resolution === null && ACTIVE_ANALYSIS_STATUSES.has(analysisStatus) && steps.length > 0) ? (
+                <TeamResultPanel
+                  catalog={catalog}
+                  party={resultParty}
+                  resolution={resolution}
+                  validity={resultValidity ?? "current"}
+                  onChooseVariant={(characterId, variantId) => {
+                    const partyId = resultParty ? getPartyId(resultParty) : undefined;
+                    if (!partyId) return;
+                    const generation = resultLoadGeneration.current;
+                    void saveAnalysisVariantSelection(partyId, characterId, variantId)
+                      .then((selected) => {
+                        if (resultLoadGeneration.current !== generation) return;
+                        setResolution(selected);
+                        setResultValidity("current");
+                        setNotice("候補の選択を保存しました。");
+                      })
+                      .catch((error: unknown) => {
+                        setNotice(error instanceof Error ? error.message : String(error));
+                      });
+                  }}
+                />
+              ) : null}
             </div>
           ) : null}
           {view === "settings" ? <Gate0Screen embedded /> : null}
@@ -468,10 +494,10 @@ function Workspace({ catalog }: { catalog: Catalog }) {
 
         <aside
           className="border-t border-slate-800 bg-slate-900/30 p-5 lg:border-l lg:border-t-0"
-          aria-label="現在の編成情報"
+          aria-label={view === "analysis" ? "分析結果の補足事項" : "現在の編成情報"}
         >
           {view === "analysis" ? (
-            <AnalysisNotesPanel resolution={resolution} validity={resultValidity ?? "current"} />
+            <AnalysisNotesPanel catalog={catalog} resolution={resolution} validity={resultValidity ?? "current"} />
           ) : (
             <>
               <div className="flex items-center gap-3 text-slate-300">

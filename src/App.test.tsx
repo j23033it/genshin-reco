@@ -1,12 +1,14 @@
 import "@testing-library/jest-dom/vitest";
-import { render, screen } from "@testing-library/react";
+import { act, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import App from "./App";
 import type { Catalog } from "./domain/catalogTypes";
+import { loadCurrentAnalysisResult } from "./features/analysis";
 import { loadCatalog } from "./features/catalog";
 import { probeCodexEnvironment } from "./features/gate0/probeCodexEnvironment";
 import { listPartyDrafts, loadPartyDraft, savePartyDraft } from "./features/party";
+import type { PartyDraft } from "./features/party";
 
 vi.mock("./features/catalog", () => ({
   loadCatalog: vi.fn(),
@@ -14,6 +16,11 @@ vi.mock("./features/catalog", () => ({
 
 vi.mock("./features/gate0/probeCodexEnvironment", () => ({
   probeCodexEnvironment: vi.fn(),
+}));
+
+vi.mock("./features/analysis", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("./features/analysis")>()),
+  loadCurrentAnalysisResult: vi.fn(),
 }));
 
 vi.mock("./features/party", async (importOriginal) => ({
@@ -28,6 +35,19 @@ const probeCodexEnvironmentMock = vi.mocked(probeCodexEnvironment);
 const listPartyDraftsMock = vi.mocked(listPartyDrafts);
 const loadPartyDraftMock = vi.mocked(loadPartyDraft);
 const savePartyDraftMock = vi.mocked(savePartyDraft);
+const loadCurrentAnalysisResultMock = vi.mocked(loadCurrentAnalysisResult);
+const savedParty: PartyDraft = {
+  partyId: "saved-party",
+  id: "saved-party",
+  name: "保存済み編成",
+  members: [0, 1, 2, 3].map((slotIndex) => ({
+    slotIndex: slotIndex as 0 | 1 | 2 | 3,
+    characterId: null,
+    weaponId: null,
+    constellation: 0,
+    refinement: 1,
+  })) as PartyDraft["members"],
+};
 const catalog: Catalog = {
   schemaVersion: "catalog-v2",
   gameVersion: "7.0",
@@ -61,6 +81,7 @@ describe("アプリワークスペース", () => {
     listPartyDraftsMock.mockResolvedValue([]);
     loadPartyDraftMock.mockResolvedValue(null);
     savePartyDraftMock.mockResolvedValue();
+    loadCurrentAnalysisResultMock.mockResolvedValue(null);
     probeCodexEnvironmentMock.mockResolvedValue({
       codexPath: "C:\\codex.exe",
       codexVersion: "0.118.0",
@@ -121,6 +142,43 @@ describe("アプリワークスペース", () => {
 
     expect(screen.getByRole("textbox", { name: "編成名" })).toHaveValue("保持する編成");
     expect(screen.getByText("保存先に接続できません")).toBeInTheDocument();
+  });
+
+  it("保存編成を選ぶと作成フォームを上書きせず分析結果へ移動する", async () => {
+    const user = userEvent.setup();
+    listPartyDraftsMock.mockResolvedValue([
+      { partyId: "saved-party", name: "保存済み編成", currentResultId: null, updatedAt: "2026-08-31T00:00:00Z" },
+    ]);
+    loadPartyDraftMock.mockResolvedValue(savedParty);
+    render(<App />);
+
+    await user.click(await screen.findByRole("button", { name: "保存済み編成" }));
+
+    expect(await screen.findByRole("heading", { name: "チーム分析結果" })).toBeInTheDocument();
+    expect(screen.queryByRole("textbox", { name: "編成名" })).not.toBeInTheDocument();
+    expect(screen.getByText(/保存済み編成はまだ分析されていません/)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "保存済み編成" })).toHaveAttribute("aria-current", "page");
+  });
+
+  it("起動時の最新結果を読み込む間は未分析の空状態を重ねて表示しない", async () => {
+    let resolveResult: (value: null) => void = () => undefined;
+    loadCurrentAnalysisResultMock.mockImplementationOnce(
+      () => new Promise<null>((resolve) => {
+        resolveResult = resolve;
+      }),
+    );
+    listPartyDraftsMock.mockResolvedValue([
+      { partyId: "saved-party", name: "保存済み編成", currentResultId: "result-1", updatedAt: "2026-08-31T01:00:00Z" },
+    ]);
+    loadPartyDraftMock.mockResolvedValue(savedParty);
+    render(<App />);
+
+    expect(await screen.findByText("分析結果を読み込み中です。")).toBeInTheDocument();
+    expect(screen.queryByTestId("team-result-empty")).not.toBeInTheDocument();
+
+    await act(async () => resolveResult(null));
+
+    expect(await screen.findByTestId("team-result-empty")).toHaveTextContent("保存済み編成はまだ分析されていません");
   });
 
   it("Codex設定からGate0を開ける", async () => {

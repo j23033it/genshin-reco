@@ -35,6 +35,41 @@ const OPERATOR_LABELS: Record<BuildCondition["operator"], string> = {
   lte: "以下",
 };
 
+const STAT_LABELS: Record<string, string> = {
+  atk: "攻撃力",
+  attack: "攻撃力",
+  atk_percent: "攻撃力%",
+  attack_percent: "攻撃力%",
+  hp: "HP",
+  hp_percent: "HP%",
+  def: "防御力",
+  defense: "防御力",
+  def_percent: "防御力%",
+  defense_percent: "防御力%",
+  er: "元素チャージ効率",
+  energy_recharge: "元素チャージ効率",
+  em: "元素熟知",
+  elemental_mastery: "元素熟知",
+  crit_rate: "会心率",
+  critical_rate: "会心率",
+  crit_damage: "会心ダメージ",
+  critical_damage: "会心ダメージ",
+  healing_bonus: "与える治療効果",
+  pyro_damage_bonus: "炎元素ダメージ",
+  hydro_damage_bonus: "水元素ダメージ",
+  electro_damage_bonus: "雷元素ダメージ",
+  cryo_damage_bonus: "氷元素ダメージ",
+  anemo_damage_bonus: "風元素ダメージ",
+  geo_damage_bonus: "岩元素ダメージ",
+  dendro_damage_bonus: "草元素ダメージ",
+  physical_damage_bonus: "物理ダメージ",
+};
+
+function localizeStatLabel(stat: string) {
+  const normalized = stat.trim().toLocaleLowerCase("en").replace(/[\s-]+/g, "_").replace(/%$/, "_percent");
+  return STAT_LABELS[normalized] ?? stat;
+}
+
 function formatNumber(value: number) {
   return new Intl.NumberFormat("ja-JP", { maximumFractionDigits: 2 }).format(value);
 }
@@ -68,7 +103,10 @@ function effectGroupSets(catalog: Catalog, effectGroupId: string) {
 function artifactHalfLabel(half: ArtifactHalf, catalog: Catalog) {
   if (half.kind === "exact_set") return findArtifactSet(catalog, half.setId)?.name ?? "聖遺物セット";
   const names = effectGroupSets(catalog, half.effectGroupId).map((artifactSet) => artifactSet.name);
-  return names.length > 0 ? `同一効果：${names.join("・")}` : "同一効果の聖遺物セット";
+  if (names.length === 0) return "同一効果の聖遺物セット";
+  const visibleNames = names.slice(0, 2).join("・");
+  const remaining = names.length - 2;
+  return `同一効果：${visibleNames}${remaining > 0 ? ` ほか${remaining}種` : ""}`;
 }
 
 function artifactPlanLabel(plan: ArtifactPlan, catalog: Catalog) {
@@ -98,7 +136,7 @@ function ArtifactSummary({ plan, catalog }: { plan: ArtifactPlan; catalog: Catal
 function MainStatSummary({ variant }: { variant: BuildVariant }) {
   return (
     <p className="min-w-0 break-words text-pretty text-sm text-slate-300">
-      砂：{variant.mainStatPackage.sands} ／ 杯：{variant.mainStatPackage.goblet} ／ 冠：{variant.mainStatPackage.circlet}
+      砂：{localizeStatLabel(variant.mainStatPackage.sands)} ／ 杯：{localizeStatLabel(variant.mainStatPackage.goblet)} ／ 冠：{localizeStatLabel(variant.mainStatPackage.circlet)}
     </p>
   );
 }
@@ -107,7 +145,7 @@ function SubstatSummary({ priorities }: { priorities: StatPriority[] }) {
   const sorted = [...priorities].sort((left, right) => left.rank - right.rank);
   return (
     <p className="min-w-0 break-words text-pretty text-sm text-slate-300">
-      優先サブ：{sorted.length > 0 ? sorted.map((priority) => priority.stat).join(" > ") : "指定なし"}
+      優先サブ：{sorted.length > 0 ? sorted.map((priority) => localizeStatLabel(priority.stat)).join(" > ") : "指定なし"}
     </p>
   );
 }
@@ -120,7 +158,7 @@ function TargetSummary({ targets }: { targets: TargetStatRange[] }) {
         <ul className="mt-1 space-y-1 text-pretty text-sm text-slate-300">
           {targets.map((target) => (
             <li key={`${target.stat}-${target.minimum}-${target.maximum}`} className="break-words">
-              {target.stat}：<span className="tabular-nums">{formatTargetRange(target)}</span>
+              {localizeStatLabel(target.stat)}：<span className="tabular-nums">{formatTargetRange(target)}</span>
             </li>
           ))}
         </ul>
@@ -290,6 +328,11 @@ function CharacterResultCard({
   return (
     <article className="min-w-0 rounded-xl border border-slate-700 bg-slate-900/80 p-4" aria-label={`${character?.name ?? "キャラクター未登録"}の分析結果`} data-testid="character-result-card">
       <CharacterIdentity character={character} weapon={weapon} partyMember={partyMember} />
+      {member.selectedVariantId ? (
+        <p className="mt-3 inline-flex rounded-full border border-emerald-300/50 px-2 py-1 text-xs font-semibold text-emerald-200">
+          選択済み
+        </p>
+      ) : null}
       {displayedVariant ? (
         <div className="mt-4 space-y-3 border-t border-slate-700 pt-4">
           <VariantSummary variant={displayedVariant} catalog={catalog} />
@@ -331,6 +374,7 @@ export function TeamResultPanel({ catalog, party, resolution, onChooseVariant }:
     <section className="min-w-0 space-y-4" aria-labelledby="team-result-heading" data-testid="team-result-panel">
       <div>
         <h2 id="team-result-heading" className="text-balance text-xl font-bold text-slate-100">チーム分析結果</h2>
+        {party?.name ? <p className="mt-1 break-words text-pretty font-semibold text-amber-300">{party.name}</p> : null}
         <p className="mt-1 text-pretty text-sm leading-6 text-slate-300">4人分のキャラクター、武器、聖遺物、ステータス目標を確認できます。</p>
       </div>
 
@@ -344,13 +388,17 @@ export function TeamResultPanel({ catalog, party, resolution, onChooseVariant }:
             {resolution.status === "unresolved" ? <p className="mt-1 text-pretty text-sm leading-6 text-rose-200">条件を満たす組み合わせを確定できませんでした。補足事項を確認してください。</p> : null}
           </div>
 
-          <div className="grid min-w-0 grid-cols-1 gap-4 lg:grid-cols-2" aria-label="4人分の分析結果">
+          <div className="grid min-w-0 grid-cols-1 gap-4 xl:grid-cols-2" aria-label="4人分の分析結果">
             {members.map((member, index) => (
               <CharacterResultCard
                 key={member?.characterId ?? `empty-${index}`}
                 member={member}
                 index={index}
-                partyMember={partyMembers[index]}
+                partyMember={
+                  member
+                    ? partyMembers.find((partyMember) => partyMember.characterId === member.characterId)
+                    : partyMembers[index]
+                }
                 catalog={catalog}
                 resolutionStatus={resolution.status}
                 onChooseVariant={onChooseVariant}
@@ -364,6 +412,7 @@ export function TeamResultPanel({ catalog, party, resolution, onChooseVariant }:
 }
 
 export interface AnalysisNotesPanelProps {
+  catalog: Catalog;
   resolution: TeamBuildResolution | null;
   validity: ResultValidity;
 }
@@ -380,7 +429,15 @@ function selectedOrCandidate(member: CharacterBuildResolution) {
     : member.alternatives[0];
 }
 
-export function AnalysisNotesPanel({ resolution, validity }: AnalysisNotesPanelProps) {
+function localizeWarning(warning: string, catalog: Catalog) {
+  const separatorIndex = warning.indexOf(": ");
+  if (separatorIndex < 0) return warning;
+  const characterId = warning.slice(0, separatorIndex);
+  const character = catalog.characters.find((candidate) => candidate.id === characterId);
+  return character ? `${character.name}：${warning.slice(separatorIndex + 2)}` : warning;
+}
+
+export function AnalysisNotesPanel({ catalog, resolution, validity }: AnalysisNotesPanelProps) {
   const notes = useMemo(() => {
     const values: string[] = [];
     const add = (value: string) => {
@@ -388,21 +445,22 @@ export function AnalysisNotesPanel({ resolution, validity }: AnalysisNotesPanelP
       if (normalized && !values.includes(normalized)) values.push(normalized);
     };
 
-    resolution?.warnings.forEach(add);
+    resolution?.warnings.forEach((warning) => add(localizeWarning(warning, catalog)));
     resolution?.members.forEach((member) => {
       const variant = selectedOrCandidate(member);
       variant?.conditions.forEach((condition) => add(`適用条件：${formatCondition(condition)}`));
+      variant?.mainStatPackage.conditions.forEach((condition) => add(`メインステータス条件：${formatCondition(condition)}`));
       variant?.mainStatPackage.targetStats.forEach((target) => {
-        if (target.note) add(`目標値の注記（${target.stat}）：${target.note}`);
+        if (target.note) add(`目標値の注記（${localizeStatLabel(target.stat)}）：${target.note}`);
       });
     });
     const validityNote = VALIDITY_NOTES[validity];
     if (validityNote) add(validityNote);
     return values;
-  }, [resolution, validity]);
+  }, [catalog, resolution, validity]);
 
   return (
-    <aside className="min-w-0 space-y-3" aria-labelledby="analysis-notes-heading" data-testid="analysis-notes-panel">
+    <section className="min-w-0 space-y-3" aria-labelledby="analysis-notes-heading" data-testid="analysis-notes-panel">
       <h2 id="analysis-notes-heading" className="text-balance text-lg font-semibold text-slate-100">補足事項</h2>
       {notes.length > 0 ? (
         <ul className="space-y-2 text-pretty text-sm leading-6 text-slate-300">
@@ -411,6 +469,6 @@ export function AnalysisNotesPanel({ resolution, validity }: AnalysisNotesPanelP
       ) : (
         <p className="text-pretty text-sm leading-6 text-slate-400">補足事項はありません</p>
       )}
-    </aside>
+    </section>
   );
 }

@@ -1,5 +1,5 @@
 import "@testing-library/jest-dom/vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import type {
@@ -202,6 +202,40 @@ describe("TeamResultPanel", () => {
     expect(onChooseVariant).toHaveBeenCalledWith("character-1", "character-1-variant-a");
   });
 
+  it("結果の並び順が変わってもキャラクターに対応する武器を表示する", () => {
+    const reversedParty = { ...party, members: [...party.members].reverse() as PartyDraft["members"] };
+    render(
+      <TeamResultPanel
+        catalog={catalog}
+        party={reversedParty}
+        resolution={createResolution("resolved", "character-1-variant-a")}
+        validity="current"
+      />,
+    );
+
+    const characterOneCard = screen.getByRole("article", { name: "キャラクター1の分析結果" });
+    expect(within(characterOneCard).getByText(/武器1/)).toBeInTheDocument();
+    expect(within(characterOneCard).queryByText(/武器4/)).not.toBeInTheDocument();
+  });
+
+  it("英語のステータス識別子は日本語へ変換して表示する", () => {
+    const resolution = structuredClone(createResolution("resolved", "character-1-variant-a"));
+    const packageToLocalize = resolution.members[0].alternatives[0].mainStatPackage;
+    packageToLocalize.sands = "energy_recharge";
+    packageToLocalize.substatPriority = [{ stat: "crit_rate", rank: 1 }];
+    packageToLocalize.targetStats = [
+      { stat: "attack_percent", minimum: 180, maximum: null, unit: "percent", scope: "character_sheet_unbuffed", note: null },
+    ];
+
+    render(<TeamResultPanel catalog={catalog} party={party} resolution={resolution} validity="current" />);
+
+    const characterOneCard = screen.getByRole("article", { name: "キャラクター1の分析結果" });
+    expect(within(characterOneCard).getAllByText(/砂：元素チャージ効率/).length).toBeGreaterThan(0);
+    expect(within(characterOneCard).getByText(/優先サブ：会心率/)).toBeInTheDocument();
+    expect(within(characterOneCard).getByText(/攻撃力%/)).toBeInTheDocument();
+    expect(within(characterOneCard).queryByText(/energy_recharge|crit_rate|attack_percent/)).not.toBeInTheDocument();
+  });
+
   it("未解決状態を日本語で表示し警告を残す", () => {
     render(<TeamResultPanel catalog={catalog} party={party} resolution={createResolution("unresolved", null)} validity="hard_stale" />);
 
@@ -213,23 +247,27 @@ describe("TeamResultPanel", () => {
 describe("AnalysisNotesPanel", () => {
   it("警告・候補の条件・目標注記・古い結果を重複なく表示する", () => {
     const resolution = createResolution("resolved", "character-1-variant-a");
-    resolution.warnings = ["条件を確認してください。", "条件を確認してください。"];
+    resolution.warnings = ["character-1: 条件を確認してください。", "character-1: 条件を確認してください。"];
     resolution.members[0].alternatives[0].conditions = [
       { field: "energy", operator: "gte", value: 180, description: "元素チャージ効率を満たす" },
     ];
     resolution.members[0].alternatives[0].mainStatPackage.targetStats[0].note = "爆発を毎回使う条件";
+    resolution.members[0].alternatives[0].mainStatPackage.conditions = [
+      { field: "weapon", operator: "equals", value: "weapon-1", description: "装備武器を固定する" },
+    ];
 
-    render(<AnalysisNotesPanel resolution={resolution} validity="hard_stale" />);
+    render(<AnalysisNotesPanel catalog={catalog} resolution={resolution} validity="hard_stale" />);
 
-    expect(screen.getByTestId("analysis-notes-panel")).toHaveTextContent("条件を確認してください。");
+    expect(screen.getByTestId("analysis-notes-panel")).toHaveTextContent("キャラクター1：条件を確認してください。");
     expect(screen.getByTestId("analysis-notes-panel")).toHaveTextContent("適用条件：元素チャージ効率を満たす");
+    expect(screen.getByTestId("analysis-notes-panel")).toHaveTextContent("メインステータス条件：装備武器を固定する");
     expect(screen.getByTestId("analysis-notes-panel")).toHaveTextContent("目標値の注記（元素チャージ効率）：爆発を毎回使う条件");
     expect(screen.getByTestId("analysis-notes-panel")).toHaveTextContent("古い分析結果です");
-    expect(screen.getAllByText("条件を確認してください。")).toHaveLength(1);
+    expect(screen.getAllByText("キャラクター1：条件を確認してください。")).toHaveLength(1);
   });
 
   it("補足がない場合は既定文言を表示する", () => {
-    render(<AnalysisNotesPanel resolution={null} validity="current" />);
+    render(<AnalysisNotesPanel catalog={catalog} resolution={null} validity="current" />);
     expect(screen.getByText("補足事項はありません")).toBeInTheDocument();
   });
 });
