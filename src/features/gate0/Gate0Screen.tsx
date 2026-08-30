@@ -1,5 +1,6 @@
 import { useRef, useState, type ReactNode } from "react";
 import { cn } from "../../lib/cn";
+import { CodexDeviceLoginPanel } from "./CodexDeviceLoginPanel";
 import { probeCodexEnvironment } from "./probeCodexEnvironment";
 import type { Gate0ProbeReport } from "./types";
 
@@ -23,7 +24,7 @@ function BooleanValue({
   return <span className="font-semibold">{value ? trueLabel : falseLabel}</span>;
 }
 
-function ReportDetails({ report }: { report: Gate0ProbeReport }) {
+function ReportDetails({ report, onRecheck }: { report: Gate0ProbeReport; onRecheck: () => void }) {
   const accountNeedsAuth = report.account === null || report.account.requiresOpenaiAuth;
 
   return (
@@ -61,9 +62,7 @@ function ReportDetails({ report }: { report: Gate0ProbeReport }) {
           アカウント
         </h3>
         {accountNeedsAuth ? (
-          <p className="mt-3 rounded-lg border border-amber-400/50 bg-amber-400/10 p-4 text-pretty text-amber-200">
-            Codexへログインしてください
-          </p>
+          <CodexDeviceLoginPanel onRecheck={onRecheck} />
         ) : (
           <dl className="mt-4 grid gap-3 sm:grid-cols-2">
             <ReportItem label="認証方式" value={valueOrFallback(report.account?.authMode ?? null)} />
@@ -195,7 +194,7 @@ export function Gate0Screen() {
           </p>
 
           {isLoading && <LoadingReport />}
-          {probeState.status === "success" && <ReportDetails report={probeState.report} />}
+          {probeState.status === "success" && <ReportDetails report={probeState.report} onRecheck={handleProbe} />}
         </section>
       </section>
     </main>

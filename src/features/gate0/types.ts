@@ -16,3 +16,16 @@ export interface Gate0ProbeReport {
   rateLimitsAvailable: boolean;
   diagnostics: string[];
 }
+
+export interface CodexDeviceLoginChallenge {
+  loginId: string;
+  verificationUrl: string;
+  userCode: string;
+}
+
+export interface CodexLoginStatus {
+  authenticated: boolean;
+  account: Gate0Account;
+  loginCompleted: boolean | null;
+  loginError: string | null;
+}
