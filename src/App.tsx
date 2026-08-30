@@ -1,10 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
 import { BarChart3, Database, Plus, Search, Settings2, Users } from "lucide-react";
-import type { AnalysisStatus } from "./domain/analysisTypes";
+import type { AnalysisStatus, ResultValidity, TeamBuildResolution } from "./domain/analysisTypes";
 import type { Catalog } from "./domain/catalogTypes";
 import {
   AnalysisProgressPanel,
   TeamResultPanel,
+  buildAnalysisInput,
+  startAnalysis,
+  subscribeAnalysisProgress,
+  type AnalysisCharacterStepStatus,
   type CharacterAnalysisStep,
 } from "./features/analysis";
 import { loadCatalog } from "./features/catalog";
@@ -26,6 +30,27 @@ const NAVIGATION = [
   { id: "analysis" as const, label: "分析結果", icon: BarChart3 },
   { id: "settings" as const, label: "Codex設定", icon: Settings2 },
 ];
+
+const ACTIVE_ANALYSIS_STATUSES = new Set<AnalysisStatus>([
+  "queued",
+  "starting_codex",
+  "researching",
+  "verifying_sources",
+  "reconciling",
+  "solving",
+  "persisting",
+]);
+
+const CHARACTER_STAGES = new Set<AnalysisCharacterStepStatus>([
+  "queued",
+  "researching",
+  "verifying",
+  "reconciling",
+  "solving",
+  "completed",
+  "failed",
+  "cancelled",
+]);
 
 function createPartyId() {
   return globalThis.crypto?.randomUUID?.() ?? `party-${Date.now()}`;
@@ -69,6 +94,9 @@ function Workspace({ catalog }: { catalog: Catalog }) {
   const [notice, setNotice] = useState("");
   const [analysisStatus, setAnalysisStatus] = useState<AnalysisStatus>("queued");
   const [steps, setSteps] = useState<CharacterAnalysisStep[]>([]);
+  const [resolution, setResolution] = useState<TeamBuildResolution | null>(null);
+  const [resultValidity, setResultValidity] = useState<ResultValidity | null>(null);
+  const [analysisError, setAnalysisError] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -110,10 +138,12 @@ function Workspace({ catalog }: { catalog: Catalog }) {
     }
   };
 
-  const handleAnalyze = (next: PartyDraft) => {
+  const handleAnalyze = async (next: PartyDraft) => {
     const characterById = new Map(catalog.characters.map((character) => [character.id, character]));
     setDraft(next);
     setAnalysisStatus("queued");
+    setAnalysisError(null);
+    if (resolution) setResultValidity("soft_stale");
     setSteps(
       next.members.map((member) => ({
         characterId: member.characterId ?? `slot-${member.slotIndex + 1}`,
@@ -122,8 +152,44 @@ function Workspace({ catalog }: { catalog: Catalog }) {
         detail: "調査ジョブの開始を待っています。",
       })),
     );
-    setNotice("分析入力を検証しました。Codex調査ジョブを開始できます。");
+    setNotice("分析入力を検証しました。Codex調査ジョブを開始します。");
     setView("analysis");
+    let unlisten: () => void = () => undefined;
+    try {
+      await savePartyDraft(next);
+      const input = buildAnalysisInput(next, catalog);
+      unlisten = await subscribeAnalysisProgress((progress) => {
+        setAnalysisStatus(progress.status);
+        if (progress.error) setAnalysisError(progress.error);
+        if (progress.characterId && progress.characterStage && CHARACTER_STAGES.has(progress.characterStage as AnalysisCharacterStepStatus)) {
+          setSteps((current) =>
+            current.map((step) =>
+              step.characterId === progress.characterId
+                ? {
+                    characterId: step.characterId,
+                    characterName: step.characterName,
+                    status: progress.characterStage as AnalysisCharacterStepStatus,
+                    detail: progress.detail,
+                    error: progress.error ?? undefined,
+                  }
+                : step,
+            ),
+          );
+        }
+      });
+      const completed = await startAnalysis(input);
+      setResolution(completed.resolution);
+      setResultValidity("current");
+      setAnalysisStatus("succeeded");
+      setNotice("検証済みの分析結果を保存しました。");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      setAnalysisStatus("failed");
+      setAnalysisError(message);
+      setNotice(message);
+    } finally {
+      unlisten();
+    }
   };
 
   const handleNewParty = () => {
@@ -241,7 +307,8 @@ function Workspace({ catalog }: { catalog: Catalog }) {
               draft={draft}
               onChange={setDraft}
               onSave={(next) => void handleSave(next)}
-              onAnalyze={handleAnalyze}
+              onAnalyze={(next) => void handleAnalyze(next)}
+              disabled={ACTIVE_ANALYSIS_STATUSES.has(analysisStatus) && steps.length > 0}
             />
           ) : null}
           {view === "analysis" ? (
@@ -249,10 +316,10 @@ function Workspace({ catalog }: { catalog: Catalog }) {
               <AnalysisProgressPanel
                 status={analysisStatus}
                 characterSteps={steps}
-                lastResultValidity={null}
-                onCancel={analysisStatus === "queued" ? () => setAnalysisStatus("cancelled") : undefined}
+                lastResultValidity={resultValidity === "current" ? null : resultValidity}
+                error={analysisError}
               />
-              <TeamResultPanel resolution={null} validity="current" />
+              <TeamResultPanel resolution={resolution} validity={resultValidity ?? "current"} />
             </div>
           ) : null}
           {view === "settings" ? <Gate0Screen embedded /> : null}

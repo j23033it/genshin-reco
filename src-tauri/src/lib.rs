@@ -1,3 +1,4 @@
+mod analysis;
 mod app_server;
 pub mod candidate_validation;
 pub mod catalog;
@@ -18,6 +19,7 @@ pub fn run() {
             Ok(())
         })
         .manage(app_server::AppServerSupervisor::default())
+        .manage(analysis::AnalysisCoordinator::default())
         .invoke_handler(tauri::generate_handler![
             app_server::probe_codex_environment,
             app_server::start_codex_device_login,
@@ -27,7 +29,8 @@ pub fn run() {
             catalog::load_catalog,
             database_commands::save_party_draft,
             database_commands::load_party_draft,
-            database_commands::list_party_drafts
+            database_commands::list_party_drafts,
+            analysis::start_analysis
         ])
         .run(tauri::generate_context!())
         .expect("Tauriアプリケーションを起動できませんでした");

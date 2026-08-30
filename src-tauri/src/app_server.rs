@@ -927,9 +927,32 @@ fn build_character_research_prompt(
     analysis_input: &AnalysisInput,
     character_id: &str,
 ) -> Result<String, AppServerError> {
-    let input = serde_json::to_string(analysis_input)?;
+    let catalog = crate::catalog::load_embedded_catalog()
+        .map_err(|error| AppServerError::Protocol(error.to_string()))?;
+    let member = analysis_input
+        .members
+        .iter()
+        .find(|member| member.character_id == character_id)
+        .ok_or_else(|| AppServerError::Protocol("調査対象メンバーがいません".into()))?;
+    let character = catalog
+        .characters
+        .iter()
+        .find(|character| character.id == member.character_id)
+        .ok_or_else(|| AppServerError::Protocol("調査対象がカタログにありません".into()))?;
+    let weapon = catalog
+        .weapons
+        .iter()
+        .find(|weapon| weapon.id == member.weapon_id)
+        .ok_or_else(|| AppServerError::Protocol("対象武器がカタログにありません".into()))?;
+    let context = json!({
+        "analysisInput": analysis_input,
+        "targetCharacter": character,
+        "targetWeapon": weapon,
+        "artifactCatalog": catalog.artifact_sets,
+    });
+    let input = serde_json::to_string(&context)?;
     Ok(format!(
-        "分析入力JSONに含まれるキャラクター `{character_id}` の聖遺物ビルドを調査してください。許可された3サイトの個別本文ページを実際に開き、聖遺物構成・メインステータス一式・サブステータス優先度を直接支える根拠を集めてください。各sourceのgameVersionは分析入力のgameVersionと完全一致させてください。条件付き推奨はconditionsへ型付きで記録してください。URLやIDを推測せず、確認できなければ候補を作らないでください。分析入力JSON: {input}"
+        "調査コンテキストJSONに含まれるtargetCharacterの聖遺物ビルドを調査してください。許可された3サイトの個別本文ページを実際に開き、聖遺物構成・メインステータス一式・サブステータス優先度を直接支える根拠を集めてください。artifactPlanのIDとteamBuffKeysはartifactCatalogの値だけをそのまま使ってください。各sourceのgameVersionはanalysisInput.gameVersionと完全一致させてください。条件付き推奨はconditionsへ型付きで記録してください。URLやIDを推測せず、確認できなければ候補を作らないでください。調査コンテキストJSON: {input}"
     ))
 }
 
