@@ -10,9 +10,9 @@ use std::{
 use tauri::Manager;
 use thiserror::Error;
 use tokio::{
-    io::{AsyncBufReadExt, AsyncWriteExt, BufReader, Lines},
-    process::{Child, ChildStdin, ChildStdout, Command},
-    sync::Mutex,
+    io::{AsyncBufReadExt, AsyncWriteExt, BufReader},
+    process::{Child, ChildStdin, Command},
+    sync::{Mutex, mpsc},
     task::JoinHandle,
     time::{Instant, timeout},
 };
@@ -21,6 +21,8 @@ const SUPPORTED_CODEX_MAJOR: u64 = 0;
 const SUPPORTED_CODEX_MINOR: u64 = 118;
 const RPC_TIMEOUT: Duration = Duration::from_secs(15);
 const MAX_DIAGNOSTIC_LINES: usize = 100;
+const MAX_NOTIFICATION_MESSAGES: usize = 256;
+const RESPONSE_CHANNEL_CAPACITY: usize = 16;
 const APP_CODEX_CONFIG: &str = r#"forced_login_method = "chatgpt"
 cli_auth_credentials_store = "keyring"
 web_search = "live"
@@ -64,6 +66,8 @@ enum AppServerError {
     Io(#[from] std::io::Error),
     #[error("Codex App Serverが不正なJSONを返しました: {0}")]
     InvalidJson(#[from] serde_json::Error),
+    #[error("Codex App Serverの標準出力をJSONとして解析できません: {0}")]
+    InvalidJsonLine(String),
     #[error("Codex App Serverからの応答がタイムアウトしました")]
     Timeout,
     #[error("Codex App Serverが応答前に終了しました")]
@@ -74,6 +78,19 @@ enum AppServerError {
     Protocol(String),
     #[error("アプリ専用Codexホームの準備に失敗しました: {0}")]
     IsolatedHome(String),
+}
+
+impl AppServerError {
+    fn invalidates_session(&self) -> bool {
+        matches!(
+            self,
+            Self::Io(_)
+                | Self::InvalidJson(_)
+                | Self::InvalidJsonLine(_)
+                | Self::Timeout
+                | Self::ProcessExited
+        )
+    }
 }
 
 #[derive(Debug)]
@@ -105,12 +122,135 @@ pub struct Gate0ProbeReport {
     diagnostics: Vec<String>,
 }
 
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DeviceLoginStart {
+    login_id: String,
+    verification_url: String,
+    user_code: String,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DeviceLoginStatus {
+    authenticated: bool,
+    account: Gate0Account,
+    login_completed: Option<bool>,
+    login_error: Option<String>,
+}
+
+#[derive(Default)]
+pub struct AppServerSupervisor {
+    session: Mutex<Option<ManagedAppServer>>,
+}
+
+struct ManagedAppServer {
+    rpc: JsonlRpcSession,
+    next_request_id: u64,
+    active_login_id: Option<String>,
+    codex_path: String,
+    codex_version: String,
+    codex_home: String,
+    platform_family: Option<String>,
+    platform_os: Option<String>,
+}
+
+impl ManagedAppServer {
+    async fn request(
+        &mut self,
+        method: &str,
+        params: Option<Value>,
+    ) -> Result<Value, AppServerError> {
+        let id = self.next_request_id;
+        self.next_request_id += 1;
+        self.rpc.request(id, method, params).await
+    }
+}
+
 struct JsonlRpcSession {
     child: Child,
-    stdin: ChildStdin,
-    stdout_lines: Lines<BufReader<ChildStdout>>,
+    stdin: Arc<Mutex<ChildStdin>>,
+    response_rx: mpsc::Receiver<IncomingResponse>,
+    stdout_task: JoinHandle<()>,
     stderr_lines: Arc<Mutex<VecDeque<String>>>,
     stderr_task: JoinHandle<()>,
+    notifications: Arc<Mutex<VecDeque<Value>>>,
+}
+
+enum IncomingResponse {
+    Message(Value),
+    InvalidJson(String),
+    Closed,
+}
+
+fn build_server_request_response(request: &Value) -> Value {
+    let id = request.get("id").cloned().unwrap_or(Value::Null);
+    let method = request.get("method").and_then(Value::as_str);
+    let result = match method {
+        Some("item/commandExecution/requestApproval") | Some("item/fileChange/requestApproval") => {
+            json!({ "decision": "decline" })
+        }
+        Some("item/tool/requestUserInput") => json!({ "answers": {} }),
+        Some("mcpServer/elicitation/request") => {
+            json!({ "action": "decline", "content": null, "_meta": null })
+        }
+        Some("item/permissions/requestApproval") => {
+            json!({ "permissions": {}, "scope": "turn" })
+        }
+        Some("item/tool/call") => json!({ "contentItems": [], "success": false }),
+        Some("applyPatchApproval") | Some("execCommandApproval") => {
+            json!({ "decision": "denied" })
+        }
+        _ => {
+            return json!({
+                "id": id,
+                "error": {
+                    "code": -32601,
+                    "message": "このアプリでは要求されたサーバー要求を処理できません"
+                }
+            });
+        }
+    };
+    json!({ "id": id, "result": result })
+}
+
+async fn write_jsonl(
+    stdin: &Arc<Mutex<ChildStdin>>,
+    message: &Value,
+) -> Result<(), AppServerError> {
+    let mut bytes = serde_json::to_vec(message)?;
+    bytes.push(b'\n');
+    let mut stdin = stdin.lock().await;
+    stdin.write_all(&bytes).await?;
+    stdin.flush().await?;
+    Ok(())
+}
+
+async fn enqueue_notification(notifications: &Arc<Mutex<VecDeque<Value>>>, message: Value) {
+    let mut buffer = notifications.lock().await;
+    if buffer.len() == MAX_NOTIFICATION_MESSAGES {
+        buffer.pop_front();
+    }
+    buffer.push_back(message);
+}
+
+fn take_matching_notification(
+    notifications: &mut VecDeque<Value>,
+    method: &str,
+    login_id: Option<&str>,
+) -> Option<Value> {
+    let index = notifications.iter().position(|notification| {
+        let method_matches = notification.get("method").and_then(Value::as_str) == Some(method);
+        let login_matches = login_id.is_none_or(|expected| {
+            notification
+                .get("params")
+                .and_then(|params| params.get("loginId"))
+                .and_then(Value::as_str)
+                == Some(expected)
+        });
+        method_matches && login_matches
+    })?;
+    notifications.remove(index)
 }
 
 impl JsonlRpcSession {
@@ -131,6 +271,7 @@ impl JsonlRpcSession {
             .stdin
             .take()
             .ok_or_else(|| AppServerError::StartFailed("標準入力を取得できません".into()))?;
+        let stdin = Arc::new(Mutex::new(stdin));
         let stdout = child
             .stdout
             .take()
@@ -152,13 +293,63 @@ impl JsonlRpcSession {
                 buffer.push_back(line);
             }
         });
+        let notifications = Arc::new(Mutex::new(VecDeque::new()));
+        let notification_buffer = Arc::clone(&notifications);
+        let server_request_stdin = Arc::clone(&stdin);
+        let (response_tx, response_rx) = mpsc::channel(RESPONSE_CHANNEL_CAPACITY);
+        let stdout_task = tokio::spawn(async move {
+            let mut lines = BufReader::new(stdout).lines();
+            loop {
+                let message = match lines.next_line().await {
+                    Ok(Some(line)) => match serde_json::from_str::<Value>(&line) {
+                        Ok(message) => message,
+                        Err(error) => {
+                            let _ = response_tx
+                                .send(IncomingResponse::InvalidJson(error.to_string()))
+                                .await;
+                            continue;
+                        }
+                    },
+                    Ok(None) => {
+                        let _ = response_tx.send(IncomingResponse::Closed).await;
+                        break;
+                    }
+                    Err(error) => {
+                        let _ = response_tx
+                            .send(IncomingResponse::InvalidJson(error.to_string()))
+                            .await;
+                        break;
+                    }
+                };
+                let has_method = message.get("method").and_then(Value::as_str).is_some();
+                if has_method && message.get("id").is_some() {
+                    let response = build_server_request_response(&message);
+                    if let Err(error) = write_jsonl(&server_request_stdin, &response).await {
+                        let _ = response_tx
+                            .send(IncomingResponse::InvalidJson(error.to_string()))
+                            .await;
+                        break;
+                    }
+                } else if has_method {
+                    enqueue_notification(&notification_buffer, message).await;
+                } else if response_tx
+                    .send(IncomingResponse::Message(message))
+                    .await
+                    .is_err()
+                {
+                    break;
+                }
+            }
+        });
 
         Ok(Self {
             child,
             stdin,
-            stdout_lines: BufReader::new(stdout).lines(),
+            response_rx,
+            stdout_task,
             stderr_lines,
             stderr_task,
+            notifications,
         })
     }
 
@@ -184,11 +375,17 @@ impl JsonlRpcSession {
                 return Err(AppServerError::Timeout);
             }
 
-            let line = timeout(remaining, self.stdout_lines.next_line())
+            let incoming = timeout(remaining, self.response_rx.recv())
                 .await
-                .map_err(|_| AppServerError::Timeout)??
+                .map_err(|_| AppServerError::Timeout)?
                 .ok_or(AppServerError::ProcessExited)?;
-            let response: Value = serde_json::from_str(&line)?;
+            let response = match incoming {
+                IncomingResponse::Message(response) => response,
+                IncomingResponse::InvalidJson(error) => {
+                    return Err(AppServerError::InvalidJsonLine(error));
+                }
+                IncomingResponse::Closed => return Err(AppServerError::ProcessExited),
+            };
             if response.get("id").and_then(Value::as_u64) != Some(id) {
                 continue;
             }
@@ -215,32 +412,143 @@ impl JsonlRpcSession {
     }
 
     async fn write(&mut self, message: &Value) -> Result<(), AppServerError> {
-        let mut bytes = serde_json::to_vec(message)?;
-        bytes.push(b'\n');
-        self.stdin.write_all(&bytes).await?;
-        self.stdin.flush().await?;
-        Ok(())
+        write_jsonl(&self.stdin, message).await
     }
 
     async fn diagnostics(&self) -> Vec<String> {
         self.stderr_lines.lock().await.iter().cloned().collect()
     }
 
+    async fn take_notification(&self, method: &str, login_id: Option<&str>) -> Option<Value> {
+        let mut notifications = self.notifications.lock().await;
+        take_matching_notification(&mut notifications, method, login_id)
+    }
+
     async fn shutdown(mut self) {
-        let _ = self.stdin.shutdown().await;
+        let _ = self.stdin.lock().await.shutdown().await;
         let _ = self.child.kill().await;
         let _ = self.child.wait().await;
+        self.stdout_task.abort();
+        let _ = self.stdout_task.await;
         self.stderr_task.abort();
         let _ = self.stderr_task.await;
     }
 }
 
 #[tauri::command]
-pub async fn probe_codex_environment(app: tauri::AppHandle) -> Result<Gate0ProbeReport, String> {
-    probe(&app).await.map_err(|error| error.to_string())
+pub async fn probe_codex_environment(
+    app: tauri::AppHandle,
+    supervisor: tauri::State<'_, AppServerSupervisor>,
+) -> Result<Gate0ProbeReport, String> {
+    let mut guard = supervisor.session.lock().await;
+    probe(&app, &mut guard)
+        .await
+        .map_err(|error| error.to_string())
 }
 
-async fn probe(app: &tauri::AppHandle) -> Result<Gate0ProbeReport, AppServerError> {
+#[tauri::command]
+pub async fn start_codex_device_login(
+    app: tauri::AppHandle,
+    supervisor: tauri::State<'_, AppServerSupervisor>,
+) -> Result<DeviceLoginStart, String> {
+    let mut guard = supervisor.session.lock().await;
+    if guard
+        .as_ref()
+        .and_then(|session| session.active_login_id.as_ref())
+        .is_some()
+    {
+        return Err("進行中のdevice code認証があります".into());
+    }
+    let result = supervised_request(
+        &app,
+        &mut guard,
+        "account/login/start",
+        Some(json!({ "type": "chatgptDeviceCode" })),
+    )
+    .await
+    .map_err(|error| error.to_string())?;
+    let login = parse_device_login_start(&result).map_err(|error| error.to_string())?;
+    if let Some(session) = guard.as_mut() {
+        session.active_login_id = Some(login.login_id.clone());
+    }
+    Ok(login)
+}
+
+#[tauri::command]
+pub async fn read_codex_login_status(
+    app: tauri::AppHandle,
+    supervisor: tauri::State<'_, AppServerSupervisor>,
+) -> Result<DeviceLoginStatus, String> {
+    let mut guard = supervisor.session.lock().await;
+    let result = supervised_request(
+        &app,
+        &mut guard,
+        "account/read",
+        Some(json!({ "refreshToken": false })),
+    )
+    .await
+    .map_err(|error| error.to_string())?;
+    let account = parse_account(&result).map_err(|error| error.to_string())?;
+    let active_login_id = guard
+        .as_ref()
+        .and_then(|session| session.active_login_id.clone());
+    let login_notification = if let Some(session) = guard.as_ref() {
+        session
+            .rpc
+            .take_notification("account/login/completed", active_login_id.as_deref())
+            .await
+            .and_then(|notification| notification.get("params").cloned())
+    } else {
+        None
+    };
+    let login_completed = login_notification
+        .as_ref()
+        .and_then(|params| params.get("success"))
+        .and_then(Value::as_bool);
+    if (account.auth_mode.as_deref() == Some("chatgpt") || login_completed.is_some())
+        && let Some(session) = guard.as_mut()
+    {
+        session.active_login_id = None;
+    }
+    Ok(DeviceLoginStatus {
+        authenticated: account.auth_mode.as_deref() == Some("chatgpt"),
+        account,
+        login_completed,
+        login_error: login_notification
+            .as_ref()
+            .and_then(|params| params.get("error"))
+            .and_then(Value::as_str)
+            .map(str::to_string),
+    })
+}
+
+#[tauri::command]
+pub async fn cancel_codex_device_login(
+    app: tauri::AppHandle,
+    supervisor: tauri::State<'_, AppServerSupervisor>,
+    login_id: String,
+) -> Result<(), String> {
+    let mut guard = supervisor.session.lock().await;
+    supervised_request(
+        &app,
+        &mut guard,
+        "account/login/cancel",
+        Some(json!({ "loginId": &login_id })),
+    )
+    .await
+    .map_err(|error| error.to_string())?;
+    if let Some(session) = guard.as_mut()
+        && session.active_login_id.as_deref() == Some(login_id.as_str())
+    {
+        session.active_login_id = None;
+    }
+    Ok(())
+}
+
+async fn probe(
+    app: &tauri::AppHandle,
+    slot: &mut Option<ManagedAppServer>,
+) -> Result<Gate0ProbeReport, AppServerError> {
     let codex = detect_codex().await?;
     let version_supported = is_supported_version(&codex.version);
     let isolated_home = app
@@ -248,7 +556,6 @@ async fn probe(app: &tauri::AppHandle) -> Result<Gate0ProbeReport, AppServerErro
         .app_data_dir()
         .map_err(|error| AppServerError::IsolatedHome(error.to_string()))?
         .join("codex-home");
-    prepare_isolated_home(&isolated_home).await?;
 
     let mut report = Gate0ProbeReport {
         codex_path: codex.path.display().to_string(),
@@ -270,14 +577,43 @@ async fn probe(app: &tauri::AppHandle) -> Result<Gate0ProbeReport, AppServerErro
         return Ok(report);
     }
 
-    let mut session = JsonlRpcSession::start(&codex, &isolated_home).await?;
-    let probe_result = probe_session(&mut session, &isolated_home, &mut report).await;
-    if let Err(error) = &probe_result {
-        report.diagnostics.extend(session.diagnostics().await);
-        report.diagnostics.push(error.to_string());
+    let account_result = supervised_request(
+        app,
+        slot,
+        "account/read",
+        Some(json!({ "refreshToken": false })),
+    )
+    .await?;
+    let account = parse_account(&account_result)?;
+    let is_chatgpt = account.auth_mode.as_deref() == Some("chatgpt");
+    report.account = Some(account);
+
+    if let Some(session) = slot.as_ref() {
+        report.codex_path.clone_from(&session.codex_path);
+        report.codex_version.clone_from(&session.codex_version);
+        report.isolated_home.clone_from(&session.codex_home);
+        report.platform_family.clone_from(&session.platform_family);
+        report.platform_os.clone_from(&session.platform_os);
+        report.app_server_initialized = true;
+        report.diagnostics.extend(session.rpc.diagnostics().await);
     }
-    session.shutdown().await;
-    probe_result.map(|_| report)
+
+    if is_chatgpt {
+        match supervised_request(app, slot, "account/rateLimits/read", None).await {
+            Ok(result) => {
+                report.rate_limits_available = result.get("rateLimits").is_some();
+            }
+            Err(error) => report
+                .diagnostics
+                .push(format!("利用上限情報を取得できませんでした: {error}")),
+        }
+        if slot.is_none() {
+            report.app_server_initialized = false;
+            report.rate_limits_available = false;
+        }
+    }
+
+    Ok(report)
 }
 
 async fn prepare_isolated_home(codex_home: &Path) -> Result<(), AppServerError> {
@@ -298,12 +634,54 @@ async fn prepare_isolated_home(codex_home: &Path) -> Result<(), AppServerError> 
     Ok(())
 }
 
-async fn probe_session(
-    session: &mut JsonlRpcSession,
-    isolated_home: &Path,
-    report: &mut Gate0ProbeReport,
-) -> Result<(), AppServerError> {
-    let initialized = session
+async fn ensure_managed_session<'a>(
+    app: &tauri::AppHandle,
+    slot: &'a mut Option<ManagedAppServer>,
+) -> Result<&'a mut ManagedAppServer, AppServerError> {
+    if slot.is_none() {
+        *slot = Some(start_managed_session(app).await?);
+    }
+    slot.as_mut()
+        .ok_or_else(|| AppServerError::Protocol("常駐セッションを取得できません".into()))
+}
+
+async fn supervised_request(
+    app: &tauri::AppHandle,
+    slot: &mut Option<ManagedAppServer>,
+    method: &str,
+    params: Option<Value>,
+) -> Result<Value, AppServerError> {
+    let result = {
+        let session = ensure_managed_session(app, slot).await?;
+        session.request(method, params).await
+    };
+    if result
+        .as_ref()
+        .err()
+        .is_some_and(AppServerError::invalidates_session)
+        && let Some(session) = slot.take()
+    {
+        session.rpc.shutdown().await;
+    }
+    result
+}
+
+async fn start_managed_session(app: &tauri::AppHandle) -> Result<ManagedAppServer, AppServerError> {
+    let codex = detect_codex().await?;
+    if !is_supported_version(&codex.version) {
+        return Err(AppServerError::Protocol(format!(
+            "対応するCodex CLIは{SUPPORTED_CODEX_MAJOR}.{SUPPORTED_CODEX_MINOR}.xです"
+        )));
+    }
+    let codex_home = app
+        .path()
+        .app_data_dir()
+        .map_err(|error| AppServerError::IsolatedHome(error.to_string()))?
+        .join("codex-home");
+    prepare_isolated_home(&codex_home).await?;
+
+    let mut rpc = JsonlRpcSession::start(&codex, &codex_home).await?;
+    let initialized = rpc
         .request(
             0,
             "initialize",
@@ -316,37 +694,27 @@ async fn probe_session(
             })),
         )
         .await?;
-    validate_codex_home(&initialized, isolated_home)?;
-    report.platform_family = initialized
+    validate_codex_home(&initialized, &codex_home)?;
+    rpc.notify("initialized", json!({})).await?;
+    let platform_family = initialized
         .get("platformFamily")
         .and_then(Value::as_str)
         .map(str::to_string);
-    report.platform_os = initialized
+    let platform_os = initialized
         .get("platformOs")
         .and_then(Value::as_str)
         .map(str::to_string);
-    session.notify("initialized", json!({})).await?;
-    report.app_server_initialized = true;
 
-    let account_result = session
-        .request(1, "account/read", Some(json!({ "refreshToken": false })))
-        .await?;
-    let account = parse_account(&account_result)?;
-    let is_chatgpt = account.auth_mode.as_deref() == Some("chatgpt");
-    report.account = Some(account);
-
-    if is_chatgpt {
-        match session.request(2, "account/rateLimits/read", None).await {
-            Ok(result) => {
-                report.rate_limits_available = result.get("rateLimits").is_some();
-            }
-            Err(error) => report
-                .diagnostics
-                .push(format!("利用上限情報を取得できませんでした: {error}")),
-        }
-    }
-
-    Ok(())
+    Ok(ManagedAppServer {
+        rpc,
+        next_request_id: 1,
+        active_login_id: None,
+        codex_path: codex.path.display().to_string(),
+        codex_version: codex.version.to_string(),
+        codex_home: codex_home.display().to_string(),
+        platform_family,
+        platform_os,
+    })
 }
 
 async fn detect_codex() -> Result<CodexBinary, AppServerError> {
@@ -477,6 +845,26 @@ fn parse_account(result: &Value) -> Result<Gate0Account, AppServerError> {
     })
 }
 
+fn parse_device_login_start(result: &Value) -> Result<DeviceLoginStart, AppServerError> {
+    if result.get("type").and_then(Value::as_str) != Some("chatgptDeviceCode") {
+        return Err(AppServerError::Protocol(
+            "device code認証以外の応答を受け取りました".into(),
+        ));
+    }
+    let required_string = |field: &str| {
+        result
+            .get(field)
+            .and_then(Value::as_str)
+            .map(str::to_string)
+            .ok_or_else(|| AppServerError::Protocol(format!("{field}がありません")))
+    };
+    Ok(DeviceLoginStart {
+        login_id: required_string("loginId")?,
+        verification_url: required_string("verificationUrl")?,
+        user_code: required_string("userCode")?,
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -503,6 +891,88 @@ mod tests {
         .expect("解析できること");
         assert_eq!(account.auth_mode, None);
         assert!(account.requires_openai_auth);
+    }
+
+    #[test]
+    fn device_code認証の開始応答を解析できる() {
+        let login = parse_device_login_start(&json!({
+            "type": "chatgptDeviceCode",
+            "loginId": "login-1",
+            "verificationUrl": "https://auth.openai.com/codex/device",
+            "userCode": "ABCD-1234"
+        }))
+        .expect("解析できること");
+
+        assert_eq!(login.login_id, "login-1");
+        assert_eq!(login.user_code, "ABCD-1234");
+    }
+
+    #[tokio::test]
+    async fn 通知キューを上限件数に保つ() {
+        let notifications = Arc::new(Mutex::new(VecDeque::new()));
+        for index in 0..=MAX_NOTIFICATION_MESSAGES {
+            enqueue_notification(
+                &notifications,
+                json!({ "method": "test/event", "params": { "index": index } }),
+            )
+            .await;
+        }
+
+        let notifications = notifications.lock().await;
+        assert_eq!(notifications.len(), MAX_NOTIFICATION_MESSAGES);
+        assert_eq!(
+            notifications.front().expect("通知があること")["params"]["index"],
+            1
+        );
+    }
+
+    #[test]
+    fn login_idが一致する完了通知だけを取り出す() {
+        let mut notifications = VecDeque::from([
+            json!({
+                "method": "account/login/completed",
+                "params": { "loginId": "old-login", "success": false }
+            }),
+            json!({
+                "method": "account/login/completed",
+                "params": { "loginId": "current-login", "success": true }
+            }),
+        ]);
+
+        let notification = take_matching_notification(
+            &mut notifications,
+            "account/login/completed",
+            Some("current-login"),
+        )
+        .expect("一致する通知があること");
+
+        assert_eq!(notification["params"]["success"], true);
+        assert_eq!(notifications.len(), 1);
+        assert_eq!(notifications[0]["params"]["loginId"], "old-login");
+    }
+
+    #[test]
+    fn サーバーからの実行承認要求を明示的に拒否する() {
+        let response = build_server_request_response(&json!({
+            "id": 42,
+            "method": "item/commandExecution/requestApproval",
+            "params": {}
+        }));
+
+        assert_eq!(response["id"], 42);
+        assert_eq!(response["result"]["decision"], "decline");
+    }
+
+    #[test]
+    fn 未対応のサーバー要求へmethod_not_foundを返す() {
+        let response = build_server_request_response(&json!({
+            "id": "server-request-1",
+            "method": "unknown/request",
+            "params": {}
+        }));
+
+        assert_eq!(response["id"], "server-request-1");
+        assert_eq!(response["error"]["code"], -32601);
     }
 
     #[tokio::test]
@@ -607,6 +1077,23 @@ mod tests {
             .await
             .expect("認証状態を確認できること");
         parse_account(&account).expect("認証応答を解析できること");
+        let login = session
+            .request(
+                2,
+                "account/login/start",
+                Some(json!({ "type": "chatgptDeviceCode" })),
+            )
+            .await
+            .expect("device code認証を開始できること");
+        let login = parse_device_login_start(&login).expect("認証開始応答を解析できること");
+        session
+            .request(
+                3,
+                "account/login/cancel",
+                Some(json!({ "loginId": login.login_id })),
+            )
+            .await
+            .expect("device code認証を取り消せること");
 
         session.shutdown().await;
         let mut removed = false;
