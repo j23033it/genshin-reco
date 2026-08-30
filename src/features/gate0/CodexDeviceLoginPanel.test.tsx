@@ -97,7 +97,8 @@ describe("CodexDeviceLoginPanel", () => {
   it("約2秒間隔で状態を確認し、成功後はポーリングを停止する", async () => {
     vi.useFakeTimers();
     readMock.mockResolvedValueOnce(pendingStatus).mockResolvedValueOnce({ ...pendingStatus, authenticated: true });
-    render(<CodexDeviceLoginPanel onRecheck={vi.fn()} />);
+    const onRecheck = vi.fn();
+    render(<CodexDeviceLoginPanel onRecheck={onRecheck} />);
 
     await act(async () => {
       fireEvent.click(screen.getByRole("button", { name: "ログインを開始" }));
@@ -115,6 +116,7 @@ describe("CodexDeviceLoginPanel", () => {
     });
     expect(readMock).toHaveBeenCalledTimes(2);
     expect(screen.getByRole("status")).toHaveTextContent("ログインが完了しました");
+    expect(onRecheck).toHaveBeenCalledTimes(1);
 
     await act(async () => {
       await vi.advanceTimersByTimeAsync(4000);

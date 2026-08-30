@@ -41,7 +41,13 @@ export function CodexDeviceLoginPanel({ onRecheck }: { onRecheck: () => void }) 
         const result = await readCodexLoginStatus();
         if (disposed) return;
 
-        if (result.authenticated || result.loginCompleted === true) {
+        if (result.authenticated) {
+          setLoginState({ status: "success" });
+          onRecheck();
+          return;
+        }
+
+        if (result.loginCompleted === true) {
           setLoginState({ status: "success" });
           return;
         }
@@ -70,7 +76,7 @@ export function CodexDeviceLoginPanel({ onRecheck }: { onRecheck: () => void }) 
       disposed = true;
       if (timerId !== undefined) window.clearTimeout(timerId);
     };
-  }, [activeLoginId]);
+  }, [activeLoginId, onRecheck]);
 
   const handleStart = async () => {
     if (loginState.status === "starting" || loginState.status === "active" || loginState.status === "cancelling") return;

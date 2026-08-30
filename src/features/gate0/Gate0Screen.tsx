@@ -1,4 +1,4 @@
-import { useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { cn } from "../../lib/cn";
 import { CodexDeviceLoginPanel } from "./CodexDeviceLoginPanel";
 import { CodexGate0SmokePanel } from "./CodexGate0SmokePanel";
@@ -13,6 +13,65 @@ type ProbeState =
 
 const valueOrFallback = (value: string | null) => value || "未取得";
 
+const isAccountConnected = (report: Gate0ProbeReport) => Boolean(report.account?.authMode);
+
+function CodexConnectionStatus({ state }: { state: ProbeState }) {
+  const status =
+    state.status === "loading"
+      ? {
+          label: "確認中",
+          description: "Codex App Serverへ接続して、アカウントの連携状態を確認しています。",
+          className: "border-slate-700 bg-slate-950/50 text-slate-200",
+          badgeClassName: "border-slate-600 bg-slate-800 text-slate-200",
+        }
+      : state.status === "error"
+        ? {
+            label: "確認できません",
+            description: "Codex環境へ接続できませんでした。表示されたエラーを確認して再実行してください。",
+            className: "border-rose-400/50 bg-rose-400/10 text-rose-100",
+            badgeClassName: "border-rose-300/50 bg-rose-300/10 text-rose-100",
+          }
+        : state.status === "success" && isAccountConnected(state.report)
+          ? {
+              label: "連携済み",
+              description: "Codexの認証情報を確認しました。このアプリはCodexと連携済みです。",
+              className: "border-emerald-400/50 bg-emerald-400/10 text-emerald-100",
+              badgeClassName: "border-emerald-300/50 bg-emerald-300/10 text-emerald-100",
+            }
+          : state.status === "success"
+            ? {
+                label: "未連携",
+                description: "Codexへログインすると、このアプリから推薦機能を利用できます。",
+                className: "border-amber-400/50 bg-amber-400/10 text-amber-100",
+                badgeClassName: "border-amber-300/50 bg-amber-300/10 text-amber-100",
+              }
+            : {
+                label: "未確認",
+                description: "この画面を開くと、Codexとの連携状態を自動で確認します。",
+                className: "border-slate-700 bg-slate-950/50 text-slate-200",
+                badgeClassName: "border-slate-600 bg-slate-800 text-slate-200",
+              };
+
+  return (
+    <div
+      className={cn("mt-6 rounded-xl border p-4", status.className)}
+      role="status"
+      aria-live="polite"
+      aria-atomic="true"
+      aria-busy={state.status === "loading"}
+      data-testid="codex-connection-status"
+    >
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p className="font-semibold">Codex連携状態</p>
+        <span className={cn("rounded-full border px-3 py-1 text-sm font-semibold", status.badgeClassName)}>
+          {status.label}
+        </span>
+      </div>
+      <p className="mt-2 text-pretty text-sm leading-6">{status.description}</p>
+    </div>
+  );
+}
+
 function BooleanValue({
   value,
   trueLabel,
@@ -26,7 +85,7 @@ function BooleanValue({
 }
 
 function ReportDetails({ report, onRecheck }: { report: Gate0ProbeReport; onRecheck: () => void }) {
-  const accountNeedsAuth = report.account === null || report.account.requiresOpenaiAuth;
+  const accountConnected = isAccountConnected(report);
   const smokeAvailable = report.account?.authMode === "chatgpt";
 
   return (
@@ -53,8 +112,14 @@ function ReportDetails({ report, onRecheck }: { report: Gate0ProbeReport; onRech
           <ReportItem label="プラットフォーム" value={valueOrFallback(report.platformFamily)} />
           <ReportItem label="OS" value={valueOrFallback(report.platformOs)} />
           <ReportItem
-            label="レート制限情報"
-            value={<BooleanValue value={report.rateLimitsAvailable} trueLabel="取得済み" falseLabel="未取得" />}
+            label="利用上限情報"
+            value={
+              <BooleanValue
+                value={report.rateLimitsAvailable}
+                trueLabel="取得済み"
+                falseLabel={accountConnected ? "取得できません（連携済み）" : "連携後に取得"}
+              />
+            }
           />
         </dl>
       </section>
@@ -63,7 +128,7 @@ function ReportDetails({ report, onRecheck }: { report: Gate0ProbeReport; onRech
         <h3 id="account-heading" className="text-balance text-xl font-semibold text-slate-100">
           アカウント
         </h3>
-        {accountNeedsAuth ? (
+        {!accountConnected ? (
           <CodexDeviceLoginPanel onRecheck={onRecheck} />
         ) : (
           <>
@@ -71,6 +136,11 @@ function ReportDetails({ report, onRecheck }: { report: Gate0ProbeReport; onRech
               <ReportItem label="認証方式" value={valueOrFallback(report.account?.authMode ?? null)} />
               <ReportItem label="プラン" value={valueOrFallback(report.account?.planType ?? null)} />
             </dl>
+            {!report.rateLimitsAvailable && (
+              <p className="mt-4 rounded-lg border border-amber-300/40 bg-amber-300/5 p-4 text-pretty text-sm leading-6 text-amber-100">
+                Codex連携は有効です。利用上限情報だけを現在表示できませんが、認証状態には影響しません。
+              </p>
+            )}
             {smokeAvailable ? (
               <CodexGate0SmokePanel />
             ) : (
@@ -132,7 +202,7 @@ export function Gate0Screen({ embedded = false }: { embedded?: boolean }) {
   const [probeState, setProbeState] = useState<ProbeState>({ status: "idle" });
   const probingRef = useRef(false);
 
-  const handleProbe = async () => {
+  const handleProbe = useCallback(async () => {
     if (probingRef.current) return;
     probingRef.current = true;
     setProbeState({ status: "loading" });
@@ -151,7 +221,14 @@ export function Gate0Screen({ embedded = false }: { embedded?: boolean }) {
     } finally {
       probingRef.current = false;
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    const timerId = window.setTimeout(() => {
+      void handleProbe();
+    }, 0);
+    return () => window.clearTimeout(timerId);
+  }, [handleProbe]);
 
   const isLoading = probeState.status === "loading";
 
@@ -185,6 +262,8 @@ export function Gate0Screen({ embedded = false }: { embedded?: boolean }) {
             推薦を始める前に、Codex App Serverへ接続できるか確認します。確認結果はこの画面でのみ表示します。
           </p>
 
+          <CodexConnectionStatus state={probeState} />
+
           <div className="mt-6">
             <button
               type="button"
@@ -193,7 +272,7 @@ export function Gate0Screen({ embedded = false }: { embedded?: boolean }) {
               disabled={isLoading}
               aria-busy={isLoading}
             >
-              {isLoading ? "確認中…" : "環境を確認"}
+              {isLoading ? "確認中…" : probeState.status === "idle" ? "環境を確認" : "再確認"}
             </button>
             {probeState.status === "error" && (
               <p className="mt-3 text-pretty text-sm leading-6 text-amber-200" role="alert">
@@ -201,16 +280,6 @@ export function Gate0Screen({ embedded = false }: { embedded?: boolean }) {
               </p>
             )}
           </div>
-
-          <p className="sr-only" role="status" aria-live="polite">
-            {probeState.status === "loading"
-              ? "Gate 0: Codex環境を確認しています。"
-              : probeState.status === "success"
-                ? "Gate 0: Codex環境の確認が完了しました。"
-                : probeState.status === "error"
-                  ? "Gate 0: 環境の確認に失敗しました。"
-                  : "Gate 0: 環境の確認を待機中です。"}
-          </p>
 
           {isLoading && <LoadingReport />}
           {probeState.status === "success" && <ReportDetails report={probeState.report} onRecheck={handleProbe} />}

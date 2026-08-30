@@ -1344,13 +1344,8 @@ async fn probe(
     }
 
     if is_chatgpt {
-        match supervised_request(app, slot, "account/rateLimits/read", None).await {
-            Ok(result) => {
-                report.rate_limits_available = result.get("rateLimits").is_some();
-            }
-            Err(error) => report
-                .diagnostics
-                .push(format!("利用上限情報を取得できませんでした: {error}")),
+        if let Ok(result) = supervised_request(app, slot, "account/rateLimits/read", None).await {
+            report.rate_limits_available = result.get("rateLimits").is_some();
         }
         if slot.is_none() {
             report.app_server_initialized = false;
@@ -1720,6 +1715,22 @@ mod tests {
         }))
         .expect("解析できること");
         assert_eq!(account.auth_mode, None);
+        assert!(account.requires_openai_auth);
+    }
+
+    #[test]
+    fn 未知のプランでもchatgpt連携状態を解析できる() {
+        let account = parse_account(&json!({
+            "account": {
+                "type": "chatgpt",
+                "planType": "prolite"
+            },
+            "requiresOpenaiAuth": true
+        }))
+        .expect("未知のプラン名を文字列として保持できること");
+
+        assert_eq!(account.auth_mode.as_deref(), Some("chatgpt"));
+        assert_eq!(account.plan_type.as_deref(), Some("prolite"));
         assert!(account.requires_openai_auth);
     }
 

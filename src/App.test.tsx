@@ -5,10 +5,15 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import App from "./App";
 import type { Catalog } from "./domain/catalogTypes";
 import { loadCatalog } from "./features/catalog";
+import { probeCodexEnvironment } from "./features/gate0/probeCodexEnvironment";
 import { listPartyDrafts, loadPartyDraft, savePartyDraft } from "./features/party";
 
 vi.mock("./features/catalog", () => ({
   loadCatalog: vi.fn(),
+}));
+
+vi.mock("./features/gate0/probeCodexEnvironment", () => ({
+  probeCodexEnvironment: vi.fn(),
 }));
 
 vi.mock("./features/party", async (importOriginal) => ({
@@ -19,6 +24,7 @@ vi.mock("./features/party", async (importOriginal) => ({
 }));
 
 const loadCatalogMock = vi.mocked(loadCatalog);
+const probeCodexEnvironmentMock = vi.mocked(probeCodexEnvironment);
 const listPartyDraftsMock = vi.mocked(listPartyDrafts);
 const loadPartyDraftMock = vi.mocked(loadPartyDraft);
 const savePartyDraftMock = vi.mocked(savePartyDraft);
@@ -55,6 +61,18 @@ describe("アプリワークスペース", () => {
     listPartyDraftsMock.mockResolvedValue([]);
     loadPartyDraftMock.mockResolvedValue(null);
     savePartyDraftMock.mockResolvedValue();
+    probeCodexEnvironmentMock.mockResolvedValue({
+      codexPath: "C:\\codex.exe",
+      codexVersion: "0.118.0",
+      versionSupported: true,
+      appServerInitialized: true,
+      isolatedHome: "C:\\codex-home",
+      platformFamily: "windows",
+      platformOs: "windows",
+      account: { authMode: null, planType: null, requiresOpenaiAuth: true },
+      rateLimitsAvailable: false,
+      diagnostics: [],
+    });
   });
 
   it("凍結カタログ読み込み後に編成ビルダーを表示する", async () => {
@@ -87,7 +105,8 @@ describe("アプリワークスペース", () => {
     await user.click(await screen.findByRole("button", { name: "Codex設定" }));
 
     expect(screen.getByRole("heading", { name: "Codexの環境を確認" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "環境を確認" })).toBeEnabled();
+    expect(await screen.findByText("未連携")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "再確認" })).toBeEnabled();
   });
 
   it("カタログ読み込み失敗を表示して再実行できる", async () => {
