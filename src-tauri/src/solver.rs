@@ -81,7 +81,7 @@ pub fn solve_team_builds(
         .try_fold(1usize, |space, character_candidates| {
             space.checked_mul(character_candidates.len())
         })
-        .ok_or_else(|| SolverError::SearchSpaceExceeded(usize::MAX))?;
+        .ok_or(SolverError::SearchSpaceExceeded(usize::MAX))?;
     if search_space > MAX_SEARCH_SPACE {
         return Err(SolverError::SearchSpaceExceeded(search_space));
     }
