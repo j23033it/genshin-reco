@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { BarChart3, Database, Plus, Search, Settings2, Users } from "lucide-react";
 import type { AnalysisStatus, ResultValidity, TeamBuildResolution } from "./domain/analysisTypes";
 import type { Catalog } from "./domain/catalogTypes";
 import {
   AnalysisProgressPanel,
+  AnalysisNotesPanel,
   TeamResultPanel,
   buildAnalysisInput,
   cancelAnalysis,
@@ -59,6 +60,10 @@ function createPartyId() {
   return globalThis.crypto?.randomUUID?.() ?? `party-${Date.now()}`;
 }
 
+function getPartyId(party: PartyDraft) {
+  return party.partyId ?? party.id;
+}
+
 function LoadingScreen() {
   return (
     <main className="grid min-h-dvh place-items-center bg-slate-950 px-6 text-slate-100">
@@ -100,23 +105,88 @@ function Workspace({ catalog }: { catalog: Catalog }) {
   const [resolution, setResolution] = useState<TeamBuildResolution | null>(null);
   const [resultValidity, setResultValidity] = useState<ResultValidity | null>(null);
   const [analysisError, setAnalysisError] = useState<string | null>(null);
+  const [resultParty, setResultParty] = useState<PartyDraft | null>(null);
+  const [selectedPartyId, setSelectedPartyId] = useState<string | null>(null);
+  const [resultLoading, setResultLoading] = useState(false);
+  const [resultError, setResultError] = useState<string | null>(null);
+  const resultLoadGeneration = useRef(0);
 
   useEffect(() => {
     let active = true;
-    listPartyDrafts()
-      .then((summaries) => Promise.all(summaries.map((summary) => loadPartyDraft(summary.partyId))))
-      .then((parties) => {
-        if (active) setSavedParties(parties.filter((party): party is PartyDraft => party !== null));
-      })
-      .catch((error: unknown) => {
-        if (active) {
-          setNotice(error instanceof Error ? error.message : "保存編成を読み込めませんでした。");
-        }
+    const generation = ++resultLoadGeneration.current;
+    const isCurrent = () => active && resultLoadGeneration.current === generation;
+
+    (async () => {
+      const summaries = await listPartyDrafts();
+      const sortedSummaries = [...summaries].sort((left, right) => {
+        const leftTime = Date.parse(left.updatedAt);
+        const rightTime = Date.parse(right.updatedAt);
+        if (Number.isNaN(leftTime) && Number.isNaN(rightTime)) return 0;
+        if (Number.isNaN(leftTime)) return 1;
+        if (Number.isNaN(rightTime)) return -1;
+        return rightTime - leftTime;
       });
+      const entries = await Promise.all(
+        sortedSummaries.map(async (summary) => ({ summary, party: await loadPartyDraft(summary.partyId) })),
+      );
+      if (!isCurrent()) return;
+
+      const parties = entries
+        .map(({ party }) => party)
+        .filter((party): party is PartyDraft => party !== null);
+      setSavedParties(parties);
+
+      const latest = entries.find(({ summary, party }) => summary.currentResultId !== null && party !== null);
+      const latestParty = latest?.party;
+      if (!latest || !latestParty) return;
+
+      const partyId = getPartyId(latestParty);
+      if (!partyId || latest.summary.currentResultId === null) return;
+      setView("analysis");
+      setSelectedPartyId(partyId);
+      setResultParty(latestParty);
+      setResultLoading(true);
+      setResultError(null);
+      const current = await loadCurrentAnalysisResult(partyId);
+      if (!isCurrent()) return;
+      setResolution(current);
+      setResultValidity(current ? "current" : null);
+      setResultLoading(false);
+    })().catch((error: unknown) => {
+      if (!isCurrent()) return;
+      setResultLoading(false);
+      setResultError(error instanceof Error ? error.message : String(error));
+      setNotice(error instanceof Error ? error.message : "保存編成を読み込めませんでした。");
+    });
     return () => {
       active = false;
     };
   }, []);
+
+  const loadResultForParty = async (party: PartyDraft) => {
+    const partyId = getPartyId(party);
+    if (!partyId) return;
+    const generation = ++resultLoadGeneration.current;
+    setView("analysis");
+    setSelectedPartyId(partyId);
+    setResultParty(party);
+    setResolution(null);
+    setResultValidity(null);
+    setResultError(null);
+    setResultLoading(true);
+    try {
+      const current = await loadCurrentAnalysisResult(partyId);
+      if (resultLoadGeneration.current !== generation) return;
+      setResolution(current);
+      setResultValidity(current ? "current" : null);
+    } catch (error: unknown) {
+      if (resultLoadGeneration.current !== generation) return;
+      setResultError(error instanceof Error ? error.message : String(error));
+      setNotice(error instanceof Error ? error.message : "分析結果を読み込めませんでした。");
+    } finally {
+      if (resultLoadGeneration.current === generation) setResultLoading(false);
+    }
+  };
 
   const filteredParties = useMemo(() => {
     const query = search.trim().toLocaleLowerCase("ja");
@@ -126,11 +196,12 @@ function Workspace({ catalog }: { catalog: Catalog }) {
   }, [savedParties, search]);
 
   const handleSave = async (next: PartyDraft) => {
-    const partyId = next.partyId ?? next.id ?? createPartyId();
+    resultLoadGeneration.current += 1;
+    const partyId = getPartyId(next) ?? createPartyId();
     const saved = { ...next, partyId, id: partyId };
     try {
       await savePartyDraft(saved);
-      setDraft(saved);
+      setDraft(createEmptyParty(createPartyId()));
       setSavedParties((current) => {
         const remaining = current.filter((party) => (party.partyId ?? party.id) !== partyId);
         return [saved, ...remaining];
@@ -142,25 +213,39 @@ function Workspace({ catalog }: { catalog: Catalog }) {
   };
 
   const handleAnalyze = async (next: PartyDraft) => {
+    resultLoadGeneration.current += 1;
     const characterById = new Map(catalog.characters.map((character) => [character.id, character]));
-    setDraft(next);
-    setAnalysisStatus("queued");
-    setAnalysisError(null);
-    if (resolution) setResultValidity("soft_stale");
-    setSteps(
-      next.members.map((member) => ({
-        characterId: member.characterId ?? `slot-${member.slotIndex + 1}`,
-        characterName: member.characterId ? characterById.get(member.characterId)?.name : undefined,
-        status: "queued",
-        detail: "調査ジョブの開始を待っています。",
-      })),
-    );
-    setNotice("分析入力を検証しました。Codex調査ジョブを開始します。");
-    setView("analysis");
+    const partyId = getPartyId(next) ?? createPartyId();
+    const saved = { ...next, partyId, id: partyId };
     let unlisten: () => void = () => undefined;
     try {
-      await savePartyDraft(next);
-      const input = buildAnalysisInput(next, catalog);
+      const input = buildAnalysisInput(saved, catalog);
+      await savePartyDraft(saved);
+
+      // 入力保存が成功した時点で、作成フォームを新規状態へ切り替える。
+      setDraft(createEmptyParty(createPartyId()));
+      setResultParty(saved);
+      setSelectedPartyId(partyId);
+      setResolution(null);
+      setResultValidity(null);
+      setAnalysisStatus("queued");
+      setAnalysisError(null);
+      setResultError(null);
+      setSteps(
+        saved.members.map((member) => ({
+          characterId: member.characterId ?? `slot-${member.slotIndex + 1}`,
+          characterName: member.characterId ? characterById.get(member.characterId)?.name : undefined,
+          status: "queued",
+          detail: "調査ジョブの開始を待っています。",
+        })),
+      );
+      setNotice("分析入力を保存しました。Codex調査ジョブを開始します。");
+      setView("analysis");
+      setSavedParties((current) => {
+        const remaining = current.filter((party) => getPartyId(party) !== partyId);
+        return [saved, ...remaining];
+      });
+
       unlisten = await subscribeAnalysisProgress((progress) => {
         setAnalysisStatus(progress.status);
         if (progress.error) setAnalysisError(progress.error);
@@ -192,6 +277,7 @@ function Workspace({ catalog }: { catalog: Catalog }) {
       });
       const completed = await startAnalysis(input);
       setResolution(completed.resolution);
+      setResultParty(saved);
       setResultValidity("current");
       setAnalysisStatus("succeeded");
       setNotice("検証済みの分析結果を保存しました。");
@@ -206,6 +292,7 @@ function Workspace({ catalog }: { catalog: Catalog }) {
   };
 
   const handleNewParty = () => {
+    resultLoadGeneration.current += 1;
     setDraft(createEmptyParty(createPartyId()));
     setNotice("新しい編成を開きました。");
     setView("party");
@@ -286,30 +373,23 @@ function Workspace({ catalog }: { catalog: Catalog }) {
               {filteredParties.length === 0 ? (
                 <p className="text-sm leading-6 text-slate-500">保存した編成はまだありません。</p>
               ) : (
-                filteredParties.map((party) => (
-                  <button
-                    key={party.partyId ?? party.id}
-                    type="button"
-                    className="w-full rounded-lg px-3 py-2 text-left text-sm text-slate-300 hover:bg-slate-800 hover:text-slate-100"
-                    onClick={() => {
-                      setDraft(party);
-                      const partyId = party.partyId ?? party.id;
-                      if (partyId) {
-                        void loadCurrentAnalysisResult(partyId)
-                          .then((current) => {
-                            setResolution(current);
-                            setResultValidity(current ? "current" : null);
-                          })
-                          .catch((error: unknown) => {
-                            setNotice(error instanceof Error ? error.message : String(error));
-                          });
-                      }
-                      setView("party");
-                    }}
-                  >
-                    {party.name}
-                  </button>
-                ))
+                filteredParties.map((party) => {
+                  const partyId = getPartyId(party);
+                  return (
+                    <button
+                      key={partyId}
+                      type="button"
+                      className={cn(
+                        "w-full rounded-lg px-3 py-2 text-left text-sm hover:bg-slate-800 hover:text-slate-100",
+                        selectedPartyId === partyId ? "bg-slate-800 text-amber-300" : "text-slate-300",
+                      )}
+                      onClick={() => void loadResultForParty(party)}
+                      aria-current={selectedPartyId === partyId ? "page" : undefined}
+                    >
+                      {party.name}
+                    </button>
+                  );
+                })
               )}
             </div>
           </section>
@@ -352,11 +432,23 @@ function Workspace({ catalog }: { catalog: Catalog }) {
                     : undefined
                 }
               />
+              {resultLoading ? (
+                <p className="text-sm text-slate-400" role="status" aria-live="polite">
+                  分析結果を読み込み中です。
+                </p>
+              ) : null}
+              {resultError ? (
+                <p className="border-l-2 border-rose-400 pl-3 text-sm leading-6 text-rose-200" role="alert">
+                  {resultError}
+                </p>
+              ) : null}
               <TeamResultPanel
+                catalog={catalog}
+                party={resultParty}
                 resolution={resolution}
                 validity={resultValidity ?? "current"}
                 onChooseVariant={(characterId, variantId) => {
-                  const partyId = draft.partyId ?? draft.id;
+                  const partyId = resultParty ? getPartyId(resultParty) : undefined;
                   if (!partyId) return;
                   void saveAnalysisVariantSelection(partyId, characterId, variantId)
                     .then((selected) => {
@@ -378,31 +470,37 @@ function Workspace({ catalog }: { catalog: Catalog }) {
           className="border-t border-slate-800 bg-slate-900/30 p-5 lg:border-l lg:border-t-0"
           aria-label="現在の編成情報"
         >
-          <div className="flex items-center gap-3 text-slate-300">
-            <Database aria-hidden="true" size={20} />
-            <h2 className="font-semibold">データ状態</h2>
-          </div>
-          <dl className="mt-4 space-y-4 text-sm">
-            <div>
-              <dt className="text-slate-500">カタログ</dt>
-              <dd className="mt-1 break-words text-slate-200">{catalog.schemaVersion}</dd>
-            </div>
-            <div>
-              <dt className="text-slate-500">更新日</dt>
-              <dd className="mt-1 tabular-nums text-slate-200">{catalog.catalogUpdatedAt}</dd>
-            </div>
-            <div>
-              <dt className="text-slate-500">編成</dt>
-              <dd className="mt-1 break-words text-slate-200">{draft.name.trim() || "未命名の編成"}</dd>
-            </div>
-            <div>
-              <dt className="text-slate-500">保存件数</dt>
-              <dd className="mt-1 tabular-nums text-slate-200">{savedParties.length}件</dd>
-            </div>
-          </dl>
-          <p className="mt-6 border-t border-slate-800 pt-5 text-pretty text-xs leading-5 text-slate-500">
-            カタログと推薦根拠は分離して保存します。根拠の検証に合格した結果だけが現在結果になります。
-          </p>
+          {view === "analysis" ? (
+            <AnalysisNotesPanel resolution={resolution} validity={resultValidity ?? "current"} />
+          ) : (
+            <>
+              <div className="flex items-center gap-3 text-slate-300">
+                <Database aria-hidden="true" size={20} />
+                <h2 className="font-semibold">データ状態</h2>
+              </div>
+              <dl className="mt-4 space-y-4 text-sm">
+                <div>
+                  <dt className="text-slate-500">カタログ</dt>
+                  <dd className="mt-1 break-words text-slate-200">{catalog.schemaVersion}</dd>
+                </div>
+                <div>
+                  <dt className="text-slate-500">更新日</dt>
+                  <dd className="mt-1 tabular-nums text-slate-200">{catalog.catalogUpdatedAt}</dd>
+                </div>
+                <div>
+                  <dt className="text-slate-500">編成</dt>
+                  <dd className="mt-1 break-words text-slate-200">{draft.name.trim() || "未命名の編成"}</dd>
+                </div>
+                <div>
+                  <dt className="text-slate-500">保存件数</dt>
+                  <dd className="mt-1 tabular-nums text-slate-200">{savedParties.length}件</dd>
+                </div>
+              </dl>
+              <p className="mt-6 border-t border-slate-800 pt-5 text-pretty text-xs leading-5 text-slate-500">
+                カタログと推薦根拠は分離して保存します。根拠の検証に合格した結果だけが現在結果になります。
+              </p>
+            </>
+          )}
         </aside>
       </div>
     </div>

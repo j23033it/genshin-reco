@@ -319,6 +319,7 @@ function PartySlot({
 }
 
 export function PartyBuilder({ catalog, draft, onChange, onSave, onAnalyze, disabled = false }: PartyBuilderProps) {
+  const draftIdentity = draft.partyId ?? draft.id ?? "new-party";
   const characterById = useMemo(
     () => new Map(catalog.characters.map((character) => [character.id, character])),
     [catalog.characters],
@@ -393,7 +394,7 @@ export function PartyBuilder({ catalog, draft, onChange, onSave, onAnalyze, disa
             }
             return (
               <PartySlot
-                key={slotIndex}
+                key={`${draftIdentity}-${slotIndex}`}
                 catalog={catalog}
                 characterById={characterById}
                 weaponById={weaponById}

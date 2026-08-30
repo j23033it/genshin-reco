@@ -98,6 +98,31 @@ describe("アプリワークスペース", () => {
     expect(savePartyDraftMock).toHaveBeenCalledOnce();
   });
 
+  it("編成の保存に成功すると作成フォームを新規状態へ戻す", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    const name = await screen.findByRole("textbox", { name: "編成名" });
+
+    await user.type(name, "保存後にリセット");
+    await user.click(screen.getByRole("button", { name: "保存" }));
+
+    expect(screen.getByRole("textbox", { name: "編成名" })).toHaveValue("");
+    expect(screen.getByText("「保存後にリセット」を保存しました。")).toBeInTheDocument();
+  });
+
+  it("編成の保存に失敗すると入力を保持して再試行できる", async () => {
+    const user = userEvent.setup();
+    savePartyDraftMock.mockRejectedValueOnce(new Error("保存先に接続できません"));
+    render(<App />);
+    const name = await screen.findByRole("textbox", { name: "編成名" });
+
+    await user.type(name, "保持する編成");
+    await user.click(screen.getByRole("button", { name: "保存" }));
+
+    expect(screen.getByRole("textbox", { name: "編成名" })).toHaveValue("保持する編成");
+    expect(screen.getByText("保存先に接続できません")).toBeInTheDocument();
+  });
+
   it("Codex設定からGate0を開ける", async () => {
     const user = userEvent.setup();
     render(<App />);

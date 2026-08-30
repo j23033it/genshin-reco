@@ -133,6 +133,29 @@ describe("PartyBuilder", () => {
     expect(screen.getByRole("option", { name: "一致するキャラクターはいません" })).toBeDisabled();
   });
 
+  it("新しい下書きIDを受け取ると各スロットのキャラクター検索を初期化する", async () => {
+    const user = userEvent.setup();
+    function ControlledBuilder() {
+      const [draft, setDraft] = useState(createEmptyParty("first-party"));
+      return (
+        <>
+          <button type="button" onClick={() => setDraft(createEmptyParty("second-party"))}>
+            新しい下書き
+          </button>
+          <PartyBuilder catalog={catalog} draft={draft} onChange={setDraft} onSave={vi.fn()} onAnalyze={vi.fn()} />
+        </>
+      );
+    }
+    render(<ControlledBuilder />);
+
+    const searchInput = screen.getAllByLabelText("キャラクターを検索")[0];
+    await user.type(searchInput, "雷");
+    expect(searchInput).toHaveValue("雷");
+
+    await user.click(screen.getByRole("button", { name: "新しい下書き" }));
+    expect(screen.getAllByLabelText("キャラクターを検索")[0]).toHaveValue("");
+  });
+
   it("重複キャラクターと旅人variantの同居を保存エラーにする", () => {
     const empty = createEmptyParty("duplicate-party");
     const draft = draftWithMembers([
