@@ -5,12 +5,23 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import App from "./App";
 import type { Catalog } from "./domain/catalogTypes";
 import { loadCatalog } from "./features/catalog";
+import { listPartyDrafts, loadPartyDraft, savePartyDraft } from "./features/party";
 
 vi.mock("./features/catalog", () => ({
   loadCatalog: vi.fn(),
 }));
 
+vi.mock("./features/party", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("./features/party")>()),
+  listPartyDrafts: vi.fn(),
+  loadPartyDraft: vi.fn(),
+  savePartyDraft: vi.fn(),
+}));
+
 const loadCatalogMock = vi.mocked(loadCatalog);
+const listPartyDraftsMock = vi.mocked(listPartyDrafts);
+const loadPartyDraftMock = vi.mocked(loadPartyDraft);
+const savePartyDraftMock = vi.mocked(savePartyDraft);
 const catalog: Catalog = {
   schemaVersion: "catalog-v2",
   gameVersion: "7.0",
@@ -41,6 +52,9 @@ describe("アプリワークスペース", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     loadCatalogMock.mockResolvedValue(catalog);
+    listPartyDraftsMock.mockResolvedValue([]);
+    loadPartyDraftMock.mockResolvedValue(null);
+    savePartyDraftMock.mockResolvedValue();
   });
 
   it("凍結カタログ読み込み後に編成ビルダーを表示する", async () => {
@@ -63,6 +77,7 @@ describe("アプリワークスペース", () => {
     expect(screen.getByText("「蒸発チーム」を保存しました。")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "蒸発チーム" })).toBeInTheDocument();
     expect(screen.getByText("1件")).toBeInTheDocument();
+    expect(savePartyDraftMock).toHaveBeenCalledOnce();
   });
 
   it("Codex設定からGate0を開ける", async () => {

@@ -9,7 +9,14 @@ import {
 } from "./features/analysis";
 import { loadCatalog } from "./features/catalog";
 import { Gate0Screen } from "./features/gate0/Gate0Screen";
-import { PartyBuilder, createEmptyParty, type PartyDraft } from "./features/party";
+import {
+  PartyBuilder,
+  createEmptyParty,
+  listPartyDrafts,
+  loadPartyDraft,
+  savePartyDraft,
+  type PartyDraft,
+} from "./features/party";
 import { cn } from "./lib/cn";
 
 type WorkspaceView = "party" | "analysis" | "settings";
@@ -63,6 +70,23 @@ function Workspace({ catalog }: { catalog: Catalog }) {
   const [analysisStatus, setAnalysisStatus] = useState<AnalysisStatus>("queued");
   const [steps, setSteps] = useState<CharacterAnalysisStep[]>([]);
 
+  useEffect(() => {
+    let active = true;
+    listPartyDrafts()
+      .then((summaries) => Promise.all(summaries.map((summary) => loadPartyDraft(summary.partyId))))
+      .then((parties) => {
+        if (active) setSavedParties(parties.filter((party): party is PartyDraft => party !== null));
+      })
+      .catch((error: unknown) => {
+        if (active) {
+          setNotice(error instanceof Error ? error.message : "保存編成を読み込めませんでした。");
+        }
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
   const filteredParties = useMemo(() => {
     const query = search.trim().toLocaleLowerCase("ja");
     return query.length === 0
@@ -70,15 +94,20 @@ function Workspace({ catalog }: { catalog: Catalog }) {
       : savedParties.filter((party) => party.name.toLocaleLowerCase("ja").includes(query));
   }, [savedParties, search]);
 
-  const handleSave = (next: PartyDraft) => {
+  const handleSave = async (next: PartyDraft) => {
     const partyId = next.partyId ?? next.id ?? createPartyId();
     const saved = { ...next, partyId, id: partyId };
-    setDraft(saved);
-    setSavedParties((current) => {
-      const remaining = current.filter((party) => (party.partyId ?? party.id) !== partyId);
-      return [saved, ...remaining];
-    });
-    setNotice(`「${saved.name}」を保存しました。`);
+    try {
+      await savePartyDraft(saved);
+      setDraft(saved);
+      setSavedParties((current) => {
+        const remaining = current.filter((party) => (party.partyId ?? party.id) !== partyId);
+        return [saved, ...remaining];
+      });
+      setNotice(`「${saved.name}」を保存しました。`);
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : "編成を保存できませんでした。");
+    }
   };
 
   const handleAnalyze = (next: PartyDraft) => {
@@ -211,7 +240,7 @@ function Workspace({ catalog }: { catalog: Catalog }) {
               catalog={catalog}
               draft={draft}
               onChange={setDraft}
-              onSave={handleSave}
+              onSave={(next) => void handleSave(next)}
               onAnalyze={handleAnalyze}
             />
           ) : null}
