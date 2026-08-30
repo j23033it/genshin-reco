@@ -1,4 +1,5 @@
 use crate::domain;
+use crate::source_policy::{SourcePolicyError, normalize_source_url};
 use std::collections::{HashMap, HashSet};
 use thiserror::Error;
 
@@ -21,6 +22,8 @@ pub enum ReconcilerError {
     Domain(#[from] domain::DomainValidationError),
     #[error("根拠URL「{0}」に対応する検証済みページがありません")]
     UnverifiedUrl(String),
+    #[error(transparent)]
+    SourcePolicy(#[from] SourcePolicyError),
 }
 
 /// 旧称を利用する呼び出し側にも同じエラー型を公開する。
@@ -32,10 +35,10 @@ pub fn reconcile_character_research(
 ) -> Result<Vec<domain::BuildVariant>, ReconcilerError> {
     domain::validate_character_research_output(output, &output.character_id)?;
 
-    let verified_by_url: HashMap<&str, &VerifiedSourcePage> = verified_pages
-        .iter()
-        .map(|page| (page.source_url.as_str(), page))
-        .collect();
+    let mut verified_by_url = HashMap::new();
+    for page in verified_pages {
+        verified_by_url.insert(normalize_source_url(&page.source_url)?, page);
+    }
 
     output
         .variants
@@ -46,11 +49,10 @@ pub fn reconcile_character_research(
             let mut conflict_penalty = 0_u32;
 
             for claim in &variant.claims {
-                let page = verified_by_url
-                    .get(claim.evidence.source_url.as_str())
-                    .ok_or_else(|| {
-                        ReconcilerError::UnverifiedUrl(claim.evidence.source_url.clone())
-                    })?;
+                let normalized_url = normalize_source_url(&claim.evidence.source_url)?;
+                let page = verified_by_url.get(&normalized_url).ok_or_else(|| {
+                    ReconcilerError::UnverifiedUrl(claim.evidence.source_url.clone())
+                })?;
                 source_families.insert(page.source_family.as_str());
                 if claim_conflicts_with_variant(claim, variant) {
                     conflict_penalty += 1;
@@ -125,9 +127,9 @@ fn claim_conflicts_with_variant(
 mod tests {
     use super::*;
 
-    const URL_ONE: &str = "https://example.com/one";
-    const URL_TWO: &str = "https://example.com/two";
-    const URL_THREE: &str = "https://example.com/three";
+    const URL_ONE: &str = "https://wikiwiki.jp/genshinwiki/one";
+    const URL_TWO: &str = "https://game8.jp/genshin/two";
+    const URL_THREE: &str = "https://wiki.hoyolab.com/pc/genshin/three";
 
     fn artifact_plan(set_id: &str) -> domain::ArtifactPlan {
         domain::ArtifactPlan::FourPiece {
