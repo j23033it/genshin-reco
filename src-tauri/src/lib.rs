@@ -4,6 +4,7 @@ pub mod domain;
 pub mod hashing;
 pub mod reconciler;
 pub mod research_provider;
+pub mod solver;
 pub mod source_policy;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
