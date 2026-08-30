@@ -20,9 +20,9 @@ use tauri::{Emitter, State};
 use tokio::sync::Mutex;
 
 const SOURCE_POLICY_VERSION: &str = "source-policy-v1";
-const PROMPT_VERSION: &str = "prompt-v1";
+const PROMPT_VERSION: &str = "prompt-v2";
 const RESEARCH_SCHEMA_VERSION: &str = "character-research-v1";
-const RECONCILER_VERSION: &str = "reconciler-v1";
+const RECONCILER_VERSION: &str = "reconciler-v2";
 const SOLVER_VERSION: &str = "solver-v1";
 const ANALYSIS_PROGRESS_EVENT: &str = "analysis-progress";
 
@@ -470,10 +470,7 @@ fn ensure_not_cancelled(cancellation: &ResearchCancellation) -> Result<(), Strin
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::domain::{
-        AnalysisVersions, BuildIntent, CharacterBuildIntent, EnergyPriority, FixedAssumptions,
-        PartyMemberInput, ReactionOwnership, SurvivabilityPriority,
-    };
+    use crate::domain::{AnalysisVersions, FixedAssumptions, PartyMemberInput};
 
     fn valid_input() -> AnalysisInput {
         let catalog = load_embedded_catalog().unwrap();
@@ -496,12 +493,6 @@ mod tests {
                 weapon_id: weapon.id.clone(),
                 refinement: 1,
                 constellation: 0,
-                intent: CharacterBuildIntent {
-                    role: BuildIntent::Auto,
-                    reaction_ownership: ReactionOwnership::Unknown,
-                    energy_priority: EnergyPriority::Balanced,
-                    survivability_priority: SurvivabilityPriority::Normal,
-                },
             }
         });
         AnalysisInput {

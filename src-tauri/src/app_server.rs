@@ -59,6 +59,7 @@ allowed_domains = ["wikiwiki.jp", "game8.jp", "wiki.hoyolab.com"]
 const APP_AGENTS_INSTRUCTIONS: &str = r#"# 原神ビルド調査エージェント
 
 - ホストアプリから渡された編成と調査対象だけを扱うこと。
+- 役割、反応担当、元素エネルギー方針、耐久方針はユーザー入力として扱わず、編成・武器・検証済み根拠から判断すること。
 - ゲーム情報の調査にはWeb検索だけを使い、ローカルコマンドやファイル操作を行わないこと。
 - 指定されたJSON Schemaに厳密に従い、確認できない情報を推測で補わないこと。
 - 引用候補には実際に確認したURLと、主張を直接支える短い抜粋または要約を含めること。
@@ -1030,7 +1031,7 @@ fn build_character_research_prompt(
     });
     let input = serde_json::to_string(&context)?;
     Ok(format!(
-        "調査コンテキストJSONに含まれるtargetCharacterの聖遺物ビルドを調査してください。許可された3サイトの個別本文ページを実際に開き、聖遺物構成・メインステータス一式・サブステータス優先度を直接支える根拠を集めてください。artifactPlanのIDとteamBuffKeysはartifactCatalogの値だけをそのまま使ってください。各sourceのgameVersionはanalysisInput.gameVersionと完全一致させてください。条件付き推奨はconditionsへ型付きで記録してください。URLやIDを推測せず、確認できなければ候補を作らないでください。調査コンテキストJSON: {input}"
+        "調査コンテキストJSONに含まれるtargetCharacterの聖遺物ビルドを調査してください。許可された3サイトの個別本文ページを実際に開き、聖遺物構成・メインステータス一式・サブステータス優先度を直接支える根拠を集めてください。役割、反応担当、元素エネルギー方針、耐久方針はユーザー指定ではありません。4人編成、武器、命ノ星座、精錬と検証済み根拠から判断し、推測で固定しないでください。artifactPlanのIDとteamBuffKeysはartifactCatalogの値だけをそのまま使ってください。各sourceのgameVersionはanalysisInput.gameVersionと完全一致させてください。条件付き推奨はconditionsへ型付きで記録し、fieldにはconstellation、refinement、characterLevel、weaponLevel、artifactLevel、artifactRarity、gameVersion、finalAscension、allTalentsAvailable、witchTeachingWhenApplicableだけを使用してください。URLやIDを推測せず、確認できなければ候補を作らないでください。調査コンテキストJSON: {input}"
     ))
 }
 

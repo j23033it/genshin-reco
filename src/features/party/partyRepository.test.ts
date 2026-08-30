@@ -13,12 +13,11 @@ describe("編成DBクライアント", () => {
     delete window.__TAURI_INTERNALS__;
   });
 
-  it("Rendererの平坦な方針をTrusted Coreのintentへ変換して保存する", async () => {
+  it("ユーザー推測のビルド方針を含めずに保存する", async () => {
     window.__TAURI_INTERNALS__ = {};
     invokeMock.mockResolvedValue(undefined);
     const draft = createEmptyParty("party-1");
     draft.name = "変換検証";
-    draft.members[0].role = "support";
 
     await savePartyDraft(draft);
 
@@ -28,14 +27,17 @@ describe("編成DBクライアント", () => {
         members: expect.arrayContaining([
           expect.objectContaining({
             slotIndex: 0,
-            intent: expect.objectContaining({ role: "support" }),
+            constellation: 0,
+            refinement: 1,
           }),
         ]),
       }),
     });
+    const saved = invokeMock.mock.calls[0]?.[1] as { draft: { members: unknown[] } };
+    expect(saved.draft.members[0]).not.toHaveProperty("intent");
   });
 
-  it("Trusted Coreのintentを編集用の平坦な方針へ戻す", async () => {
+  it("旧保存データのintentを編集入力へ戻さない", async () => {
     window.__TAURI_INTERNALS__ = {};
     invokeMock.mockResolvedValue({
       partyId: "party-1",
@@ -59,7 +61,8 @@ describe("編成DBクライアント", () => {
 
     expect(invokeMock).toHaveBeenCalledWith("load_party_draft", { partyId: "party-1" });
     expect(draft).toMatchObject({ partyId: "party-1", id: "party-1", name: "読込検証" });
-    expect(draft?.members[0]).toMatchObject({ role: "auto", reactionOwnership: "unknown" });
+    expect(draft?.members[0]).not.toHaveProperty("intent");
+    expect(draft?.members[0]).not.toHaveProperty("role");
   });
 
   it("一覧はスナップショット本体ではなく検索用要約として取得する", async () => {

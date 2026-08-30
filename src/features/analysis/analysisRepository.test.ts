@@ -27,6 +27,7 @@ describe("分析コマンド境界", () => {
     expect(input.partyId).toBe("party-analysis");
     expect(input.gameVersion).toBe("7.0");
     expect(input.members).toHaveLength(4);
+    expect(input.members[0]).not.toHaveProperty("intent");
     expect(input.assumptions).toEqual({
       characterLevel: 90,
       weaponLevel: 90,
@@ -40,9 +41,9 @@ describe("分析コマンド境界", () => {
     expect(input.versions).toEqual({
       catalogVersion: "catalog-v2",
       sourcePolicyVersion: "source-policy-v1",
-      promptVersion: "prompt-v1",
+      promptVersion: "prompt-v2",
       schemaVersion: "character-research-v1",
-      reconcilerVersion: "reconciler-v1",
+      reconcilerVersion: "reconciler-v2",
       solverVersion: "solver-v1",
     });
   });

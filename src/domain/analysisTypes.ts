@@ -44,7 +44,6 @@ export interface PartyMemberInput {
   weaponId: string;
   refinement: 1 | 2 | 3 | 4 | 5;
   constellation: 0 | 1 | 2 | 3 | 4 | 5 | 6;
-  intent: CharacterBuildIntent;
 }
 
 export interface AnalysisVersions {

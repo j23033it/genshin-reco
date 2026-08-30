@@ -75,6 +75,9 @@ describe("PartyBuilder", () => {
     expect(screen.getByLabelText("編成名")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "保存" })).toBeDisabled();
     expect(screen.getByRole("button", { name: "分析を開始" })).toBeDisabled();
+    expect(screen.queryByLabelText("役割")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("反応担当")).not.toBeInTheDocument();
+    expect(screen.getByText(/ビルド方針は、編成と検証済みの根拠から分析時に判断します/)).toBeInTheDocument();
   });
 
   it("名前付きの途中下書きは保存できるが分析できない", () => {

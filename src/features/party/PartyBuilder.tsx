@@ -7,10 +7,6 @@ import {
   type PartyValidationError,
 } from "./partyDraft";
 import {
-  ENERGY_PRIORITY_OPTIONS,
-  REACTION_OWNERSHIP_OPTIONS,
-  ROLE_OPTIONS,
-  SURVIVABILITY_PRIORITY_OPTIONS,
   type PartyDraft,
   type PartyMemberDraft,
   type SlotIndex,
@@ -299,54 +295,6 @@ function PartySlot({
           />
         </div>
 
-        <fieldset className="min-w-0 space-y-3 border-0 p-0">
-          <legend className="text-sm font-semibold text-slate-200">ビルド方針</legend>
-          <SelectField
-            id={`party-role-${slotIndex}`}
-            label="役割"
-            value={member.role}
-            onChange={(event) => {
-              const role = event.target.value as PartyMemberDraft["role"];
-              onChange(slotIndex, (previousMember) => ({ ...previousMember, role }));
-            }}
-            disabled={disabled}
-            options={ROLE_OPTIONS}
-          />
-          <SelectField
-            id={`party-reaction-${slotIndex}`}
-            label="反応担当"
-            value={member.reactionOwnership}
-            onChange={(event) => {
-              const reactionOwnership = event.target.value as PartyMemberDraft["reactionOwnership"];
-              onChange(slotIndex, (previousMember) => ({ ...previousMember, reactionOwnership }));
-            }}
-            disabled={disabled}
-            options={REACTION_OWNERSHIP_OPTIONS}
-          />
-          <SelectField
-            id={`party-energy-${slotIndex}`}
-            label="元素エネルギー方針"
-            value={member.energyPriority}
-            onChange={(event) => {
-              const energyPriority = event.target.value as PartyMemberDraft["energyPriority"];
-              onChange(slotIndex, (previousMember) => ({ ...previousMember, energyPriority }));
-            }}
-            disabled={disabled}
-            options={ENERGY_PRIORITY_OPTIONS}
-          />
-          <SelectField
-            id={`party-survivability-${slotIndex}`}
-            label="耐久方針"
-            value={member.survivabilityPriority}
-            onChange={(event) => {
-              const survivabilityPriority = event.target.value as PartyMemberDraft["survivabilityPriority"];
-              onChange(slotIndex, (previousMember) => ({ ...previousMember, survivabilityPriority }));
-            }}
-            disabled={disabled}
-            options={SURVIVABILITY_PRIORITY_OPTIONS}
-          />
-        </fieldset>
-
         {(character?.imageUrl || weapon?.imageUrl) && (
           <div className="flex flex-wrap gap-2" aria-label="選択中のアイコン">
             {character?.imageUrl && (
@@ -410,7 +358,7 @@ export function PartyBuilder({ catalog, draft, onChange, onSave, onAnalyze, disa
         <p className="text-sm font-semibold text-amber-400">編成エディター</p>
         <h2 id="party-builder-heading" className="text-balance text-3xl font-bold">4人編成を作成</h2>
         <p className="max-w-3xl text-pretty leading-7 text-slate-300">
-          キャラクターと武器を選ぶと、同じ武器種の候補だけが表示されます。保存は途中の下書きでもできますが、分析には4人分の選択が必要です。
+          キャラクターと武器を選ぶと、同じ武器種の候補だけが表示されます。役割や反応担当などのビルド方針は、編成と検証済みの根拠から分析時に判断します。
         </p>
       </header>
 

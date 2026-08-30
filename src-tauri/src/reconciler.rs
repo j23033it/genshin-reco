@@ -216,10 +216,6 @@ fn condition_matches(
     let actual = match condition.field.as_str() {
         "constellation" => domain::ConditionValue::Number(f64::from(member.constellation)),
         "refinement" => domain::ConditionValue::Number(f64::from(member.refinement)),
-        "role" => enum_condition_value(member.intent.role),
-        "reactionOwnership" => enum_condition_value(member.intent.reaction_ownership),
-        "energyPriority" => enum_condition_value(member.intent.energy_priority),
-        "survivabilityPriority" => enum_condition_value(member.intent.survivability_priority),
         "characterLevel" => {
             domain::ConditionValue::Number(f64::from(input.assumptions.character_level))
         }
@@ -265,11 +261,6 @@ fn condition_matches(
         domain::ConditionOperator::Gte => compare_numbers(&actual, &condition.value, |a, b| a >= b),
         domain::ConditionOperator::Lte => compare_numbers(&actual, &condition.value, |a, b| a <= b),
     })
-}
-
-fn enum_condition_value(value: impl serde::Serialize) -> domain::ConditionValue {
-    let value = serde_json::to_value(value).expect("列挙値をJSON化できること");
-    domain::ConditionValue::String(value.as_str().expect("列挙値が文字列であること").to_owned())
 }
 
 fn compare_numbers(
@@ -472,13 +463,7 @@ mod tests {
             "characterId": character_id,
             "weaponId": format!("weapon-{slot}"),
             "refinement": 1,
-            "constellation": constellation,
-            "intent": {
-                "role": "auto",
-                "reactionOwnership": "unknown",
-                "energyPriority": "balanced",
-                "survivabilityPriority": "normal"
-            }
+            "constellation": constellation
         })
     }
 
@@ -812,5 +797,32 @@ mod tests {
             result,
             Err(ReconcilerError::ContradictoryVariant(_))
         ));
+    }
+
+    #[test]
+    fn 廃止したユーザー方針を候補条件にできない() {
+        let mut output = output_with_claims(required_claims(URL_ONE));
+        output.variants[0].conditions.push(domain::BuildCondition {
+            field: "role".into(),
+            operator: domain::ConditionOperator::Equals,
+            value: domain::ConditionValue::String("support".into()),
+            description: "旧ユーザー入力への依存".into(),
+        });
+
+        let result = reconcile_character_research(
+            &output,
+            &[page(
+                URL_ONE,
+                "page-1",
+                domain::EvidenceVerification::HostExactMatch,
+                "wiki",
+            )],
+            &analysis_input(),
+        );
+
+        assert_eq!(
+            result,
+            Err(ReconcilerError::UnsupportedCondition("role".into()))
+        );
     }
 }

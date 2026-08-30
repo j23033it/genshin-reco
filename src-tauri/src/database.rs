@@ -224,7 +224,9 @@ pub struct PartyMemberDraft {
     pub weapon_id: Option<String>,
     pub refinement: u8,
     pub constellation: u8,
-    pub intent: CharacterBuildIntent,
+    /// 旧版の保存データを読み込むためだけに保持し、分析入力には使用しない。
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub intent: Option<CharacterBuildIntent>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -1096,9 +1098,7 @@ fn invalid(message: impl Into<String>) -> DatabaseError {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::domain::{
-        BuildIntent, EnergyPriority, ReactionOwnership, ResolutionStatus, SurvivabilityPriority,
-    };
+    use crate::domain::ResolutionStatus;
     use serde_json::json;
     use std::fs;
 
@@ -1113,12 +1113,7 @@ mod tests {
             weapon_id: weapon_id.map(str::to_owned),
             refinement: 1,
             constellation: 0,
-            intent: CharacterBuildIntent {
-                role: BuildIntent::Auto,
-                reaction_ownership: ReactionOwnership::Unknown,
-                energy_priority: EnergyPriority::Balanced,
-                survivability_priority: SurvivabilityPriority::Normal,
-            },
+            intent: None,
         }
     }
 
@@ -1133,6 +1128,29 @@ mod tests {
                 member(3, None, None),
             ],
         )
+    }
+
+    #[test]
+    fn 旧版のintentを読み込めるが新規保存では省略できる() {
+        let mut member: PartyMemberDraft = serde_json::from_value(json!({
+            "slotIndex": 0,
+            "characterId": "char-a",
+            "weaponId": "weapon-a",
+            "refinement": 1,
+            "constellation": 0,
+            "intent": {
+                "role": "support",
+                "reactionOwnership": "unknown",
+                "energyPriority": "balanced",
+                "survivabilityPriority": "normal"
+            }
+        }))
+        .unwrap();
+        assert!(member.intent.is_some());
+
+        member.intent = None;
+        let serialized = serde_json::to_value(member).unwrap();
+        assert!(serialized.get("intent").is_none());
     }
 
     fn identity(run_id: &str, suffix: &str) -> HostGeneratedIdentity {
@@ -1342,12 +1360,6 @@ mod tests {
             weapon_id: format!("weapon-{slot_index}"),
             refinement: 1,
             constellation: 0,
-            intent: CharacterBuildIntent {
-                role: BuildIntent::Auto,
-                reaction_ownership: ReactionOwnership::Unknown,
-                energy_priority: EnergyPriority::Balanced,
-                survivability_priority: SurvivabilityPriority::Normal,
-            },
         });
 
         let jobs = database

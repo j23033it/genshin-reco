@@ -1,5 +1,4 @@
 import { invoke } from "@tauri-apps/api/core";
-import type { CharacterBuildIntent } from "../../domain/analysisTypes";
 import type { PartyDraft, PartyMemberDraft } from "./partyTypes";
 
 export interface PartySummary {
@@ -15,7 +14,6 @@ interface DatabasePartyMemberDraft {
   weaponId: string | null;
   refinement: number;
   constellation: number;
-  intent: CharacterBuildIntent;
 }
 
 interface DatabasePartyDraft {
@@ -42,12 +40,6 @@ function toDatabaseDraft(draft: PartyDraft): DatabasePartyDraft {
       weaponId: member.weaponId,
       refinement: member.refinement,
       constellation: member.constellation,
-      intent: {
-        role: member.role,
-        reactionOwnership: member.reactionOwnership,
-        energyPriority: member.energyPriority,
-        survivabilityPriority: member.survivabilityPriority,
-      },
     })),
   };
 }
@@ -60,10 +52,6 @@ function fromDatabaseDraft(draft: DatabasePartyDraft): PartyDraft {
       weaponId: member.weaponId,
       refinement: member.refinement as PartyMemberDraft["refinement"],
       constellation: member.constellation as PartyMemberDraft["constellation"],
-      role: member.intent.role,
-      reactionOwnership: member.intent.reactionOwnership,
-      energyPriority: member.intent.energyPriority,
-      survivabilityPriority: member.intent.survivabilityPriority,
     }),
   ) as PartyDraft["members"];
   return { partyId: draft.partyId, id: draft.partyId, name: draft.name, members };

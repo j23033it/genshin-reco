@@ -41,12 +41,6 @@ export function buildAnalysisInput(draft: PartyDraft, catalog: Catalog): Analysi
       weaponId: member.weaponId,
       refinement: member.refinement,
       constellation: member.constellation,
-      intent: {
-        role: member.role,
-        reactionOwnership: member.reactionOwnership,
-        energyPriority: member.energyPriority,
-        survivabilityPriority: member.survivabilityPriority,
-      },
     };
   }) as AnalysisInput["members"];
 
@@ -68,9 +62,9 @@ export function buildAnalysisInput(draft: PartyDraft, catalog: Catalog): Analysi
     versions: {
       catalogVersion: catalog.schemaVersion,
       sourcePolicyVersion: "source-policy-v1",
-      promptVersion: "prompt-v1",
+      promptVersion: "prompt-v2",
       schemaVersion: "character-research-v1",
-      reconcilerVersion: "reconciler-v1",
+      reconcilerVersion: "reconciler-v2",
       solverVersion: "solver-v1",
     },
   };

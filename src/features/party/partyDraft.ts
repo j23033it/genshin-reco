@@ -1,15 +1,5 @@
 import type { Catalog, Character } from "../../domain/catalogTypes";
-import type {
-  BuildIntent,
-  EnergyPriority,
-  ReactionOwnership,
-  SurvivabilityPriority,
-} from "../../domain/analysisTypes";
 import {
-  BUILD_INTENTS,
-  ENERGY_PRIORITIES,
-  REACTION_OWNERSHIPS,
-  SURVIVABILITY_PRIORITIES,
   type PartyDraft,
   type PartyMemberDraft,
   type SlotIndex,
@@ -24,10 +14,6 @@ export const DEFAULT_MEMBER_VALUES: Omit<PartyMemberDraft, "slotIndex"> = {
   weaponId: null,
   constellation: 0,
   refinement: 1,
-  role: "auto",
-  reactionOwnership: "unknown",
-  energyPriority: "balanced",
-  survivabilityPriority: "normal",
 };
 
 export function createEmptyParty(partyId = "new-party"): PartyDraft {
@@ -51,10 +37,6 @@ export type PartyValidationErrorCode =
   | "slot-index"
   | "constellation-range"
   | "refinement-range"
-  | "role-invalid"
-  | "reaction-ownership-invalid"
-  | "energy-priority-invalid"
-  | "survivability-priority-invalid"
   | "duplicate-character"
   | "traveler-variant-conflict"
   | "character-required"
@@ -90,9 +72,6 @@ export interface PartyValidationResult {
 
 const isIntegerInRange = (value: unknown, minimum: number, maximum: number) =>
   typeof value === "number" && Number.isInteger(value) && value >= minimum && value <= maximum;
-
-const isOneOf = <T extends string>(value: unknown, values: readonly T[]): value is T =>
-  typeof value === "string" && values.includes(value as T);
 
 function travelerVariantKey(characterId: string): string | null {
   if (characterId === "traveler" || characterId.startsWith("traveler-") || characterId.startsWith("traveler_")) {
@@ -189,39 +168,6 @@ export function validatePartyDraft(draft: PartyDraft, catalog?: Catalog): PartyV
         }),
       );
     }
-    if (!isOneOf<BuildIntent>(member.role, BUILD_INTENTS)) {
-      saveErrors.push(
-        error("role-invalid", `${slotLabel}の役割を選択してください。`, {
-          field: `members.${position}.role`,
-          slotIndex: position,
-        }),
-      );
-    }
-    if (!isOneOf<ReactionOwnership>(member.reactionOwnership, REACTION_OWNERSHIPS)) {
-      saveErrors.push(
-        error("reaction-ownership-invalid", `${slotLabel}の反応担当を選択してください。`, {
-          field: `members.${position}.reactionOwnership`,
-          slotIndex: position,
-        }),
-      );
-    }
-    if (!isOneOf<EnergyPriority>(member.energyPriority, ENERGY_PRIORITIES)) {
-      saveErrors.push(
-        error("energy-priority-invalid", `${slotLabel}の元素エネルギー方針を選択してください。`, {
-          field: `members.${position}.energyPriority`,
-          slotIndex: position,
-        }),
-      );
-    }
-    if (!isOneOf<SurvivabilityPriority>(member.survivabilityPriority, SURVIVABILITY_PRIORITIES)) {
-      saveErrors.push(
-        error("survivability-priority-invalid", `${slotLabel}の耐久方針を選択してください。`, {
-          field: `members.${position}.survivabilityPriority`,
-          slotIndex: position,
-        }),
-      );
-    }
-
     if (typeof member.characterId === "string" && member.characterId.length > 0) {
       const previousPosition = seenCharacters.get(member.characterId);
       if (previousPosition !== undefined) {

@@ -1,4 +1,4 @@
-use crate::domain::{AnalysisInput, CharacterBuildIntent};
+use crate::domain::AnalysisInput;
 use serde::Serialize;
 use serde_json::{Map, Value, json};
 use sha2::{Digest, Sha256};
@@ -17,16 +17,6 @@ struct CompositionMember<'a> {
     weapon_id: &'a str,
     refinement: u8,
     constellation: u8,
-}
-
-#[derive(Serialize)]
-#[serde(rename_all = "camelCase")]
-struct AnalysisMember<'a> {
-    character_id: &'a str,
-    weapon_id: &'a str,
-    refinement: u8,
-    constellation: u8,
-    intent: &'a CharacterBuildIntent,
 }
 
 pub fn party_composition_hash(input: &AnalysisInput) -> Result<String, HashingError> {
@@ -55,12 +45,11 @@ pub fn analysis_input_hash(input: &AnalysisInput) -> Result<String, HashingError
     let mut members = input
         .members
         .iter()
-        .map(|member| AnalysisMember {
+        .map(|member| CompositionMember {
             character_id: &member.character_id,
             weapon_id: &member.weapon_id,
             refinement: member.refinement,
             constellation: member.constellation,
-            intent: &member.intent,
         })
         .collect::<Vec<_>>();
     members.sort_by(|left, right| left.character_id.cmp(right.character_id));
@@ -161,13 +150,7 @@ mod tests {
             "characterId": character,
             "weaponId": weapon,
             "refinement": 1,
-            "constellation": 0,
-            "intent": {
-                "role": "auto",
-                "reactionOwnership": "unknown",
-                "energyPriority": "balanced",
-                "survivabilityPriority": "normal"
-            }
+            "constellation": 0
         })
     }
 
@@ -192,21 +175,6 @@ mod tests {
         assert_eq!(
             analysis_input_hash(&first).unwrap(),
             analysis_input_hash(&reordered).unwrap()
-        );
-    }
-
-    #[test]
-    fn intent変更は分析hashだけを変更する() {
-        let first = input();
-        let mut changed = first.clone();
-        changed.members[0].intent.role = crate::domain::BuildIntent::OnFieldDamage;
-        assert_eq!(
-            party_composition_hash(&first).unwrap(),
-            party_composition_hash(&changed).unwrap()
-        );
-        assert_ne!(
-            analysis_input_hash(&first).unwrap(),
-            analysis_input_hash(&changed).unwrap()
         );
     }
 

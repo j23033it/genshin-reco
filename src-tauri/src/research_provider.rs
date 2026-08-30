@@ -299,11 +299,10 @@ impl ResearchProvider for FakeResearchProvider {
 mod tests {
     use super::*;
     use crate::domain::{
-        ArtifactPlan, BuildCondition, BuildIntent, CharacterBuildIntent, EnergyPriority,
-        EvidenceClaimType, FixedAssumptions, MainStatPackage, NormalizedClaimValue,
-        PartyMemberInput, ReactionOwnership, ResearchBuildVariant, ResearchClaim, ResearchEvidence,
-        ResearchLocator, ResearchSchemaVersion, ResearchSourcePage, StatPriority, StatUnit,
-        SurvivabilityPriority, TargetScope, TargetStatRange,
+        ArtifactPlan, BuildCondition, EvidenceClaimType, FixedAssumptions, MainStatPackage,
+        NormalizedClaimValue, PartyMemberInput, ResearchBuildVariant, ResearchClaim,
+        ResearchEvidence, ResearchLocator, ResearchSchemaVersion, ResearchSourcePage, StatPriority,
+        StatUnit, TargetScope, TargetStatRange,
     };
 
     fn valid_input() -> AnalysisInput {
@@ -317,12 +316,6 @@ mod tests {
                 weapon_id: format!("weapon-{slot_index}"),
                 refinement: 1,
                 constellation: 0,
-                intent: CharacterBuildIntent {
-                    role: BuildIntent::Auto,
-                    reaction_ownership: ReactionOwnership::Unknown,
-                    energy_priority: EnergyPriority::Balanced,
-                    survivability_priority: SurvivabilityPriority::Normal,
-                },
             }),
             assumptions: FixedAssumptions {
                 character_level: 90,

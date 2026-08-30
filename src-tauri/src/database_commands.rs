@@ -83,9 +83,6 @@ pub fn initialize_database(app: &AppHandle) -> Result<(), String> {
 mod tests {
     use super::*;
     use crate::database::PartyMemberDraft;
-    use crate::domain::{
-        BuildIntent, CharacterBuildIntent, EnergyPriority, ReactionOwnership, SurvivabilityPriority,
-    };
 
     fn draft() -> PartyDraft {
         PartyDraft::new(
@@ -98,12 +95,7 @@ mod tests {
                     weapon_id: (slot_index < 3).then(|| format!("weapon-{slot_index}")),
                     refinement: 1,
                     constellation: 0,
-                    intent: CharacterBuildIntent {
-                        role: BuildIntent::Auto,
-                        reaction_ownership: ReactionOwnership::Unknown,
-                        energy_priority: EnergyPriority::Balanced,
-                        survivability_priority: SurvivabilityPriority::Normal,
-                    },
+                    intent: None,
                 })
                 .collect(),
         )

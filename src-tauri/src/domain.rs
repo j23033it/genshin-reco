@@ -120,7 +120,6 @@ pub struct PartyMemberInput {
     pub refinement: u8,
     #[schemars(range(min = 0, max = 6))]
     pub constellation: u8,
-    pub intent: CharacterBuildIntent,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
@@ -758,13 +757,7 @@ mod tests {
                 "characterId": character_id,
                 "weaponId": format!("weapon-{slot_index}"),
                 "refinement": 1,
-                "constellation": 0,
-                "intent": {
-                    "role": "auto",
-                    "reactionOwnership": "unknown",
-                    "energyPriority": "balanced",
-                    "survivabilityPriority": "normal"
-                }
+                "constellation": 0
             })
         };
         let mut value = json!({
@@ -798,6 +791,15 @@ mod tests {
         });
         let input: AnalysisInput = serde_json::from_value(value.clone()).unwrap();
         assert_eq!(validate_analysis_input(&input), Ok(()));
+
+        let mut deprecated_intent = value.clone();
+        deprecated_intent["members"][0]["intent"] = json!({
+            "role": "auto",
+            "reactionOwnership": "unknown",
+            "energyPriority": "balanced",
+            "survivabilityPriority": "normal"
+        });
+        assert!(serde_json::from_value::<AnalysisInput>(deprecated_intent).is_err());
 
         value["members"][1]["characterId"] = json!("char-a");
         let duplicate: AnalysisInput = serde_json::from_value(value).unwrap();
