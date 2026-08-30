@@ -510,6 +510,90 @@ impl Database {
         self.begin_analysis_run(party_id, "unknown", "unknown")
     }
 
+    pub fn create_member_research_jobs(
+        &self,
+        analysis_run_id: &str,
+        members: &[crate::domain::PartyMemberInput; 4],
+    ) -> Result<Vec<String>, DatabaseError> {
+        if analysis_run_id.trim().is_empty() {
+            return Err(invalid("分析実行IDは必須です"));
+        }
+        let now = timestamp();
+        let mut connection = self.connection()?;
+        let transaction = connection.transaction()?;
+        let mut job_ids = Vec::with_capacity(4);
+        for member in members {
+            let job_id = new_id("job");
+            transaction.execute(
+                "INSERT INTO member_research_jobs
+                    (job_id, analysis_run_id, slot_index, character_id, status,
+                     source_count, created_at, updated_at)
+                 VALUES (?1, ?2, ?3, ?4, 'queued', 0, ?5, ?5)",
+                params![
+                    job_id,
+                    analysis_run_id,
+                    member.slot_index,
+                    member.character_id,
+                    now,
+                ],
+            )?;
+            job_ids.push(job_id);
+        }
+        transaction.commit()?;
+        Ok(job_ids)
+    }
+
+    pub fn update_member_research_job(
+        &self,
+        job_id: &str,
+        status: AnalysisStatus,
+        source_count: usize,
+        error_message: Option<&str>,
+    ) -> Result<(), DatabaseError> {
+        if job_id.trim().is_empty() {
+            return Err(invalid("調査ジョブIDは必須です"));
+        }
+        let changed = self.connection()?.execute(
+            "UPDATE member_research_jobs
+             SET status = ?1, source_count = ?2, error_message = ?3, updated_at = ?4
+             WHERE job_id = ?5",
+            params![
+                analysis_status_text(status)?,
+                i64::try_from(source_count).map_err(|_| invalid("source件数が大きすぎます"))?,
+                error_message,
+                timestamp(),
+                job_id,
+            ],
+        )?;
+        if changed == 0 {
+            return Err(DatabaseError::NotFound(format!("調査ジョブID: {job_id}")));
+        }
+        Ok(())
+    }
+
+    pub fn finish_open_research_jobs(
+        &self,
+        analysis_run_id: &str,
+        status: AnalysisStatus,
+        error_message: Option<&str>,
+    ) -> Result<(), DatabaseError> {
+        if analysis_run_id.trim().is_empty() {
+            return Err(invalid("分析実行IDは必須です"));
+        }
+        self.connection()?.execute(
+            "UPDATE member_research_jobs
+             SET status = ?1, error_message = ?2, updated_at = ?3
+             WHERE analysis_run_id = ?4 AND status != 'succeeded'",
+            params![
+                analysis_status_text(status)?,
+                error_message,
+                timestamp(),
+                analysis_run_id,
+            ],
+        )?;
+        Ok(())
+    }
+
     pub fn update_run_status(
         &self,
         analysis_run_id: &str,
@@ -1243,6 +1327,56 @@ mod tests {
                 .save_user_selection("party-choice", "char-a", "unknown")
                 .is_err()
         );
+    }
+
+    #[test]
+    fn キャラクター別調査ジョブの状態とsource件数を保存する() {
+        let database = Database::open_in_memory().unwrap();
+        database.save_party(draft("party-jobs")).unwrap();
+        let run_id = database
+            .begin_analysis_run("party-jobs", "composition", "input")
+            .unwrap();
+        let members = std::array::from_fn(|slot_index| crate::domain::PartyMemberInput {
+            slot_index: slot_index as u8,
+            character_id: format!("char-{slot_index}"),
+            weapon_id: format!("weapon-{slot_index}"),
+            refinement: 1,
+            constellation: 0,
+            intent: CharacterBuildIntent {
+                role: BuildIntent::Auto,
+                reaction_ownership: ReactionOwnership::Unknown,
+                energy_priority: EnergyPriority::Balanced,
+                survivability_priority: SurvivabilityPriority::Normal,
+            },
+        });
+
+        let jobs = database
+            .create_member_research_jobs(&run_id, &members)
+            .unwrap();
+        database
+            .update_member_research_job(&jobs[0], AnalysisStatus::Succeeded, 2, None)
+            .unwrap();
+        database
+            .finish_open_research_jobs(&run_id, AnalysisStatus::Failed, Some("停止"))
+            .unwrap();
+
+        let connection = database.connection().unwrap();
+        let first: (String, i64) = connection
+            .query_row(
+                "SELECT status, source_count FROM member_research_jobs WHERE job_id = ?1",
+                params![jobs[0]],
+                |row| Ok((row.get(0)?, row.get(1)?)),
+            )
+            .unwrap();
+        let failed_count: i64 = connection
+            .query_row(
+                "SELECT COUNT(*) FROM member_research_jobs WHERE analysis_run_id = ?1 AND status = 'failed'",
+                params![run_id],
+                |row| row.get(0),
+            )
+            .unwrap();
+        assert_eq!(first, ("succeeded".into(), 2));
+        assert_eq!(failed_count, 3);
     }
 
     #[test]

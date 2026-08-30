@@ -90,6 +90,14 @@ pub async fn start_analysis(
     let run_id = database
         .begin_analysis_run(&input.party_id, &composition_hash, &input_hash)
         .map_err(|error| error.to_string())?;
+    let job_ids = match database.create_member_research_jobs(&run_id, &input.members) {
+        Ok(job_ids) => job_ids,
+        Err(error) => {
+            let message = error.to_string();
+            let _ = database.update_run_status(&run_id, AnalysisStatus::Failed, Some(&message));
+            return Err(message);
+        }
+    };
     let cancellation = ResearchCancellation::default();
     {
         let mut active = coordinator
@@ -102,7 +110,16 @@ pub async fn start_analysis(
         });
     }
 
-    let result = execute_analysis(&app, &database, &catalog, &run_id, &input, &cancellation).await;
+    let result = execute_analysis(
+        &app,
+        &database,
+        &catalog,
+        &run_id,
+        &input,
+        &cancellation,
+        &job_ids,
+    )
+    .await;
     if let Ok(mut active) = coordinator.active.lock()
         && active
             .as_ref()
@@ -117,6 +134,7 @@ pub async fn start_analysis(
             AnalysisStatus::Failed
         };
         let _ = database.update_run_status(&run_id, status, Some(error));
+        let _ = database.finish_open_research_jobs(&run_id, status, Some(error));
         emit_progress(
             &app,
             &run_id,
@@ -154,6 +172,7 @@ async fn execute_analysis(
     run_id: &str,
     input: &AnalysisInput,
     cancellation: &ResearchCancellation,
+    job_ids: &[String],
 ) -> Result<AnalysisCommandResult, String> {
     ensure_not_cancelled(cancellation)?;
     set_status(
@@ -170,8 +189,14 @@ async fn execute_analysis(
     let mut research_outputs = Vec::new();
     let mut research_warnings = Vec::new();
 
-    for member in &input.members {
+    for (member_index, member) in input.members.iter().enumerate() {
         ensure_not_cancelled(cancellation)?;
+        let job_id = job_ids
+            .get(member_index)
+            .ok_or_else(|| "キャラクター別調査ジョブが不足しています".to_string())?;
+        database
+            .update_member_research_job(job_id, AnalysisStatus::Researching, 0, None)
+            .map_err(|error| error.to_string())?;
         update_character_progress(
             app,
             database,
@@ -192,6 +217,15 @@ async fn execute_analysis(
             .await
             .map_err(|error| error.to_string())?;
         ensure_not_cancelled(cancellation)?;
+        let source_count = research.verified_pages.len();
+        database
+            .update_member_research_job(
+                job_id,
+                AnalysisStatus::VerifyingSources,
+                source_count,
+                None,
+            )
+            .map_err(|error| error.to_string())?;
 
         update_character_progress(
             app,
@@ -228,6 +262,9 @@ async fn execute_analysis(
         research_outputs
             .push(serde_json::to_value(&research.output).map_err(|error| error.to_string())?);
         candidate_groups.push(variants);
+        database
+            .update_member_research_job(job_id, AnalysisStatus::Succeeded, source_count, None)
+            .map_err(|error| error.to_string())?;
         emit_progress(
             app,
             run_id,
