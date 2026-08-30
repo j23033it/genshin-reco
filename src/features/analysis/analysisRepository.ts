@@ -62,10 +62,10 @@ export function buildAnalysisInput(draft: PartyDraft, catalog: Catalog): Analysi
     versions: {
       catalogVersion: catalog.schemaVersion,
       sourcePolicyVersion: "source-policy-v1",
-      promptVersion: "prompt-v2",
+      promptVersion: "prompt-v3",
       schemaVersion: "character-research-v1",
       reconcilerVersion: "reconciler-v2",
-      solverVersion: "solver-v1",
+      solverVersion: "solver-v2",
     },
   };
 }

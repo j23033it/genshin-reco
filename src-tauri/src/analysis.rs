@@ -4,13 +4,20 @@ use crate::{
         validate_analysis_input_against_catalog, validate_build_variants_against_catalog,
     },
     catalog::load_embedded_catalog,
-    database::{Database, SuccessfulAnalysisRecord},
+    database::{CharacterResearchCacheRecord, Database, SuccessfulAnalysisRecord},
     domain::{
-        AnalysisInput, AnalysisStatus, EvidenceClaim, HostGeneratedIdentity, TeamBuildResolution,
+        AnalysisInput, AnalysisStatus, BuildVariant, EvidenceClaim, HostGeneratedIdentity,
+        TeamBuildResolution,
     },
-    hashing::{analysis_input_hash, evidence_snapshot_hash, party_composition_hash, result_hash},
+    hashing::{
+        analysis_input_hash, evidence_snapshot_hash, party_composition_hash, result_hash,
+        sha256_canonical,
+    },
     reconciler::{VerifiedSourcePage, reconcile_character_research},
-    research_provider::{CharacterResearchRequest, CodexResearchProvider},
+    research_provider::{
+        CharacterResearchRequest, CodexResearchProvider, ResearchProviderError,
+        VerifiedCharacterResearch,
+    },
     solver::solve_team_builds,
 };
 use serde::Serialize;
@@ -20,10 +27,10 @@ use tauri::{Emitter, State};
 use tokio::sync::Mutex;
 
 const SOURCE_POLICY_VERSION: &str = "source-policy-v1";
-const PROMPT_VERSION: &str = "prompt-v2";
+const PROMPT_VERSION: &str = "prompt-v3";
 const RESEARCH_SCHEMA_VERSION: &str = "character-research-v1";
 const RECONCILER_VERSION: &str = "reconciler-v2";
-const SOLVER_VERSION: &str = "solver-v1";
+const SOLVER_VERSION: &str = "solver-v2";
 const ANALYSIS_PROGRESS_EVENT: &str = "analysis-progress";
 
 /// 複数の分析実行が同時にWeb調査を始めないための直列化ゲート。
@@ -189,59 +196,59 @@ async fn execute_analysis(
     let mut research_outputs = Vec::new();
     let mut research_warnings = Vec::new();
 
-    for (member_index, member) in input.members.iter().enumerate() {
-        ensure_not_cancelled(cancellation)?;
-        let job_id = job_ids
-            .get(member_index)
-            .ok_or_else(|| "キャラクター別調査ジョブが不足しています".to_string())?;
-        database
-            .update_member_research_job(job_id, AnalysisStatus::Researching, 0, None)
-            .map_err(|error| error.to_string())?;
-        update_character_progress(
+    let (member_0, member_1, member_2, member_3) = tokio::try_join!(
+        research_member(
             app,
             database,
+            catalog,
             run_id,
-            AnalysisStatus::Researching,
-            &member.character_id,
-            "researching",
-            "個別本文ページを調査しています。",
-        )?;
-        let research = provider
-            .research_verified_cancellable(
-                CharacterResearchRequest {
-                    analysis_input: input.clone(),
-                    character_id: member.character_id.clone(),
-                },
-                Some(cancellation.clone()),
-            )
-            .await
-            .map_err(|error| error.to_string())?;
-        ensure_not_cancelled(cancellation)?;
-        let source_count = research.verified_pages.len();
-        database
-            .update_member_research_job(
-                job_id,
-                AnalysisStatus::VerifyingSources,
-                source_count,
-                None,
-            )
-            .map_err(|error| error.to_string())?;
-
-        update_character_progress(
+            input,
+            cancellation,
+            &provider,
+            0,
+            job_ids.first(),
+        ),
+        research_member(
             app,
             database,
+            catalog,
             run_id,
-            AnalysisStatus::VerifyingSources,
-            &member.character_id,
-            "verifying",
-            "本文取得イベントと構造化出力を照合しています。",
-        )?;
-        let variants =
-            reconcile_character_research(&research.output, &research.verified_pages, input)
-                .map_err(|error| error.to_string())?;
-        validate_build_variants_against_catalog(&member.character_id, &variants, catalog)
-            .map_err(|error| error.to_string())?;
+            input,
+            cancellation,
+            &provider,
+            1,
+            job_ids.get(1),
+        ),
+        research_member(
+            app,
+            database,
+            catalog,
+            run_id,
+            input,
+            cancellation,
+            &provider,
+            2,
+            job_ids.get(2),
+        ),
+        research_member(
+            app,
+            database,
+            catalog,
+            run_id,
+            input,
+            cancellation,
+            &provider,
+            3,
+            job_ids.get(3),
+        ),
+    )?;
 
+    for (member_index, member_result) in [member_0, member_1, member_2, member_3]
+        .into_iter()
+        .enumerate()
+    {
+        let research = member_result.research;
+        let variants = member_result.variants;
         for page in research.verified_pages {
             if let Some(existing) = source_pages.insert(page.source_page_id.clone(), page.clone())
                 && existing != page
@@ -257,23 +264,11 @@ async fn execute_analysis(
                 .output
                 .warnings
                 .iter()
-                .map(|warning| format!("{}: {warning}", member.character_id)),
+                .map(|warning| format!("{}: {warning}", input.members[member_index].character_id)),
         );
         research_outputs
             .push(serde_json::to_value(&research.output).map_err(|error| error.to_string())?);
         candidate_groups.push(variants);
-        database
-            .update_member_research_job(job_id, AnalysisStatus::Succeeded, source_count, None)
-            .map_err(|error| error.to_string())?;
-        emit_progress(
-            app,
-            run_id,
-            AnalysisStatus::Reconciling,
-            Some(member.character_id.clone()),
-            Some("completed".into()),
-            "候補と根拠の照合が完了しました。",
-            None,
-        );
     }
 
     ensure_not_cancelled(cancellation)?;
@@ -342,6 +337,223 @@ async fn execute_analysis(
         identity,
         resolution,
     })
+}
+
+struct MemberResearchResult {
+    research: VerifiedCharacterResearch,
+    variants: Vec<BuildVariant>,
+}
+
+#[allow(clippy::too_many_arguments)]
+async fn research_member(
+    app: &tauri::AppHandle,
+    database: &Database,
+    catalog: &crate::catalog::Catalog,
+    run_id: &str,
+    input: &AnalysisInput,
+    cancellation: &ResearchCancellation,
+    provider: &CodexResearchProvider,
+    member_index: usize,
+    job_id: Option<&String>,
+) -> Result<MemberResearchResult, String> {
+    ensure_not_cancelled(cancellation)?;
+    let member = input
+        .members
+        .get(member_index)
+        .ok_or_else(|| "分析対象のキャラクターが4人揃っていません".to_string())?;
+    let job_id = job_id.ok_or_else(|| "キャラクター別調査ジョブが不足しています".to_string())?;
+    database
+        .update_member_research_job(job_id, AnalysisStatus::Researching, 0, None)
+        .map_err(|error| error.to_string())?;
+    update_character_progress(
+        app,
+        database,
+        run_id,
+        AnalysisStatus::Researching,
+        &member.character_id,
+        "researching",
+        "個別本文ページを調査しています。",
+    )?;
+    let input_hash = analysis_input_hash(input).map_err(|error| error.to_string())?;
+    let version_key = sha256_canonical(&input.versions).map_err(|error| error.to_string())?;
+    let cached = database
+        .load_character_research_cache(
+            &member.character_id,
+            &input.game_version,
+            &version_key,
+            &input_hash,
+        )
+        .map_err(|error| error.to_string())?;
+    let prior_research = cached.as_ref().map(|cached| cached.record.output.clone());
+
+    if let Some(cached) = cached.as_ref()
+        && (cached.exact_input_match
+            || can_reuse_cache_without_web(&cached.record.analysis_input, input))
+    {
+        let research = VerifiedCharacterResearch {
+            output: cached.record.output.clone(),
+            verified_pages: cached.record.verified_pages.clone(),
+        };
+        if let Ok(variants) =
+            validate_member_research(&research, &member.character_id, catalog, input)
+        {
+            let source_count = research.verified_pages.len();
+            database
+                .update_member_research_job(job_id, AnalysisStatus::Succeeded, source_count, None)
+                .map_err(|error| error.to_string())?;
+            emit_progress(
+                app,
+                run_id,
+                AnalysisStatus::Reconciling,
+                Some(member.character_id.clone()),
+                Some("completed".into()),
+                "検証済み調査キャッシュを再利用しました。",
+                None,
+            );
+            return Ok(MemberResearchResult { research, variants });
+        }
+    }
+
+    if prior_research.is_some() {
+        update_character_progress(
+            app,
+            database,
+            run_id,
+            AnalysisStatus::Researching,
+            &member.character_id,
+            "researching",
+            "保存済み根拠を使って変更点を再調査しています。",
+        )?;
+    }
+    let mut last_validation_error = None;
+    for attempt in 0..=1 {
+        let research_result = provider
+            .research_verified_cancellable(
+                CharacterResearchRequest {
+                    analysis_input: input.clone(),
+                    character_id: member.character_id.clone(),
+                    prior_research: prior_research.clone(),
+                },
+                Some(cancellation.clone()),
+            )
+            .await;
+        let research = match research_result {
+            Ok(research) => research,
+            Err(error @ ResearchProviderError::EvidenceVerification(_)) if attempt == 0 => {
+                last_validation_error = Some(error.to_string());
+                database
+                    .update_member_research_job(job_id, AnalysisStatus::Researching, 0, None)
+                    .map_err(|error| error.to_string())?;
+                update_character_progress(
+                    app,
+                    database,
+                    run_id,
+                    AnalysisStatus::Researching,
+                    &member.character_id,
+                    "researching",
+                    "根拠情報の整合性を直すため再調査しています。",
+                )?;
+                continue;
+            }
+            Err(error) => return Err(error.to_string()),
+        };
+        ensure_not_cancelled(cancellation)?;
+        let source_count = research.verified_pages.len();
+        database
+            .update_member_research_job(
+                job_id,
+                AnalysisStatus::VerifyingSources,
+                source_count,
+                None,
+            )
+            .map_err(|error| error.to_string())?;
+        update_character_progress(
+            app,
+            database,
+            run_id,
+            AnalysisStatus::VerifyingSources,
+            &member.character_id,
+            "verifying",
+            "本文取得イベントと構造化出力を照合しています。",
+        )?;
+        let validation = validate_member_research(&research, &member.character_id, catalog, input);
+        match validation {
+            Ok(variants) => {
+                database
+                    .save_character_research_cache(
+                        &input_hash,
+                        &version_key,
+                        &CharacterResearchCacheRecord {
+                            analysis_input: input.clone(),
+                            output: research.output.clone(),
+                            verified_pages: research.verified_pages.clone(),
+                        },
+                    )
+                    .map_err(|error| error.to_string())?;
+                database
+                    .update_member_research_job(
+                        job_id,
+                        AnalysisStatus::Succeeded,
+                        source_count,
+                        None,
+                    )
+                    .map_err(|error| error.to_string())?;
+                emit_progress(
+                    app,
+                    run_id,
+                    AnalysisStatus::Reconciling,
+                    Some(member.character_id.clone()),
+                    Some("completed".into()),
+                    "候補と根拠の照合が完了しました。",
+                    None,
+                );
+                return Ok(MemberResearchResult { research, variants });
+            }
+            Err(error) if attempt == 0 => {
+                last_validation_error = Some(error);
+                database
+                    .update_member_research_job(job_id, AnalysisStatus::Researching, 0, None)
+                    .map_err(|error| error.to_string())?;
+                update_character_progress(
+                    app,
+                    database,
+                    run_id,
+                    AnalysisStatus::Researching,
+                    &member.character_id,
+                    "researching",
+                    "候補と根拠の矛盾を解消するため再調査しています。",
+                )?;
+            }
+            Err(error) => return Err(error),
+        }
+    }
+    Err(last_validation_error.unwrap_or_else(|| "候補を検証できませんでした".into()))
+}
+
+fn validate_member_research(
+    research: &VerifiedCharacterResearch,
+    character_id: &str,
+    catalog: &crate::catalog::Catalog,
+    input: &AnalysisInput,
+) -> Result<Vec<BuildVariant>, String> {
+    let variants = reconcile_character_research(&research.output, &research.verified_pages, input)
+        .map_err(|error| error.to_string())?;
+    validate_build_variants_against_catalog(character_id, &variants, catalog)
+        .map_err(|error| error.to_string())?;
+    Ok(variants)
+}
+
+fn can_reuse_cache_without_web(cached: &AnalysisInput, current: &AnalysisInput) -> bool {
+    cached.game_version == current.game_version
+        && cached.assumptions == current.assumptions
+        && cached.versions == current.versions
+        && cached.members.iter().zip(current.members.iter()).all(
+            |(cached_member, current_member)| {
+                cached_member.slot_index == current_member.slot_index
+                    && cached_member.character_id == current_member.character_id
+                    && cached_member.weapon_id == current_member.weapon_id
+            },
+        )
 }
 
 fn validate_analysis_contract(
@@ -536,5 +748,17 @@ mod tests {
         let error = validate_analysis_contract(&input, &catalog).unwrap_err();
 
         assert!(error.contains("solverVersion"));
+    }
+
+    #[test]
+    fn 凸と精錬だけの変更は検証済み調査を再利用できる() {
+        let cached = valid_input();
+        let mut changed = cached.clone();
+        changed.members[0].constellation = 2;
+        changed.members[1].refinement = 5;
+        assert!(can_reuse_cache_without_web(&cached, &changed));
+
+        changed.members[2].character_id = "different-character".into();
+        assert!(!can_reuse_cache_without_web(&cached, &changed));
     }
 }

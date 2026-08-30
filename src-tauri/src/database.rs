@@ -1,7 +1,7 @@
 use crate::{
     domain::{
-        AnalysisStatus, CharacterBuildIntent, HostGeneratedIdentity, ResolutionStatus,
-        TeamBuildResolution,
+        AnalysisInput, AnalysisStatus, CharacterBuildIntent, CharacterResearchOutput,
+        HostGeneratedIdentity, ResolutionStatus, TeamBuildResolution,
     },
     reconciler::VerifiedSourcePage,
     source_policy::normalize_source_url,
@@ -18,7 +18,7 @@ use std::{
 };
 use thiserror::Error;
 
-pub const CURRENT_SCHEMA_VERSION: i64 = 1;
+pub const CURRENT_SCHEMA_VERSION: i64 = 2;
 pub const BUSY_TIMEOUT_MS: u64 = 5_000;
 
 const SCHEMA_SQL: &str = r#"
@@ -148,6 +148,18 @@ CREATE TABLE IF NOT EXISTS app_settings (
     updated_at TEXT NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS character_research_cache (
+    cache_id TEXT PRIMARY KEY NOT NULL,
+    character_id TEXT NOT NULL,
+    game_version TEXT NOT NULL,
+    version_key TEXT NOT NULL,
+    analysis_input_hash TEXT NOT NULL,
+    cache_json TEXT NOT NULL CHECK (json_valid(cache_json)),
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    UNIQUE(character_id, version_key, analysis_input_hash)
+);
+
 CREATE INDEX IF NOT EXISTS idx_parties_name ON parties(name);
 CREATE INDEX IF NOT EXISTS idx_party_members_character ON party_members(character_id);
 CREATE INDEX IF NOT EXISTS idx_analysis_runs_party ON analysis_runs(party_id, created_at DESC);
@@ -155,6 +167,8 @@ CREATE INDEX IF NOT EXISTS idx_member_research_jobs_run ON member_research_jobs(
 CREATE INDEX IF NOT EXISTS idx_source_pages_normalized_url ON source_pages(normalized_url);
 CREATE INDEX IF NOT EXISTS idx_evidence_claims_snapshot ON evidence_claims(snapshot_id);
 CREATE INDEX IF NOT EXISTS idx_build_results_run ON build_results(analysis_run_id);
+CREATE INDEX IF NOT EXISTS idx_character_research_cache_lookup
+ON character_research_cache(character_id, game_version, version_key, updated_at DESC);
 
 CREATE TRIGGER IF NOT EXISTS evidence_snapshots_no_update
 BEFORE UPDATE ON evidence_snapshots
@@ -261,6 +275,21 @@ pub struct SuccessfulAnalysisRecord {
     pub identity: HostGeneratedIdentity,
     pub evidence_snapshot: Value,
     pub result: TeamBuildResolution,
+}
+
+/// 次回分析で再利用する、ホスト検証済みのキャラクター調査情報。
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct CharacterResearchCacheRecord {
+    pub analysis_input: AnalysisInput,
+    pub output: CharacterResearchOutput,
+    pub verified_pages: Vec<VerifiedSourcePage>,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct LoadedCharacterResearchCache {
+    pub record: CharacterResearchCacheRecord,
+    pub exact_input_match: bool,
 }
 
 impl PartyDraft {
@@ -370,6 +399,85 @@ impl Database {
         self.connection
             .lock()
             .map_err(|_| DatabaseError::MutexPoisoned)
+    }
+
+    pub fn save_character_research_cache(
+        &self,
+        analysis_input_hash: &str,
+        version_key: &str,
+        record: &CharacterResearchCacheRecord,
+    ) -> Result<(), DatabaseError> {
+        if analysis_input_hash.trim().is_empty() || version_key.trim().is_empty() {
+            return Err(invalid("調査キャッシュの識別子は必須です"));
+        }
+        if !record
+            .analysis_input
+            .members
+            .iter()
+            .any(|member| member.character_id == record.output.character_id)
+        {
+            return Err(invalid(
+                "調査キャッシュのcharacterIdが分析入力に含まれていません",
+            ));
+        }
+        let cache_json = serde_json::to_string(record)?;
+        let now = timestamp();
+        let connection = self.connection()?;
+        connection.execute(
+            "INSERT INTO character_research_cache (
+                cache_id, character_id, game_version, version_key,
+                analysis_input_hash, cache_json, created_at, updated_at
+             ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?7)
+             ON CONFLICT(character_id, version_key, analysis_input_hash) DO UPDATE SET
+                game_version = excluded.game_version,
+                cache_json = excluded.cache_json,
+                updated_at = excluded.updated_at",
+            params![
+                new_id("research-cache"),
+                record.output.character_id,
+                record.analysis_input.game_version,
+                version_key,
+                analysis_input_hash,
+                cache_json,
+                now,
+            ],
+        )?;
+        Ok(())
+    }
+
+    pub fn load_character_research_cache(
+        &self,
+        character_id: &str,
+        game_version: &str,
+        version_key: &str,
+        analysis_input_hash: &str,
+    ) -> Result<Option<LoadedCharacterResearchCache>, DatabaseError> {
+        if [character_id, game_version, version_key, analysis_input_hash]
+            .iter()
+            .any(|value| value.trim().is_empty())
+        {
+            return Err(invalid("調査キャッシュの検索条件は必須です"));
+        }
+        let connection = self.connection()?;
+        let row = connection
+            .query_row(
+                "SELECT analysis_input_hash, cache_json
+                 FROM character_research_cache
+                 WHERE character_id = ?1 AND game_version = ?2 AND version_key = ?3
+                 ORDER BY CASE WHEN analysis_input_hash = ?4 THEN 0 ELSE 1 END,
+                          updated_at DESC
+                 LIMIT 1",
+                params![character_id, game_version, version_key, analysis_input_hash],
+                |row| Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?)),
+            )
+            .optional()?;
+        row.map(|(cached_input_hash, cache_json)| {
+            Ok(LoadedCharacterResearchCache {
+                record: serde_json::from_str(&cache_json)?,
+                exact_input_match: cached_input_hash == analysis_input_hash,
+            })
+        })
+        .transpose()
     }
 
     pub fn save_party<D>(&self, draft: D) -> Result<(), DatabaseError>
@@ -1173,6 +1281,50 @@ mod tests {
         }
     }
 
+    fn research_cache_record() -> CharacterResearchCacheRecord {
+        CharacterResearchCacheRecord {
+            analysis_input: serde_json::from_value(json!({
+                "partyId": "party-cache",
+                "partyName": "キャッシュ検証",
+                "gameVersion": "7.0",
+                "members": [
+                    { "slotIndex": 0, "characterId": "char-a", "weaponId": "weapon-a", "refinement": 1, "constellation": 0 },
+                    { "slotIndex": 1, "characterId": "char-b", "weaponId": "weapon-b", "refinement": 1, "constellation": 0 },
+                    { "slotIndex": 2, "characterId": "char-c", "weaponId": "weapon-c", "refinement": 1, "constellation": 0 },
+                    { "slotIndex": 3, "characterId": "char-d", "weaponId": "weapon-d", "refinement": 1, "constellation": 0 }
+                ],
+                "assumptions": {
+                    "characterLevel": 90,
+                    "weaponLevel": 90,
+                    "artifactLevel": 20,
+                    "artifactRarity": 5,
+                    "sheetTiming": "pre_combat",
+                    "finalAscension": true,
+                    "allTalentsAvailable": true,
+                    "witchTeachingWhenApplicable": true
+                },
+                "versions": {
+                    "catalogVersion": "catalog-v1",
+                    "sourcePolicyVersion": "source-v1",
+                    "promptVersion": "prompt-v1",
+                    "schemaVersion": "schema-v1",
+                    "reconcilerVersion": "reconciler-v1",
+                    "solverVersion": "solver-v1"
+                }
+            }))
+            .unwrap(),
+            output: serde_json::from_value(json!({
+                "schemaVersion": "character-research-v1",
+                "characterId": "char-a",
+                "sources": [],
+                "variants": [],
+                "warnings": []
+            }))
+            .unwrap(),
+            verified_pages: Vec::new(),
+        }
+    }
+
     fn choice_result() -> TeamBuildResolution {
         serde_json::from_value(serde_json::json!({
             "status": "needs_user_choice",
@@ -1221,6 +1373,34 @@ mod tests {
         assert_eq!(foreign_keys, 1);
         assert_eq!(busy_timeout, BUSY_TIMEOUT_MS as i64);
         assert_eq!(version, CURRENT_SCHEMA_VERSION);
+    }
+
+    #[test]
+    fn 検証済み調査キャッシュを完全一致と変更時の両方で読み込む() {
+        let database = Database::open_in_memory().unwrap();
+        let first = research_cache_record();
+        database
+            .save_character_research_cache("input-a", "version-a", &first)
+            .unwrap();
+
+        let exact = database
+            .load_character_research_cache("char-a", "7.0", "version-a", "input-a")
+            .unwrap()
+            .unwrap();
+        assert!(exact.exact_input_match);
+        assert_eq!(exact.record, first);
+
+        let mut changed = first;
+        changed.analysis_input.members[0].constellation = 1;
+        database
+            .save_character_research_cache("input-b", "version-a", &changed)
+            .unwrap();
+        let warm = database
+            .load_character_research_cache("char-a", "7.0", "version-a", "input-c")
+            .unwrap()
+            .unwrap();
+        assert!(!warm.exact_input_match);
+        assert_eq!(warm.record.analysis_input.members[0].constellation, 1);
     }
 
     #[test]

@@ -41,10 +41,10 @@ describe("分析コマンド境界", () => {
     expect(input.versions).toEqual({
       catalogVersion: "catalog-v2",
       sourcePolicyVersion: "source-policy-v1",
-      promptVersion: "prompt-v2",
+      promptVersion: "prompt-v3",
       schemaVersion: "character-research-v1",
       reconcilerVersion: "reconciler-v2",
-      solverVersion: "solver-v1",
+      solverVersion: "solver-v2",
     });
   });
 

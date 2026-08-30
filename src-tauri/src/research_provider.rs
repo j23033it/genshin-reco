@@ -12,10 +12,11 @@ use tauri::Manager;
 use url::Url;
 
 /// キャラクター1件の調査を依頼するための入力。
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct CharacterResearchRequest {
     pub analysis_input: AnalysisInput,
     pub character_id: String,
+    pub prior_research: Option<CharacterResearchOutput>,
 }
 
 /// 調査プロバイダが返す非同期処理の型。
@@ -133,6 +134,7 @@ impl CodexResearchProvider {
                 &request.analysis_input,
                 &request.character_id,
                 cancellation.as_ref(),
+                request.prior_research.as_ref(),
             )
             .await
             .map_err(ResearchProviderError::AppServer)?;
@@ -170,48 +172,44 @@ struct CapturedPageEvidence<'a> {
 fn build_verified_pages(
     output: &CharacterResearchOutput,
 ) -> Result<Vec<VerifiedSourcePage>, ResearchProviderError> {
-    output
-        .sources
-        .iter()
-        .map(|source| {
-            let normalized = normalize_source_url(&source.source_url)
-                .map_err(|error| ResearchProviderError::EvidenceVerification(error.to_string()))?;
-            let claims = output
-                .variants
-                .iter()
-                .flat_map(|variant| variant.claims.iter())
-                .filter(|claim| {
-                    normalize_source_url(&claim.evidence.source_url)
-                        .is_ok_and(|claim_url| claim_url == normalized)
-                })
-                .collect::<Vec<_>>();
-            if claims.is_empty() {
-                return Err(ResearchProviderError::EvidenceVerification(format!(
-                    "参照ページに対応するclaimがありません: {normalized}"
-                )));
-            }
-            let content_hash = sha256_canonical(&CapturedPageEvidence { source, claims })
-                .map_err(|error| ResearchProviderError::EvidenceVerification(error.to_string()))?;
-            let source_page_hash = sha256_canonical(&normalized)
-                .map_err(|error| ResearchProviderError::EvidenceVerification(error.to_string()))?;
-            let host = Url::parse(&normalized)
-                .ok()
-                .and_then(|url| url.host_str().map(str::to_string))
-                .ok_or_else(|| {
-                    ResearchProviderError::EvidenceVerification(
-                        "参照ページのhostを取得できません".into(),
-                    )
-                })?;
-            Ok(VerifiedSourcePage {
-                source_url: normalized,
-                source_page_id: format!("source-{source_page_hash}"),
-                content_hash: Some(content_hash),
-                verification: EvidenceVerification::HostExactMatch,
-                source_family: host,
-                is_direct_content_page: true,
+    let mut verified_pages = Vec::new();
+    for source in &output.sources {
+        let normalized = normalize_source_url(&source.source_url)
+            .map_err(|error| ResearchProviderError::EvidenceVerification(error.to_string()))?;
+        let claims = output
+            .variants
+            .iter()
+            .flat_map(|variant| variant.claims.iter())
+            .filter(|claim| {
+                normalize_source_url(&claim.evidence.source_url)
+                    .is_ok_and(|claim_url| claim_url == normalized)
             })
-        })
-        .collect()
+            .collect::<Vec<_>>();
+        if claims.is_empty() {
+            continue;
+        }
+        let content_hash = sha256_canonical(&CapturedPageEvidence { source, claims })
+            .map_err(|error| ResearchProviderError::EvidenceVerification(error.to_string()))?;
+        let source_page_hash = sha256_canonical(&normalized)
+            .map_err(|error| ResearchProviderError::EvidenceVerification(error.to_string()))?;
+        let host = Url::parse(&normalized)
+            .ok()
+            .and_then(|url| url.host_str().map(str::to_string))
+            .ok_or_else(|| {
+                ResearchProviderError::EvidenceVerification(
+                    "参照ページのhostを取得できません".into(),
+                )
+            })?;
+        verified_pages.push(VerifiedSourcePage {
+            source_url: normalized,
+            source_page_id: format!("source-{source_page_hash}"),
+            content_hash: Some(content_hash),
+            verification: EvidenceVerification::HostExactMatch,
+            source_family: host,
+            is_direct_content_page: true,
+        });
+    }
+    Ok(verified_pages)
 }
 
 /// 決められたfixtureを使う、ネットワーク不要の調査プロバイダ。
@@ -425,6 +423,7 @@ mod tests {
         CharacterResearchRequest {
             analysis_input: valid_input(),
             character_id: character_id.to_string(),
+            prior_research: None,
         }
     }
 
@@ -456,6 +455,7 @@ mod tests {
         let error = futures_block_on(provider.research(CharacterResearchRequest {
             analysis_input: input,
             character_id: "char-a".to_string(),
+            prior_research: None,
         }))
         .unwrap_err();
         assert!(matches!(
@@ -512,7 +512,7 @@ mod tests {
     }
 
     #[test]
-    fn claimから参照されないsourceは検証済みにしない() {
+    fn claimから参照されないsourceは無視する() {
         let mut output = valid_output("char-a");
         output.sources.push(ResearchSourcePage {
             source_url: "https://game8.jp/genshin/12345".into(),
@@ -522,11 +522,12 @@ mod tests {
             updated_at: None,
         });
 
-        assert!(matches!(
-            build_verified_pages(&output),
-            Err(ResearchProviderError::EvidenceVerification(message))
-                if message.contains("claimがありません")
-        ));
+        let pages = build_verified_pages(&output).expect("未使用sourceを除外できること");
+        assert_eq!(pages.len(), 1);
+        assert_eq!(
+            pages[0].source_url,
+            "https://wikiwiki.jp/genshinwiki/example"
+        );
     }
 
     fn futures_block_on<F: Future>(future: F) -> F::Output {

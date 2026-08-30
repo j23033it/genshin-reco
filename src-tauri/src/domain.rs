@@ -509,7 +509,9 @@ pub fn validate_character_research_output(
             let evidence_url = normalize_source_url(&claim.evidence.source_url)
                 .map_err(|error| invalid(format!("根拠URLが不正です: {error}")))?;
             if !source_urls.contains(&evidence_url) {
-                return Err(invalid("根拠URLがsourcesに含まれていません"));
+                return Err(invalid(format!(
+                    "根拠URLがsourcesに含まれていません: {evidence_url}"
+                )));
             }
             let claim_key = serde_json::to_string(&(
                 claim.claim_type,
