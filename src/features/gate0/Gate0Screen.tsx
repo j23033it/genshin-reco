@@ -199,6 +199,7 @@ function LoadingReport() {
 }
 
 export function Gate0Screen({ embedded = false }: { embedded?: boolean }) {
+  const desktopRuntime = Boolean(window.__TAURI_INTERNALS__);
   const [probeState, setProbeState] = useState<ProbeState>({ status: "idle" });
   const probingRef = useRef(false);
 
@@ -224,11 +225,12 @@ export function Gate0Screen({ embedded = false }: { embedded?: boolean }) {
   }, []);
 
   useEffect(() => {
+    if (!desktopRuntime) return;
     const timerId = window.setTimeout(() => {
       void handleProbe();
     }, 0);
     return () => window.clearTimeout(timerId);
-  }, [handleProbe]);
+  }, [desktopRuntime, handleProbe]);
 
   const isLoading = probeState.status === "loading";
 
@@ -269,7 +271,7 @@ export function Gate0Screen({ embedded = false }: { embedded?: boolean }) {
               type="button"
               className="inline-flex min-h-11 items-center justify-center rounded-lg bg-amber-400 px-5 py-3 font-semibold text-slate-950 shadow-sm hover:bg-amber-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400 disabled:cursor-not-allowed disabled:opacity-60"
               onClick={handleProbe}
-              disabled={isLoading}
+              disabled={isLoading || !desktopRuntime}
               aria-busy={isLoading}
             >
               {isLoading ? "確認中…" : probeState.status === "idle" ? "環境を確認" : "再確認"}
@@ -279,6 +281,11 @@ export function Gate0Screen({ embedded = false }: { embedded?: boolean }) {
                 {probeState.message}
               </p>
             )}
+            {!desktopRuntime ? (
+              <p className="mt-3 text-pretty text-sm leading-6 text-slate-400">
+                Codex連携の確認はデスクトップアプリで利用できます。
+              </p>
+            ) : null}
           </div>
 
           {isLoading && <LoadingReport />}

@@ -10,6 +10,7 @@ pub mod reconciler;
 pub mod research_provider;
 pub mod solver;
 pub mod source_policy;
+mod tavily;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -26,6 +27,10 @@ pub fn run() {
             app_server::read_codex_login_status,
             app_server::cancel_codex_device_login,
             app_server::run_codex_gate0_smoke,
+            tavily::read_tavily_settings_status,
+            tavily::save_tavily_api_key,
+            tavily::test_tavily_connection,
+            tavily::delete_tavily_api_key,
             catalog::load_catalog,
             database_commands::save_party_draft,
             database_commands::load_party_draft,

@@ -1,7 +1,7 @@
 import "@testing-library/jest-dom/vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Gate0Screen } from "./Gate0Screen";
 import { probeCodexEnvironment } from "./probeCodexEnvironment";
 import type { Gate0ProbeReport } from "./types";
@@ -32,6 +32,11 @@ const report = (connected: boolean, rateLimitsAvailable = true): Gate0ProbeRepor
 describe("Gate0Screen", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    window.__TAURI_INTERNALS__ = {};
+  });
+
+  afterEach(() => {
+    delete window.__TAURI_INTERNALS__;
   });
 
   it("画面を開くと自動確認し、ChatGPT認証済みなら連携済みと表示する", async () => {

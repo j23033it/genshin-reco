@@ -6,6 +6,7 @@ use crate::domain::{
 use crate::hashing::sha256_canonical;
 use crate::reconciler::VerifiedSourcePage;
 use crate::source_policy::normalize_source_url;
+use crate::tavily::{self, TavilyExtractedPage};
 use serde::Serialize;
 use std::{collections::HashMap, error::Error, fmt, future::Future, pin::Pin};
 use tauri::Manager;
@@ -26,7 +27,7 @@ pub type ResearchFuture =
     Pin<Box<dyn Future<Output = Result<CharacterResearchOutput, ResearchProviderError>> + Send>>;
 
 /// 調査処理で発生したエラー。
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq)]
 pub enum ResearchProviderError {
     /// 分析入力がドメイン契約に違反している。
     InvalidAnalysisInput(DomainValidationError),
@@ -38,7 +39,13 @@ pub enum ResearchProviderError {
         source: DomainValidationError,
     },
     /// Codex App Serverによる実調査に失敗した。
-    AppServer(String),
+    AppServer { message: String, retryable: bool },
+    /// 構造化出力を取得できたが、ホスト検証に失敗した。
+    InvalidResearchOutput {
+        character_id: String,
+        message: String,
+        output: Box<CharacterResearchOutput>,
+    },
     /// 本文イベントから検証済み根拠を生成できなかった。
     EvidenceVerification(String),
     /// プロバイダ実装がどちらの入口も実装していない。
@@ -61,7 +68,17 @@ impl fmt::Display for ResearchProviderError {
                 formatter,
                 "調査fixtureが不正です ({character_id}): {source}"
             ),
-            Self::AppServer(message) => write!(formatter, "Codex調査に失敗しました: {message}"),
+            Self::AppServer { message, .. } => {
+                write!(formatter, "Codex調査に失敗しました: {message}")
+            }
+            Self::InvalidResearchOutput {
+                character_id,
+                message,
+                ..
+            } => write!(
+                formatter,
+                "Codex調査の出力検証に失敗しました ({character_id}): {message}"
+            ),
             Self::EvidenceVerification(message) => {
                 write!(formatter, "根拠検証に失敗しました: {message}")
             }
@@ -77,10 +94,24 @@ impl Error for ResearchProviderError {
                 Some(source)
             }
             Self::CharacterNotConfigured { .. }
-            | Self::AppServer(_)
+            | Self::AppServer { .. }
+            | Self::InvalidResearchOutput { .. }
             | Self::EvidenceVerification(_)
             | Self::Unsupported => None,
         }
+    }
+}
+
+impl ResearchProviderError {
+    pub fn retryable(&self) -> bool {
+        matches!(
+            self,
+            Self::AppServer {
+                retryable: true,
+                ..
+            } | Self::InvalidResearchOutput { .. }
+                | Self::EvidenceVerification(_)
+        )
     }
 }
 
@@ -131,6 +162,14 @@ impl CodexResearchProvider {
         Box::pin(async move {
             validate_analysis_input(&request.analysis_input)
                 .map_err(ResearchProviderError::InvalidAnalysisInput)?;
+            // Tavilyが未設定・一時失敗でも、従来のCodex Web調査へ安全に戻す。
+            let prefetched_pages = tavily::fetch_research_context(
+                &request.analysis_input,
+                &request.character_id,
+                mode,
+            )
+            .await
+            .unwrap_or_default();
             let supervisor = app.state::<app_server::AppServerSupervisor>();
             let observed = app_server::research_character_with_codex(
                 &app,
@@ -143,11 +182,30 @@ impl CodexResearchProvider {
                     previous_invalid_output: request.previous_invalid_output.as_ref(),
                     correction_feedback: request.correction_feedback.as_deref(),
                     mode,
+                    prefetched_pages: &prefetched_pages,
                 },
             )
             .await
-            .map_err(ResearchProviderError::AppServer)?;
-            let verified_pages = build_verified_pages(&observed.output)?;
+            .map_err(|failure| {
+                if let Some(output) = failure.invalid_output {
+                    ResearchProviderError::InvalidResearchOutput {
+                        character_id: request.character_id.clone(),
+                        message: failure.message,
+                        output: Box::new(output),
+                    }
+                } else {
+                    ResearchProviderError::AppServer {
+                        message: failure.message,
+                        retryable: failure.retryable,
+                    }
+                }
+            })?;
+            let verified_pages = build_verified_pages(&observed.output, &prefetched_pages)
+                .map_err(|error| ResearchProviderError::InvalidResearchOutput {
+                    character_id: request.character_id.clone(),
+                    message: error.to_string(),
+                    output: Box::new(observed.output.clone()),
+                })?;
             Ok(VerifiedCharacterResearch {
                 output: observed.output,
                 verified_pages,
@@ -180,6 +238,7 @@ struct CapturedPageEvidence<'a> {
 
 fn build_verified_pages(
     output: &CharacterResearchOutput,
+    prefetched_pages: &[TavilyExtractedPage],
 ) -> Result<Vec<VerifiedSourcePage>, ResearchProviderError> {
     let mut verified_pages = Vec::new();
     for source in &output.sources {
@@ -197,8 +256,14 @@ fn build_verified_pages(
         if claims.is_empty() {
             continue;
         }
-        let content_hash = sha256_canonical(&CapturedPageEvidence { source, claims })
-            .map_err(|error| ResearchProviderError::EvidenceVerification(error.to_string()))?;
+        let content_hash = if let Some(page) = prefetched_pages.iter().find(|page| {
+            normalize_source_url(&page.source_url).is_ok_and(|page_url| page_url == normalized)
+        }) {
+            sha256_canonical(&page.content)
+        } else {
+            sha256_canonical(&CapturedPageEvidence { source, claims })
+        }
+        .map_err(|error| ResearchProviderError::EvidenceVerification(error.to_string()))?;
         let source_page_hash = sha256_canonical(&normalized)
             .map_err(|error| ResearchProviderError::EvidenceVerification(error.to_string()))?;
         let host = Url::parse(&normalized)
@@ -533,8 +598,8 @@ mod tests {
     fn 本文根拠から決定論的な検証済みページを作る() {
         let output = valid_output("char-a");
 
-        let first = build_verified_pages(&output).expect("検証済みページを作れること");
-        let second = build_verified_pages(&output).expect("再度作れること");
+        let first = build_verified_pages(&output, &[]).expect("検証済みページを作れること");
+        let second = build_verified_pages(&output, &[]).expect("再度作れること");
 
         assert_eq!(first, second);
         assert_eq!(first.len(), 1);
@@ -551,6 +616,22 @@ mod tests {
     }
 
     #[test]
+    fn tavily本文がある場合は実本文から内容ハッシュを作る() {
+        let output = valid_output("char-a");
+        let page = TavilyExtractedPage {
+            source_url: "https://wikiwiki.jp/genshinwiki/example#build".into(),
+            title: "検証ページ".into(),
+            content: "Tavilyが抽出した本文".into(),
+        };
+
+        let pages = build_verified_pages(&output, std::slice::from_ref(&page))
+            .expect("検証済みページを作れること");
+        let expected = sha256_canonical(&page.content).expect("本文をハッシュ化できること");
+
+        assert_eq!(pages[0].content_hash.as_deref(), Some(expected.as_str()));
+    }
+
+    #[test]
     fn claimから参照されないsourceは無視する() {
         let mut output = valid_output("char-a");
         output.sources.push(ResearchSourcePage {
@@ -561,7 +642,7 @@ mod tests {
             updated_at: None,
         });
 
-        let pages = build_verified_pages(&output).expect("未使用sourceを除外できること");
+        let pages = build_verified_pages(&output, &[]).expect("未使用sourceを除外できること");
         assert_eq!(pages.len(), 1);
         assert_eq!(
             pages[0].source_url,

@@ -1,7 +1,7 @@
 import "@testing-library/jest-dom/vitest";
 import { act, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import App from "./App";
 import type { Catalog } from "./domain/catalogTypes";
 import { loadCurrentAnalysisResult, startAnalysis, subscribeAnalysisProgress } from "./features/analysis";
@@ -107,6 +107,7 @@ async function fillValidParty(user: ReturnType<typeof userEvent.setup>, name: st
 
 describe("アプリワークスペース", () => {
   beforeEach(() => {
+    window.__TAURI_INTERNALS__ = {};
     vi.clearAllMocks();
     loadCatalogMock.mockResolvedValue(catalog);
     listPartyDraftsMock.mockResolvedValue([]);
@@ -128,6 +129,10 @@ describe("アプリワークスペース", () => {
       rateLimitsAvailable: false,
       diagnostics: [],
     });
+  });
+
+  afterEach(() => {
+    delete window.__TAURI_INTERNALS__;
   });
 
   it("凍結カタログ読み込み後に編成ビルダーを表示する", async () => {
@@ -274,7 +279,7 @@ describe("アプリワークスペース", () => {
     await user.click(await screen.findByRole("button", { name: "分析を更新" }));
 
     expect(screen.getByRole("button", { name: "編成を作る" })).toBeDisabled();
-    expect(screen.getByRole("button", { name: "Codex設定" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "調査設定" })).toBeDisabled();
     expect(screen.getByRole("button", { name: "保存済み編成" })).toBeDisabled();
     expect(screen.getByRole("button", { name: "「保存済み編成」を削除" })).toBeDisabled();
     expect(screen.getByTestId("analysis-progress-panel")).toBeInTheDocument();
@@ -378,11 +383,11 @@ describe("アプリワークスペース", () => {
     expect(await screen.findByTestId("team-result-empty")).toHaveTextContent("保存済み編成はまだ分析されていません");
   });
 
-  it("Codex設定からGate0を開ける", async () => {
+  it("調査設定からGate0を開ける", async () => {
     const user = userEvent.setup();
     render(<App />);
 
-    await user.click(await screen.findByRole("button", { name: "Codex設定" }));
+    await user.click(await screen.findByRole("button", { name: "調査設定" }));
 
     expect(screen.getByRole("heading", { name: "Codexの環境を確認" })).toBeInTheDocument();
     expect(await screen.findByText("未連携")).toBeInTheDocument();

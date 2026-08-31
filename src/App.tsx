@@ -27,6 +27,7 @@ import {
 } from "./features/analysis";
 import { loadCatalog } from "./features/catalog";
 import { Gate0Screen } from "./features/gate0/Gate0Screen";
+import { TavilySettingsPanel } from "./features/tavily/TavilySettingsPanel";
 import {
   PartyBuilder,
   createEmptyParty,
@@ -42,7 +43,7 @@ type WorkspaceView = "party" | "settings";
 
 const NAVIGATION = [
   { id: "party" as const, label: "編成を作る", icon: Users },
-  { id: "settings" as const, label: "Codex設定", icon: Settings2 },
+  { id: "settings" as const, label: "調査設定", icon: Settings2 },
 ];
 
 const ACTIVE_ANALYSIS_STATUSES = new Set<AnalysisStatus>([
@@ -528,8 +529,12 @@ function Workspace({ catalog }: { catalog: Catalog }) {
         className={cn(
           "grid min-h-dvh",
           sidebarOpen
-            ? "lg:grid-cols-[17rem_minmax(0,1fr)_19rem]"
-            : "lg:grid-cols-[minmax(0,1fr)_19rem]",
+            ? view === "settings"
+              ? "lg:grid-cols-[17rem_minmax(0,1fr)]"
+              : "lg:grid-cols-[17rem_minmax(0,1fr)_19rem]"
+            : view === "settings"
+              ? "lg:grid-cols-[minmax(0,1fr)]"
+              : "lg:grid-cols-[minmax(0,1fr)_19rem]",
         )}
       >
         <aside
@@ -727,14 +732,20 @@ function Workspace({ catalog }: { catalog: Catalog }) {
               ) : null}
             </div>
           ) : null}
-          {view === "settings" ? <Gate0Screen embedded /> : null}
+          {view === "settings" ? (
+            <div className="space-y-8">
+              <TavilySettingsPanel />
+              <Gate0Screen embedded />
+            </div>
+          ) : null}
         </main>
 
-        <aside
-          className="border-t border-slate-800 bg-slate-900/30 p-5 lg:border-l lg:border-t-0"
-          aria-label={view === "party" && selectedIsSaved ? "分析結果の補足事項" : "現在の編成情報"}
-        >
-          {view === "party" && selectedIsSaved ? (
+        {view === "party" ? (
+          <aside
+            className="border-t border-slate-800 bg-slate-900/30 p-5 lg:border-l lg:border-t-0"
+            aria-label={selectedIsSaved ? "分析結果の補足事項" : "現在の編成情報"}
+          >
+            {selectedIsSaved ? (
             <AnalysisNotesPanel catalog={catalog} resolution={resolution} validity={resultValidity ?? "current"} />
           ) : (
             <>
@@ -764,8 +775,9 @@ function Workspace({ catalog }: { catalog: Catalog }) {
                 カタログと推薦根拠は分離して保存します。根拠の検証に合格した結果だけが現在結果になります。
               </p>
             </>
-          )}
-        </aside>
+            )}
+          </aside>
+        ) : null}
       </div>
     </div>
   );

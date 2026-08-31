@@ -18,7 +18,7 @@ use std::{
 };
 use thiserror::Error;
 
-pub const CURRENT_SCHEMA_VERSION: i64 = 3;
+pub const CURRENT_SCHEMA_VERSION: i64 = 4;
 pub const BUSY_TIMEOUT_MS: u64 = 5_000;
 
 const SCHEMA_SQL: &str = r#"
@@ -92,6 +92,14 @@ CREATE TABLE IF NOT EXISTS member_research_jobs (
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL,
     FOREIGN KEY (analysis_run_id) REFERENCES analysis_runs(analysis_run_id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS research_failure_diagnostics (
+    job_id TEXT PRIMARY KEY NOT NULL,
+    validation_error TEXT NOT NULL,
+    invalid_output_json TEXT NOT NULL CHECK (json_valid(invalid_output_json)),
+    created_at TEXT NOT NULL,
+    FOREIGN KEY (job_id) REFERENCES member_research_jobs(job_id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS source_pages (
@@ -732,6 +740,55 @@ impl Database {
         Ok(())
     }
 
+    pub fn finish_member_research_job(
+        &self,
+        job_id: &str,
+        status: AnalysisStatus,
+        error_message: Option<&str>,
+    ) -> Result<(), DatabaseError> {
+        if job_id.trim().is_empty() {
+            return Err(invalid("調査ジョブIDは必須です"));
+        }
+        let changed = self.connection()?.execute(
+            "UPDATE member_research_jobs
+             SET status = ?1, error_message = ?2, updated_at = ?3
+             WHERE job_id = ?4",
+            params![
+                analysis_status_text(status)?,
+                error_message,
+                timestamp(),
+                job_id,
+            ],
+        )?;
+        if changed == 0 {
+            return Err(DatabaseError::NotFound(format!("調査ジョブID: {job_id}")));
+        }
+        Ok(())
+    }
+
+    pub fn save_research_failure_diagnostic(
+        &self,
+        job_id: &str,
+        validation_error: &str,
+        invalid_output: &CharacterResearchOutput,
+    ) -> Result<(), DatabaseError> {
+        if job_id.trim().is_empty() || validation_error.trim().is_empty() {
+            return Err(invalid("調査失敗診断にはジョブIDと検証エラーが必要です"));
+        }
+        let invalid_output_json = serde_json::to_string(invalid_output)?;
+        self.connection()?.execute(
+            "INSERT INTO research_failure_diagnostics
+                (job_id, validation_error, invalid_output_json, created_at)
+             VALUES (?1, ?2, ?3, ?4)
+             ON CONFLICT(job_id) DO UPDATE SET
+                validation_error = excluded.validation_error,
+                invalid_output_json = excluded.invalid_output_json,
+                created_at = excluded.created_at",
+            params![job_id, validation_error, invalid_output_json, timestamp()],
+        )?;
+        Ok(())
+    }
+
     pub fn finish_open_research_jobs(
         &self,
         analysis_run_id: &str,
@@ -744,7 +801,8 @@ impl Database {
         self.connection()?.execute(
             "UPDATE member_research_jobs
              SET status = ?1, error_message = ?2, updated_at = ?3
-             WHERE analysis_run_id = ?4 AND status != 'succeeded'",
+             WHERE analysis_run_id = ?4
+               AND status NOT IN ('succeeded', 'failed', 'cancelled')",
             params![
                 analysis_status_text(status)?,
                 error_message,
@@ -1613,6 +1671,21 @@ mod tests {
             .update_member_research_job(&jobs[0], AnalysisStatus::Succeeded, 2, None)
             .unwrap();
         database
+            .finish_member_research_job(
+                &jobs[1],
+                AnalysisStatus::Failed,
+                Some("キャラ固有の検証失敗"),
+            )
+            .unwrap();
+        let invalid_output = research_cache_record().output;
+        database
+            .save_research_failure_diagnostic(
+                &jobs[1],
+                "includedBonuses[0].sourceが空です",
+                &invalid_output,
+            )
+            .unwrap();
+        database
             .finish_open_research_jobs(&run_id, AnalysisStatus::Failed, Some("停止"))
             .unwrap();
 
@@ -1631,8 +1704,29 @@ mod tests {
                 |row| row.get(0),
             )
             .unwrap();
+        let second_error: Option<String> = connection
+            .query_row(
+                "SELECT error_message FROM member_research_jobs WHERE job_id = ?1",
+                params![jobs[1]],
+                |row| row.get(0),
+            )
+            .unwrap();
+        let diagnostic: (String, String) = connection
+            .query_row(
+                "SELECT validation_error, invalid_output_json
+                 FROM research_failure_diagnostics WHERE job_id = ?1",
+                params![jobs[1]],
+                |row| Ok((row.get(0)?, row.get(1)?)),
+            )
+            .unwrap();
         assert_eq!(first, ("succeeded".into(), 2));
         assert_eq!(failed_count, 3);
+        assert_eq!(second_error.as_deref(), Some("キャラ固有の検証失敗"));
+        assert_eq!(diagnostic.0, "includedBonuses[0].sourceが空です");
+        assert_eq!(
+            serde_json::from_str::<CharacterResearchOutput>(&diagnostic.1).unwrap(),
+            invalid_output
+        );
     }
 
     #[test]

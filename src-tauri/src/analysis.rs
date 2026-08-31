@@ -212,7 +212,7 @@ async fn execute_analysis(context: AnalysisExecution<'_>) -> Result<AnalysisComm
     let mut research_outputs = Vec::new();
     let mut research_warnings = Vec::new();
 
-    let (member_0, member_1, member_2, member_3) = tokio::try_join!(
+    let (member_0, member_1, member_2, member_3) = tokio::join!(
         research_member(
             app,
             database,
@@ -261,12 +261,50 @@ async fn execute_analysis(context: AnalysisExecution<'_>) -> Result<AnalysisComm
             3,
             job_ids.get(3),
         ),
-    )?;
+    );
 
-    for (member_index, member_result) in [member_0, member_1, member_2, member_3]
+    let member_results = [member_0, member_1, member_2, member_3];
+    let mut failures = Vec::new();
+    for (member_index, result) in member_results.iter().enumerate() {
+        let Err(error) = result else {
+            continue;
+        };
+        let status = if cancellation.is_cancelled() {
+            AnalysisStatus::Cancelled
+        } else {
+            AnalysisStatus::Failed
+        };
+        if let Some(job_id) = job_ids.get(member_index) {
+            let _ = database.finish_member_research_job(job_id, status, Some(error));
+        }
+        let character_id = &input.members[member_index].character_id;
+        emit_progress(
+            app,
+            run_id,
+            status,
+            Some(character_id.clone()),
+            Some(if status == AnalysisStatus::Cancelled {
+                "cancelled".into()
+            } else {
+                "failed".into()
+            }),
+            if status == AnalysisStatus::Cancelled {
+                "キャラクター調査をキャンセルしました。"
+            } else {
+                "キャラクター調査に失敗しました。"
+            },
+            Some(error.clone()),
+        );
+        failures.push(format!("{character_id}: {error}"));
+    }
+    if !failures.is_empty() {
+        return Err(failures.join(" / "));
+    }
+    let member_results = member_results
         .into_iter()
-        .enumerate()
-    {
+        .collect::<Result<Vec<_>, String>>()?;
+
+    for (member_index, member_result) in member_results.into_iter().enumerate() {
         let research = member_result.research;
         let variants = member_result.variants;
         for page in research.verified_pages {
@@ -464,8 +502,11 @@ async fn research_member(
             .await;
         let research = match research_result {
             Ok(research) => research,
-            Err(error @ ResearchProviderError::EvidenceVerification(_)) if attempt == 0 => {
-                last_validation_error = Some(error.to_string());
+            Err(ResearchProviderError::InvalidResearchOutput {
+                message, output, ..
+            }) if attempt == 0 => {
+                previous_invalid_output = Some(*output);
+                last_validation_error = Some(message);
                 database
                     .update_member_research_job(job_id, AnalysisStatus::Researching, 0, None)
                     .map_err(|error| error.to_string())?;
@@ -479,6 +520,33 @@ async fn research_member(
                     "根拠情報の整合性を直すため再調査しています。",
                 )?;
                 continue;
+            }
+            Err(error) if attempt == 0 && error.retryable() => {
+                last_validation_error = Some(error.to_string());
+                database
+                    .update_member_research_job(job_id, AnalysisStatus::Researching, 0, None)
+                    .map_err(|error| error.to_string())?;
+                update_character_progress(
+                    app,
+                    database,
+                    run_id,
+                    AnalysisStatus::Researching,
+                    &member.character_id,
+                    "researching",
+                    "一時的な調査失敗を修正するため再試行しています。",
+                )?;
+                continue;
+            }
+            Err(ResearchProviderError::InvalidResearchOutput {
+                message, output, ..
+            }) => {
+                database
+                    .save_research_failure_diagnostic(job_id, &message, &output)
+                    .map_err(|error| error.to_string())?;
+                return Err(format!(
+                    "Codex調査の出力検証に失敗しました ({}): {message}",
+                    member.character_id
+                ));
             }
             Err(error) => return Err(error.to_string()),
         };
@@ -550,7 +618,12 @@ async fn research_member(
                     "候補と根拠の矛盾を解消するため再調査しています。",
                 )?;
             }
-            Err(error) => return Err(error),
+            Err(error) => {
+                database
+                    .save_research_failure_diagnostic(job_id, &error, &research.output)
+                    .map_err(|database_error| database_error.to_string())?;
+                return Err(error);
+            }
         }
     }
     Err(last_validation_error.unwrap_or_else(|| "候補を検証できませんでした".into()))

@@ -1,6 +1,6 @@
 use schemars::{JsonSchema, schema_for};
 use serde::{Deserialize, Serialize};
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use thiserror::Error;
 
 use crate::source_policy::normalize_source_url;
@@ -524,7 +524,11 @@ pub fn validate_character_research_output(
             return Err(invalid("BuildVariantのIDは空でない一意値が必要です"));
         }
         validate_artifact_plan(&variant.artifact_plan)?;
-        validate_main_stat_package(&variant.main_stat_package)?;
+        validate_main_stat_package(
+            &variant.main_stat_package,
+            expected_character_id,
+            &variant.id,
+        )?;
         if !(3..=48).contains(&variant.claims.len()) {
             return Err(invalid(
                 "各候補のclaimsは3件以上48件以下である必要があります",
@@ -613,6 +617,35 @@ pub fn target_stat_key(stat: &str, scope: TargetScope) -> (String, TargetScope) 
     (stat.trim().to_lowercase().replace([' ', '-'], "_"), scope)
 }
 
+/// モデル出力の表記ゆれだけを整え、意味が同じ効果の完全重複を除去する。
+/// 金額や条件が異なる同一sourceは検証エラーとして残し、推測で統合しない。
+pub fn normalize_character_research_output(output: &mut CharacterResearchOutput) {
+    for variant in &mut output.variants {
+        for target in &mut variant.main_stat_package.target_stats {
+            let mut normalized =
+                Vec::<TargetStatBonus>::with_capacity(target.included_bonuses.len());
+            for mut bonus in target.included_bonuses.drain(..) {
+                bonus.source = bonus.source.trim().to_string();
+                bonus.condition = bonus
+                    .condition
+                    .take()
+                    .map(|condition| condition.trim().to_string())
+                    .filter(|condition| !condition.is_empty());
+
+                let is_exact_duplicate = normalized.iter().any(|existing| {
+                    existing.source.to_lowercase() == bonus.source.to_lowercase()
+                        && existing.amount.to_bits() == bonus.amount.to_bits()
+                        && existing.condition == bonus.condition
+                });
+                if !is_exact_duplicate {
+                    normalized.push(bonus);
+                }
+            }
+            target.included_bonuses = normalized;
+        }
+    }
+}
+
 fn validate_artifact_plan(plan: &ArtifactPlan) -> Result<(), DomainValidationError> {
     match plan {
         ArtifactPlan::FourPiece { set_id } if set_id.trim().is_empty() => {
@@ -626,7 +659,11 @@ fn validate_artifact_plan(plan: &ArtifactPlan) -> Result<(), DomainValidationErr
     }
 }
 
-fn validate_main_stat_package(package: &MainStatPackage) -> Result<(), DomainValidationError> {
+fn validate_main_stat_package(
+    package: &MainStatPackage,
+    character_id: &str,
+    variant_id: &str,
+) -> Result<(), DomainValidationError> {
     if [
         package.id.as_str(),
         package.sands.as_str(),
@@ -653,7 +690,7 @@ fn validate_main_stat_package(package: &MainStatPackage) -> Result<(), DomainVal
     }
 
     let mut target_keys = HashSet::new();
-    for target in &package.target_stats {
+    for (target_index, target) in package.target_stats.iter().enumerate() {
         let normalized_stat = target_stat_key(&target.stat, target.scope).0;
         let has_invalid_number = target
             .minimum
@@ -664,20 +701,35 @@ fn validate_main_stat_package(package: &MainStatPackage) -> Result<(), DomainVal
             .note
             .as_deref()
             .is_none_or(|note| note.trim().is_empty());
-        let mut bonus_sources = HashSet::new();
+        let mut bonus_sources = HashMap::new();
         let mut bonus_total = 0.0;
-        for bonus in &target.included_bonuses {
+        for (bonus_index, bonus) in target.included_bonuses.iter().enumerate() {
             let normalized_source = bonus.source.trim().to_lowercase();
-            if normalized_source.is_empty()
-                || !bonus_sources.insert(normalized_source)
-                || !bonus.amount.is_finite()
-                || bonus.amount < 0.0
-                || bonus
-                    .condition
-                    .as_deref()
-                    .is_some_and(|condition| condition.trim().is_empty())
+            let path = format!(
+                "characterId={character_id}, variantId={variant_id}, targetStats[{target_index}]({}), includedBonuses[{bonus_index}]",
+                target.stat
+            );
+            if normalized_source.is_empty() {
+                return Err(invalid(format!("{path}.sourceが空です")));
+            }
+            if let Some(previous_index) = bonus_sources.insert(normalized_source, bonus_index) {
+                return Err(invalid(format!(
+                    "{path}.source「{}」がincludedBonuses[{previous_index}]と重複し、金額または条件が一致しません",
+                    bonus.source
+                )));
+            }
+            if !bonus.amount.is_finite() {
+                return Err(invalid(format!("{path}.amountが有限値ではありません")));
+            }
+            if bonus.amount < 0.0 {
+                return Err(invalid(format!("{path}.amountが負数です")));
+            }
+            if bonus
+                .condition
+                .as_deref()
+                .is_some_and(|condition| condition.trim().is_empty())
             {
-                return Err(invalid("目標ステータスへ含める効果が不正です"));
+                return Err(invalid(format!("{path}.conditionが空文字です")));
             }
             bonus_total += bonus.amount;
         }
@@ -698,9 +750,10 @@ fn validate_main_stat_package(package: &MainStatPackage) -> Result<(), DomainVal
                 .maximum
                 .is_none_or(|maximum| maximum + bonus_total > 100.0 + f64::EPSILON))
         {
-            return Err(invalid(
-                "会心率は戦闘前上限と適用可能な加算の合計を100%以下にする必要があります",
-            ));
+            return Err(invalid(format!(
+                "characterId={character_id}, variantId={variant_id}, targetStats[{target_index}]({})はmaximumとincludedBonusesの合計を100%以下にする必要があります（加算合計: {bonus_total}%）",
+                target.stat
+            )));
         }
     }
     Ok(())
@@ -1045,6 +1098,54 @@ mod tests {
         );
         assert!(validate_character_research_output(&output, "char-b", "7.0").is_err());
 
+        let mut normalized = output.clone();
+        let bonuses =
+            &mut normalized.variants[0].main_stat_package.target_stats[0].included_bonuses;
+        bonuses[0].source = "  氷共鳴  ".into();
+        bonuses[0].condition = Some("  氷元素付着中  ".into());
+        bonuses.push(TargetStatBonus {
+            source: "氷共鳴".into(),
+            amount: 15.0,
+            condition: Some("氷元素付着中".into()),
+        });
+        normalize_character_research_output(&mut normalized);
+        let bonuses = &normalized.variants[0].main_stat_package.target_stats[0].included_bonuses;
+        assert_eq!(bonuses.len(), 1);
+        assert_eq!(bonuses[0].source, "氷共鳴");
+        assert_eq!(bonuses[0].condition.as_deref(), Some("氷元素付着中"));
+        assert_eq!(
+            validate_character_research_output(&normalized, "char-a", "7.0"),
+            Ok(())
+        );
+
+        let mut blank_condition = normalized.clone();
+        blank_condition.variants[0].main_stat_package.target_stats[0].included_bonuses[0]
+            .condition = Some("   ".into());
+        normalize_character_research_output(&mut blank_condition);
+        assert_eq!(
+            blank_condition.variants[0].main_stat_package.target_stats[0].included_bonuses[0]
+                .condition,
+            None
+        );
+
+        let mut conflicting = normalized.clone();
+        conflicting.variants[0].main_stat_package.target_stats[0]
+            .included_bonuses
+            .push(TargetStatBonus {
+                source: "氷共鳴".into(),
+                amount: 10.0,
+                condition: Some("凍結中".into()),
+            });
+        assert!(matches!(
+            validate_character_research_output(&conflicting, "char-a", "7.0"),
+            Err(DomainValidationError::Invalid(message))
+                if message.contains("characterId=char-a")
+                    && message.contains("variantId=variant-a")
+                    && message.contains("targetStats[0](会心率)")
+                    && message.contains("includedBonuses[1]")
+                    && message.contains("重複")
+        ));
+
         let mut canonical_change = output.clone();
         let target = &mut canonical_change.variants[0].main_stat_package.target_stats[0];
         target.note = Some("注記だけを変更".into());
@@ -1119,16 +1220,19 @@ mod tests {
                 },
             ],
         };
-        assert_eq!(validate_main_stat_package(&valid), Ok(()));
+        assert_eq!(
+            validate_main_stat_package(&valid, "char-a", "variant-a"),
+            Ok(())
+        );
 
         let mut over_cap = valid.clone();
         over_cap.target_stats[0].maximum = Some(86.0);
-        assert!(validate_main_stat_package(&over_cap).is_err());
+        assert!(validate_main_stat_package(&over_cap, "char-a", "variant-a").is_err());
 
         let mut missing_bounds = valid.clone();
         missing_bounds.target_stats[1].minimum = None;
         missing_bounds.target_stats[1].maximum = None;
-        assert!(validate_main_stat_package(&missing_bounds).is_err());
+        assert!(validate_main_stat_package(&missing_bounds, "char-a", "variant-a").is_err());
     }
 
     #[test]
