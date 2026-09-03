@@ -16,6 +16,7 @@ const SEARCH_ENDPOINT: &str = "https://api.tavily.com/search";
 const EXTRACT_ENDPOINT: &str = "https://api.tavily.com/extract";
 const ALLOWED_DOMAINS: [&str; 3] = ["wiki.hoyolab.com", "game8.jp", "wikiwiki.jp"];
 const MAX_EXTRACT_URLS: usize = 8;
+const MAX_DIRECT_EXTRACT_URLS: usize = 20;
 const MAX_PAGE_CHARS: usize = 8_000;
 static TAVILY_REQUEST_LIMIT: Semaphore = Semaphore::const_new(4);
 
@@ -226,6 +227,41 @@ pub(crate) async fn fetch_research_context(
         character.name
     );
     extract_pages(&client, &api_key, &selected, &extract_query).await
+}
+
+/// Codex出力で新たに参照された許可済み本文URLを、Tavilyで追加検証する。
+pub(crate) async fn extract_source_urls(
+    urls: &[String],
+    query: &str,
+) -> Result<Vec<TavilyExtractedPage>, TavilyError> {
+    let api_key = match stored_api_key().await {
+        Ok(key) => key,
+        Err(TavilyError::NotConfigured) => return Ok(Vec::new()),
+        Err(error) => return Err(error),
+    };
+    let mut selected = HashMap::<String, SearchResult>::new();
+    for raw_url in urls {
+        let Ok(normalized) = normalize_source_url(raw_url) else {
+            continue;
+        };
+        if !is_direct_content_url(&normalized).unwrap_or(false) {
+            continue;
+        }
+        selected.entry(normalized.clone()).or_insert(SearchResult {
+            title: "Codexが参照した追加根拠".into(),
+            url: normalized,
+            score: 1.0,
+        });
+    }
+    let mut selected = selected.into_values().collect::<Vec<_>>();
+    selected.sort_by(|left, right| left.url.cmp(&right.url));
+    selected.truncate(MAX_DIRECT_EXTRACT_URLS);
+    if selected.is_empty() {
+        return Ok(Vec::new());
+    }
+    let compact_query = query.chars().take(350).collect::<String>();
+    let client = http_client()?;
+    extract_pages(&client, &api_key, &selected, &compact_query).await
 }
 
 async fn stored_api_key() -> Result<String, TavilyError> {

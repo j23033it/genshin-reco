@@ -620,6 +620,7 @@ pub fn target_stat_key(stat: &str, scope: TargetScope) -> (String, TargetScope) 
 /// モデル出力の表記ゆれだけを整え、意味が同じ効果の完全重複を除去する。
 /// 金額や条件が異なる同一sourceは検証エラーとして残し、推測で統合しない。
 pub fn normalize_character_research_output(output: &mut CharacterResearchOutput) {
+    repair_malformed_claim_source_urls(output);
     for variant in &mut output.variants {
         for target in &mut variant.main_stat_package.target_stats {
             let mut normalized =
@@ -644,6 +645,137 @@ pub fn normalize_character_research_output(output: &mut CharacterResearchOutput)
             target.included_bonuses = normalized;
         }
     }
+}
+
+/// `%XX`表現の一部だけが壊れたclaim URLを、同じ出力内の一意なsourceへ戻す。
+///
+/// 数字や通常文字の単純なタイプミスは補修せず、パーセント表現の破損が明確で、
+/// 復号後の編集距離が2文字以内のときだけ参照文字列を置き換える。
+fn repair_malformed_claim_source_urls(output: &mut CharacterResearchOutput) {
+    let source_urls = output
+        .sources
+        .iter()
+        .map(|source| source.source_url.clone())
+        .collect::<Vec<_>>();
+    for claim in output
+        .variants
+        .iter_mut()
+        .flat_map(|variant| variant.claims.iter_mut())
+    {
+        if normalize_source_url(&claim.evidence.source_url).is_ok_and(|claim_url| {
+            source_urls.iter().any(|source_url| {
+                normalize_source_url(source_url).is_ok_and(|source| source == claim_url)
+            })
+        }) {
+            continue;
+        }
+        if let Some(repaired) = unique_percent_encoding_repair(
+            &claim.evidence.source_url,
+            source_urls.iter().map(String::as_str),
+        ) {
+            claim.evidence.source_url = repaired.to_string();
+        }
+    }
+}
+
+fn unique_percent_encoding_repair<'a>(
+    claim_url: &str,
+    source_urls: impl Iterator<Item = &'a str>,
+) -> Option<&'a str> {
+    if !has_broken_percent_encoding(claim_url) {
+        return None;
+    }
+    let claim_host = url::Url::parse(claim_url)
+        .ok()?
+        .host_str()
+        .map(str::to_string)?;
+    let comparable_claim = percent_decode_lossy(claim_url);
+    let mut best: Option<(&str, usize)> = None;
+    let mut tied = false;
+    for source_url in source_urls {
+        let same_host = url::Url::parse(source_url)
+            .ok()
+            .and_then(|url| url.host_str().map(str::to_string))
+            .is_some_and(|host| host == claim_host);
+        if !same_host {
+            continue;
+        }
+        let distance = levenshtein_distance(&comparable_claim, &percent_decode_lossy(source_url));
+        match best {
+            None => {
+                best = Some((source_url, distance));
+                tied = false;
+            }
+            Some((_, best_distance)) if distance < best_distance => {
+                best = Some((source_url, distance));
+                tied = false;
+            }
+            Some((_, best_distance)) if distance == best_distance => tied = true,
+            _ => {}
+        }
+    }
+    best.and_then(|(source_url, distance)| (distance <= 2 && !tied).then_some(source_url))
+}
+
+fn has_broken_percent_encoding(value: &str) -> bool {
+    let bytes = value.as_bytes();
+    let has_percent = bytes.contains(&b'%');
+    let has_invalid_escape = bytes.iter().enumerate().any(|(index, byte)| {
+        *byte == b'%'
+            && (index + 2 >= bytes.len()
+                || !bytes[index + 1].is_ascii_hexdigit()
+                || !bytes[index + 2].is_ascii_hexdigit())
+    });
+    has_invalid_escape || (has_percent && !value.is_ascii())
+}
+
+fn percent_decode_lossy(value: &str) -> String {
+    let bytes = value.as_bytes();
+    let mut decoded = Vec::with_capacity(bytes.len());
+    let mut index = 0;
+    while index < bytes.len() {
+        if bytes[index] == b'%'
+            && index + 2 < bytes.len()
+            && bytes[index + 1].is_ascii_hexdigit()
+            && bytes[index + 2].is_ascii_hexdigit()
+        {
+            let high = hex_value(bytes[index + 1]);
+            let low = hex_value(bytes[index + 2]);
+            decoded.push((high << 4) | low);
+            index += 3;
+        } else {
+            decoded.push(bytes[index]);
+            index += 1;
+        }
+    }
+    String::from_utf8_lossy(&decoded).into_owned()
+}
+
+fn hex_value(value: u8) -> u8 {
+    match value {
+        b'0'..=b'9' => value - b'0',
+        b'a'..=b'f' => value - b'a' + 10,
+        b'A'..=b'F' => value - b'A' + 10,
+        _ => 0,
+    }
+}
+
+fn levenshtein_distance(left: &str, right: &str) -> usize {
+    let right = right.chars().collect::<Vec<_>>();
+    let mut previous = (0..=right.len()).collect::<Vec<_>>();
+    for (left_index, left_char) in left.chars().enumerate() {
+        let mut current = Vec::with_capacity(right.len() + 1);
+        current.push(left_index + 1);
+        for (right_index, right_char) in right.iter().enumerate() {
+            current.push(
+                (previous[right_index + 1] + 1)
+                    .min(current[right_index] + 1)
+                    .min(previous[right_index] + usize::from(left_char != *right_char)),
+            );
+        }
+        previous = current;
+    }
+    previous[right.len()]
 }
 
 fn validate_artifact_plan(plan: &ArtifactPlan) -> Result<(), DomainValidationError> {
@@ -1233,6 +1365,51 @@ mod tests {
         missing_bounds.target_stats[1].minimum = None;
         missing_bounds.target_stats[1].maximum = None;
         assert!(validate_main_stat_package(&missing_bounds, "char-a", "variant-a").is_err());
+    }
+
+    #[test]
+    fn 壊れたpercent表現だけを一意なsourceへ補修する() {
+        let alyosha_source = "https://wikiwiki.jp/genshinwiki/%E3%82%A2%E3%83%AA%E3%83%A7%E3%83%BC%E3%82%B7%E3%83%A3";
+        let alyosha_broken =
+            "https://wikiwiki.jp/genshinwiki/%E3%82%A2%E3%83%AA%E3%83%%E3%83%BC%E3%82%B7%E3%83%A3";
+        let odette_source =
+            "https://wikiwiki.jp/genshinwiki/%E7%89%87%E6%89%8B%E5%89%A3/%E8%92%BC%E8%80%80";
+        let odette_broken =
+            "https://wikiwiki.jp/genshinwiki/%E7%89%87%E6%89%8B%E5%89%A3/%E8%92%BC%E8%80耀";
+
+        assert_eq!(
+            unique_percent_encoding_repair(alyosha_broken, [alyosha_source].into_iter()),
+            Some(alyosha_source)
+        );
+        assert_eq!(
+            unique_percent_encoding_repair(odette_broken, [odette_source].into_iter()),
+            Some(odette_source)
+        );
+    }
+
+    #[test]
+    fn 通常のurl誤字と曖昧な候補は補修しない() {
+        let numeric_typo = "https://game8.jp/genshin/466957";
+        assert_eq!(
+            unique_percent_encoding_repair(
+                numeric_typo,
+                ["https://game8.jp/genshin/466956"].into_iter()
+            ),
+            None
+        );
+
+        let broken = "https://wikiwiki.jp/genshinwiki/%E3%82%A2%E3%83%";
+        assert_eq!(
+            unique_percent_encoding_repair(
+                broken,
+                [
+                    "https://wikiwiki.jp/genshinwiki/%E3%82%A2%E3%83%AA",
+                    "https://wikiwiki.jp/genshinwiki/%E3%82%A2%E3%83%AB",
+                ]
+                .into_iter()
+            ),
+            None
+        );
     }
 
     #[test]

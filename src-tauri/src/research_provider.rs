@@ -8,7 +8,13 @@ use crate::reconciler::VerifiedSourcePage;
 use crate::source_policy::normalize_source_url;
 use crate::tavily::{self, TavilyExtractedPage};
 use serde::Serialize;
-use std::{collections::HashMap, error::Error, fmt, future::Future, pin::Pin};
+use std::{
+    collections::{HashMap, HashSet},
+    error::Error,
+    fmt,
+    future::Future,
+    pin::Pin,
+};
 use tauri::Manager;
 use url::Url;
 
@@ -200,11 +206,45 @@ impl CodexResearchProvider {
                     }
                 }
             })?;
-            let verified_pages = build_verified_pages(&observed.output, &prefetched_pages)
-                .map_err(|error| ResearchProviderError::InvalidResearchOutput {
-                    character_id: request.character_id.clone(),
-                    message: error.to_string(),
-                    output: Box::new(observed.output.clone()),
+            let mut extracted_pages = prefetched_pages;
+            let missing_urls =
+                missing_source_urls(&observed.output, &observed.opened_urls, &extracted_pages);
+            if !missing_urls.is_empty() {
+                let query = format!(
+                    "原神 {}のビルド、武器、天賦、聖遺物、目標ステータスの数値根拠",
+                    request.character_id
+                );
+                if let Ok(additional_pages) =
+                    tavily::extract_source_urls(&missing_urls, &query).await
+                {
+                    for page in additional_pages {
+                        let already_extracted = extracted_pages.iter().any(|current| {
+                            normalize_source_url(&current.source_url).ok()
+                                == normalize_source_url(&page.source_url).ok()
+                        });
+                        if !already_extracted {
+                            extracted_pages.push(page);
+                        }
+                    }
+                }
+            }
+            app_server::validate_research_source_pages(
+                &observed.output,
+                &observed.opened_urls,
+                &extracted_pages,
+            )
+            .map_err(|message| ResearchProviderError::InvalidResearchOutput {
+                character_id: request.character_id.clone(),
+                message,
+                output: Box::new(observed.output.clone()),
+            })?;
+            let verified_pages =
+                build_verified_pages(&observed.output, &extracted_pages).map_err(|error| {
+                    ResearchProviderError::InvalidResearchOutput {
+                        character_id: request.character_id.clone(),
+                        message: error.to_string(),
+                        output: Box::new(observed.output.clone()),
+                    }
                 })?;
             Ok(VerifiedCharacterResearch {
                 output: observed.output,
@@ -284,6 +324,24 @@ fn build_verified_pages(
         });
     }
     Ok(verified_pages)
+}
+
+fn missing_source_urls(
+    output: &CharacterResearchOutput,
+    opened_urls: &[String],
+    extracted_pages: &[TavilyExtractedPage],
+) -> Vec<String> {
+    let known_urls = opened_urls
+        .iter()
+        .chain(extracted_pages.iter().map(|page| &page.source_url))
+        .filter_map(|url| normalize_source_url(url).ok())
+        .collect::<HashSet<_>>();
+    output
+        .sources
+        .iter()
+        .filter_map(|source| normalize_source_url(&source.source_url).ok())
+        .filter(|url| !known_urls.contains(url))
+        .collect()
 }
 
 /// 決められたfixtureを使う、ネットワーク不要の調査プロバイダ。
@@ -648,6 +706,31 @@ mod tests {
             pages[0].source_url,
             "https://wikiwiki.jp/genshinwiki/example"
         );
+    }
+
+    #[test]
+    fn 未閲覧sourceだけをtavily追加抽出対象にする() {
+        let mut output = valid_output("char-a");
+        output.sources.push(ResearchSourcePage {
+            source_url: "https://game8.jp/genshin/466956".into(),
+            title: "追加根拠".into(),
+            publisher: "Game8".into(),
+            game_version: "7.0".into(),
+            updated_at: None,
+        });
+        let opened = vec!["https://wikiwiki.jp/genshinwiki/example#build".into()];
+
+        assert_eq!(
+            missing_source_urls(&output, &opened, &[]),
+            vec!["https://game8.jp/genshin/466956"]
+        );
+
+        let extracted = [TavilyExtractedPage {
+            source_url: "https://game8.jp/genshin/466956".into(),
+            title: "追加根拠".into(),
+            content: "抽出済み本文".into(),
+        }];
+        assert!(missing_source_urls(&output, &opened, &extracted).is_empty());
     }
 
     fn futures_block_on<F: Future>(future: F) -> F::Output {

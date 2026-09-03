@@ -979,16 +979,6 @@ pub(crate) async fn research_character_with_codex(
                 observed.output,
             ));
         }
-        if let Err(error) = validate_observed_source_pages(
-            &observed.output,
-            &observed.opened_urls,
-            prefetched_pages,
-        ) {
-            return Err(CodexCharacterResearchFailure::invalid_output(
-                error.to_string(),
-                observed.output,
-            ));
-        }
         Ok(observed)
     }
     .await;
@@ -1289,6 +1279,15 @@ fn validate_observed_source_pages(
         }
     }
     Ok(())
+}
+
+pub(crate) fn validate_research_source_pages(
+    output: &CharacterResearchOutput,
+    opened_urls: &[String],
+    prefetched_pages: &[TavilyExtractedPage],
+) -> Result<(), String> {
+    validate_observed_source_pages(output, opened_urls, prefetched_pages)
+        .map_err(|error| error.to_string())
 }
 
 async fn run_gate0_smoke(
