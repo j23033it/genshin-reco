@@ -68,7 +68,7 @@ try {
   $env:TAURI_SIGNING_PRIVATE_KEY = $key
   $env:CARGO_TARGET_DIR = Join-Path $env:USERPROFILE '.cache/genshin-reco/target'
 
-  npm ci
+  npm install
   if ($LASTEXITCODE -ne 0) { throw '依存関係の準備に失敗しました。' }
   npm run check
   if ($LASTEXITCODE -ne 0) { throw '検査に失敗したため公開物を作りません。' }
