@@ -225,7 +225,7 @@ pub(crate) struct ObservedCharacterResearch {
 pub(crate) struct CodexCharacterResearchFailure {
     pub message: String,
     pub retryable: bool,
-    pub invalid_output: Option<CharacterResearchOutput>,
+    pub invalid_output: Option<Box<CharacterResearchOutput>>,
 }
 
 impl CodexCharacterResearchFailure {
@@ -242,7 +242,7 @@ impl CodexCharacterResearchFailure {
         Self {
             message,
             retryable: true,
-            invalid_output: Some(output),
+            invalid_output: Some(Box::new(output)),
         }
     }
 }
