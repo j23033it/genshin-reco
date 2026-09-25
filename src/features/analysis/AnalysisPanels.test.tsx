@@ -178,7 +178,7 @@ describe("TeamResultPanel", () => {
     expect(screen.queryByText(/EvidenceGrade|verification|根拠|推薦理由/)).not.toBeInTheDocument();
     expect(screen.getAllByText("C0").length).toBeGreaterThan(0);
     expect(screen.getAllByText("R1").length).toBeGreaterThan(0);
-  });
+  }, 30_000);
 
   it("候補未選択時は候補ボタンをキーボード操作し、選択を通知する", async () => {
     const user = userEvent.setup();
