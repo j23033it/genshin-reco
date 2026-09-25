@@ -66,7 +66,7 @@ try {
     throw "署名用の秘密鍵が見つかりません: $key"
   }
   $env:TAURI_SIGNING_PRIVATE_KEY = $key
-  $env:CARGO_TARGET_DIR = Join-Path $env:USERPROFILE '.cache/genshin-reco/target'
+  & (Join-Path $PSScriptRoot 'use-cargo-target.ps1')
 
   npm install
   if ($LASTEXITCODE -ne 0) { throw '依存関係の準備に失敗しました。' }

@@ -19,9 +19,12 @@ npm install
 npm run dev
 npm run test
 npm run build
+./scripts/use-cargo-target.ps1
 npm run tauri dev
 npm run check
 ```
+
+Rust/Tauriを使うPowerShellでは、`tauri dev`や`check`の前にビルド先設定を一度実行する。作業フォルダごとに別のビルド先を選ぶため、移動前の絶対パスを持つ古い生成物を再利用しない。正式版の公開スクリプトはこの設定を内部で実行する。
 
 ## 基本の流れ
 
