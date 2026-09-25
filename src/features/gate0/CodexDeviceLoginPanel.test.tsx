@@ -124,6 +124,29 @@ describe("CodexDeviceLoginPanel", () => {
     expect(readMock).toHaveBeenCalledTimes(2);
   });
 
+  it("完了通知だけでは成功扱いにせず、認証状態の反映を待つ", async () => {
+    vi.useFakeTimers();
+    readMock
+      .mockResolvedValueOnce({ ...pendingStatus, loginCompleted: true })
+      .mockResolvedValueOnce({ ...pendingStatus, authenticated: true });
+    const onRecheck = vi.fn();
+    render(<CodexDeviceLoginPanel onRecheck={onRecheck} />);
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "ログインを開始" }));
+    });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(2000);
+    });
+    expect(onRecheck).not.toHaveBeenCalled();
+    expect(screen.getByText(challenge.userCode)).toBeInTheDocument();
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(2000);
+    });
+    expect(onRecheck).toHaveBeenCalledTimes(1);
+  });
+
   it("認証を取消して開始状態へ戻る", async () => {
     const user = userEvent.setup();
     render(<CodexDeviceLoginPanel onRecheck={vi.fn()} />);

@@ -19,6 +19,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { cn } from "../../lib/cn";
+import { ResearchConditionsEditor } from "./ResearchConditionsEditor";
 import { researchRepository } from "./researchRepository";
 import { useResearchChat } from "./useResearchChat";
 import type {
@@ -104,7 +105,7 @@ function EmptyConversation({ onUseExample }: { onUseExample: () => void }) {
         調べたい4人を教えてください
       </h1>
       <p className="mt-4 max-w-xl text-pretty leading-7 text-slate-400">
-        4人の名前を送ると、Codexが不足している武器や凸数だけを確認します。情報が揃った編成だけ、この端末へ保存します。
+        4人の名前を送った後、凸と武器を画面で選べます。武器が決まっていなくても調査できます。
       </p>
       <button
         type="button"
@@ -748,7 +749,17 @@ export function ResearchChatPrototype({
                   調査をキャンセルしました。条件を直すか、もう一度調査できます。
                 </p>
               ) : null}
-              {["ready", "failed", "cancelled"].includes(
+              {chat.conversation.members.length === 4 &&
+              ["ready", "failed", "cancelled"].includes(
+                chat.conversation.status,
+              ) ? (
+                <ResearchConditionsEditor
+                  key={`${chat.conversation.sessionId}:${chat.conversation.updatedAt}`}
+                  conversation={chat.conversation}
+                  disabled={chat.busy}
+                  onResearch={(members) => void chat.start(members)}
+                />
+              ) : ["ready", "failed", "cancelled"].includes(
                 chat.conversation.status,
               ) ? (
                 <button

@@ -13,6 +13,14 @@ export interface ResearchMember {
   imageUrl?: string | null;
 }
 
+export interface ResearchMemberInput {
+  slotIndex: number;
+  name: string;
+  weapon?: string | null;
+  constellation?: number | null;
+  refinement?: number | null;
+}
+
 export interface ResearchConversation {
   sessionId: string;
   status:
@@ -27,13 +35,7 @@ export interface ResearchConversation {
     content: string;
     createdAt: string;
   }[];
-  members: {
-    slotIndex: number;
-    name: string;
-    weapon?: string | null;
-    constellation?: number | null;
-    refinement?: number | null;
-  }[];
+  members: ResearchMemberInput[];
   teamId?: string | null;
   error?: string | null;
   createdAt: string;
@@ -86,6 +88,10 @@ export interface ResearchRepository {
   sendMessage(
     message: string,
     sessionId?: string,
+  ): Promise<ResearchConversation>;
+  updateConditions(
+    sessionId: string,
+    members: ResearchMemberInput[],
   ): Promise<ResearchConversation>;
   startResearch(sessionId: string): Promise<ResearchedTeamRecord>;
   cancelResearch(sessionId: string): Promise<void>;

@@ -5,6 +5,7 @@ import {
   render,
   screen,
   waitFor,
+  within,
 } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
@@ -15,6 +16,23 @@ import type {
   ResearchRepository,
   ResearchedTeamRecord,
 } from "./types";
+
+vi.mock("../catalog/loadCatalog", () => ({
+  loadCatalog: vi.fn(async () => ({
+    schemaVersion: "catalog-v2",
+    gameVersion: "7.0",
+    catalogUpdatedAt: "2026-08-24",
+    characters: [
+      { id: "a", name: "アルレッキーノ", element: "炎", weaponType: "長柄武器", rarity: 5, imageUrl: "" },
+      { id: "b", name: "夜蘭", element: "水", weaponType: "弓", rarity: 5, imageUrl: "" },
+    ],
+    weapons: [
+      { id: "spear", name: "赤月のシルエット", weaponType: "長柄武器", rarity: 5, imageUrl: "" },
+      { id: "bow", name: "若水", weaponType: "弓", rarity: 5, imageUrl: "" },
+    ],
+    artifactSets: [],
+  })),
+}));
 
 const conversation: ResearchConversation = {
   sessionId: "session-1",
@@ -67,6 +85,10 @@ function setupRepository() {
   const repository: ResearchRepository = {
     mode: "tauri",
     sendMessage: vi.fn(async () => conversation),
+    updateConditions: vi.fn(async (_sessionId, members) => ({
+      ...conversation,
+      members,
+    })),
     startResearch: vi.fn(async () => record),
     cancelResearch: vi.fn(async () => {}),
     listTeams: vi.fn(async () => []),
@@ -95,6 +117,38 @@ async function send(
 }
 
 describe("実データの編成調査UI", () => {
+  it("4人が揃うと凸と武器を選べ、指定なしを保ったまま保存してから調査する", async () => {
+    const user = userEvent.setup();
+    const { repository } = setupRepository();
+    vi.mocked(repository.sendMessage).mockResolvedValueOnce({
+      ...conversation,
+      members: ["アルレッキーノ", "夜蘭", "ベネット", "鍾離"].map((name, slotIndex) => ({
+        slotIndex,
+        name,
+        weapon: slotIndex === 1 ? "若水" : null,
+      })),
+    });
+    render(<ResearchChatPrototype repository={repository} />);
+    await send(user, "アルレッキーノ、夜蘭、ベネット、鍾離");
+    const attacker = await screen.findByRole("group", { name: "アルレッキーノの条件" });
+    expect(within(attacker).getByRole("button", { name: "アルレッキーノ：指定なし" })).toHaveAttribute("aria-pressed", "true");
+    await user.click(within(attacker).getByRole("button", { name: "アルレッキーノ：2凸" }));
+    const weapon = within(attacker).getByRole("combobox", { name: "武器" });
+    expect(within(weapon).queryByRole("option", { name: "若水" })).not.toBeInTheDocument();
+    await user.selectOptions(weapon, "赤月のシルエット");
+    await user.selectOptions(weapon, "");
+    await user.selectOptions(weapon, "赤月のシルエット");
+    const hydro = screen.getByRole("group", { name: "夜蘭の条件" });
+    await user.selectOptions(within(hydro).getByRole("combobox", { name: "武器" }), "");
+    await user.click(screen.getByRole("button", { name: "この条件で調査する" }));
+    await waitFor(() => expect(repository.updateConditions).toHaveBeenCalledOnce());
+    const [sessionId, selected] = vi.mocked(repository.updateConditions).mock.calls[0];
+    expect(sessionId).toBe("session-1");
+    expect(selected[0]).toMatchObject({ constellation: 2, weapon: "赤月のシルエット", refinement: null });
+    expect(selected[1]).toMatchObject({ weapon: null, refinement: null });
+    await waitFor(() => expect(repository.startResearch).toHaveBeenCalledWith("session-1"));
+  });
+
   it("不足情報を確認し、同じ会話へ追加して準備完了になったときだけ開始できる", async () => {
     const user = userEvent.setup();
     const { repository } = setupRepository();

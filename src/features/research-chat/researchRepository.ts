@@ -6,6 +6,8 @@ export const researchRepository: ResearchRepository = {
   mode: "tauri",
   sendMessage: (message, sessionId) =>
     invoke("send_on_demand_message", { sessionId, message }),
+  updateConditions: (sessionId, members) =>
+    invoke("update_on_demand_conditions", { sessionId, members }),
   startResearch: (sessionId) =>
     invoke("start_on_demand_research", { sessionId }),
   cancelResearch: (sessionId) =>

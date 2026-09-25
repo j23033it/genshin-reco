@@ -33,9 +33,9 @@ use tokio::{
 
 const MINIMUM_CODEX_MAJOR: u64 = 0;
 const MINIMUM_CODEX_MINOR: u64 = 143;
-const DEFAULT_CODEX_MODEL: &str = "gpt-5.6-luna";
-const DEFAULT_REASONING_EFFORT: &str = "medium";
-const FAST_REASONING_EFFORT: &str = "low";
+const DEFAULT_CODEX_MODEL: &str = "gpt-6-luna";
+const DEFAULT_REASONING_EFFORT: &str = "max";
+const FAST_REASONING_EFFORT: &str = "max";
 const RPC_TIMEOUT: Duration = Duration::from_secs(15);
 const TURN_TIMEOUT: Duration = Duration::from_secs(600);
 const MAX_DIAGNOSTIC_LINES: usize = 100;
@@ -50,16 +50,15 @@ hide_agent_reasoning = true
 check_for_update_on_startup = false
 approval_policy = "never"
 sandbox_mode = "read-only"
+service_tier = "fast"
 
 [history]
 persistence = "none"
 
 [features]
+fast_mode = true
 shell_tool = false
 skill_mcp_dependency_install = false
-
-[tools]
-view_image = false
 
 [tools.web_search]
 context_size = "medium"
@@ -2119,20 +2118,14 @@ mod tests {
     }
 
     #[test]
-    fn 通常と高速と再修正で推論量を切り替える() {
+    fn 通常と高速と再修正で最大推論量を使う() {
         assert_eq!(
             research_reasoning_effort(AnalysisMode::Normal, false),
-            "medium"
+            "max"
         );
-        assert_eq!(research_reasoning_effort(AnalysisMode::Fast, false), "low");
-        assert_eq!(
-            research_reasoning_effort(AnalysisMode::Normal, true),
-            "medium"
-        );
-        assert_eq!(
-            research_reasoning_effort(AnalysisMode::Fast, true),
-            "medium"
-        );
+        assert_eq!(research_reasoning_effort(AnalysisMode::Fast, false), "max");
+        assert_eq!(research_reasoning_effort(AnalysisMode::Normal, true), "max");
+        assert_eq!(research_reasoning_effort(AnalysisMode::Fast, true), "max");
     }
 
     #[test]
@@ -2897,6 +2890,8 @@ mod tests {
             .expect("設定を読めること");
         assert!(config.contains("forced_login_method = \"chatgpt\""));
         assert!(config.contains("cli_auth_credentials_store = \"file\""));
+        assert!(config.contains("service_tier = \"fast\""));
+        assert!(config.contains("fast_mode = true"));
         assert!(config.contains("persistence = \"none\""));
         assert!(config.contains("shell_tool = false"));
         assert!(codex_home.join("workspace").join("AGENTS.md").is_file());
@@ -3010,5 +3005,124 @@ mod tests {
             }
         }
         assert!(removed, "一時Codexホームを削除できること");
+    }
+
+    #[tokio::test]
+    #[ignore = "GENSHIN_RECO_CODEX_HOMEで指定した認証済み環境と実Web検索を使う"]
+    async fn 実codexで認証済み検索を完了できる() {
+        let codex_home = PathBuf::from(
+            std::env::var_os("GENSHIN_RECO_CODEX_HOME")
+                .expect("GENSHIN_RECO_CODEX_HOMEを指定すること"),
+        );
+        let codex = detect_codex().await.expect("Codexを検出できること");
+        let mut session = JsonlRpcSession::start(&codex, &codex_home)
+            .await
+            .expect("App Serverを起動できること");
+        let initialized = session
+            .request(
+                0,
+                "initialize",
+                Some(json!({
+                    "clientInfo": {
+                        "name": "genshin_reco_live_search_test",
+                        "title": "原神 編成調査の実検索確認",
+                        "version": env!("CARGO_PKG_VERSION")
+                    }
+                })),
+            )
+            .await
+            .expect("初期化できること");
+        validate_codex_home(&initialized, &codex_home).expect("分離ホームが一致すること");
+        session
+            .notify("initialized", json!({}))
+            .await
+            .expect("初期化完了を通知できること");
+        let account = session
+            .request(1, "account/read", Some(json!({ "refreshToken": false })))
+            .await
+            .expect("認証状態を確認できること");
+        assert_eq!(
+            parse_account(&account)
+                .expect("認証応答を解析できること")
+                .auth_mode
+                .as_deref(),
+            Some("chatgpt")
+        );
+
+        let thread = session
+            .request(
+                2,
+                "thread/start",
+                Some(json!({
+                    "model": DEFAULT_CODEX_MODEL,
+                    "cwd": codex_home.join("workspace"),
+                    "approvalPolicy": "never",
+                    "sandbox": "read-only",
+                    "serviceName": "genshin_reco_live_search_test",
+                    "developerInstructions": "Web検索だけを使い、原神の個別本文ページを開いてください。",
+                    "ephemeral": true,
+                    "experimentalRawEvents": false,
+                    "persistExtendedHistory": false
+                })),
+            )
+            .await
+            .expect("調査スレッドを開始できること");
+        let thread_id =
+            required_json_string(&thread, &["thread", "id"]).expect("スレッドIDを取得できること");
+        let turn = session
+            .request(
+                3,
+                "turn/start",
+                Some(json!({
+                    "threadId": thread_id,
+                    "model": DEFAULT_CODEX_MODEL,
+                    "effort": DEFAULT_REASONING_EFFORT,
+                    "input": [{
+                        "type": "text",
+                        "text": "Web検索でHoYoWikiの原神の個別ページを1つ開き、確認したURLをsourceUrlに入れてください。",
+                        "text_elements": []
+                    }],
+                    "outputSchema": {
+                        "type": "object",
+                        "properties": { "sourceUrl": { "type": "string" } },
+                        "required": ["sourceUrl"],
+                        "additionalProperties": false
+                    }
+                })),
+            )
+            .await
+            .expect("検索ターンを開始できること");
+        let turn_id =
+            required_json_string(&turn, &["turn", "id"]).expect("ターンIDを取得できること");
+        let completion = session
+            .wait_for_turn_completion(&thread_id, &turn_id)
+            .await
+            .expect("検索ターンが完了すること");
+        assert_eq!(completion["params"]["turn"]["status"], "completed");
+        let observed = session.take_turn_observations(&thread_id, &turn_id).await;
+        assert!(
+            observed.rerouted_to.is_none(),
+            "指定モデルから別モデルへ切り替わっていないこと: {:?}",
+            observed.rerouted_to
+        );
+        assert!(observed.web_search_observed, "Web検索イベントがあること");
+        assert!(
+            !observed.opened_urls.is_empty(),
+            "本文閲覧イベントがあること"
+        );
+        let output: Value = serde_json::from_str(
+            observed
+                .agent_message
+                .as_deref()
+                .expect("構造化出力があること"),
+        )
+        .expect("構造化出力を解析できること");
+        let source_url = output["sourceUrl"].as_str().expect("根拠URLがあること");
+        assert!(
+            observed.opened_urls.iter().any(|url| url == source_url),
+            "出力URLの本文閲覧イベントがあること: {source_url}; 観測: {:?}",
+            observed.opened_urls
+        );
+        session.shutdown().await;
     }
 }

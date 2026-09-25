@@ -47,11 +47,6 @@ export function CodexDeviceLoginPanel({ onRecheck }: { onRecheck: () => void }) 
           return;
         }
 
-        if (result.loginCompleted === true) {
-          setLoginState({ status: "success" });
-          return;
-        }
-
         if (result.loginError || result.loginCompleted === false) {
           setLoginState({
             status: "error",
@@ -160,12 +155,21 @@ export function CodexDeviceLoginPanel({ onRecheck }: { onRecheck: () => void }) 
       {(loginState.status === "active" || loginState.status === "cancelling") && (
         <div className="mt-4 space-y-4">
           <p className="text-pretty text-sm leading-6 text-amber-200">
-            表示されたURLをブラウザで開き、次のコードを入力してください。このアプリはブラウザを自動で開きません。
+            次のURLをブラウザで開き、コードを入力してください。コードはこの画面だけで扱ってください。
           </p>
           <dl className="grid gap-3 sm:grid-cols-2">
             <div className="min-w-0 rounded-lg border border-amber-300/30 bg-slate-950/50 p-3 sm:col-span-2">
               <dt className="text-sm text-amber-200/80">認証URL</dt>
-              <dd className="mt-2 break-all font-mono text-sm text-slate-100">{loginState.challenge.verificationUrl}</dd>
+              <dd className="mt-2 break-all font-mono text-sm text-slate-100">
+                <a
+                  href={loginState.challenge.verificationUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline underline-offset-4 hover:text-amber-200"
+                >
+                  {loginState.challenge.verificationUrl}
+                </a>
+              </dd>
             </div>
             <div className="min-w-0 rounded-lg border border-amber-300/30 bg-slate-950/50 p-3">
               <dt className="text-sm text-amber-200/80">ユーザーコード</dt>

@@ -45,6 +45,7 @@ pub fn run() {
             analysis::start_analysis,
             analysis::cancel_analysis,
             on_demand::send_on_demand_message,
+            on_demand::update_on_demand_conditions,
             on_demand::start_on_demand_research,
             on_demand::cancel_on_demand_research,
             on_demand::list_researched_teams,

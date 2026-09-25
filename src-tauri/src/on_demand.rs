@@ -6,8 +6,8 @@ use crate::{
     database::{Database, new_id, timestamp},
     on_demand_domain::{
         OnDemandResearchProgress, ResearchConversation, ResearchConversationStatus, ResearchIntake,
-        ResearchMessage, ResearchMessageRole, ResearchedTeamDraft, ResearchedTeamRecord,
-        ResearchedTeamSummary,
+        ResearchMemberInput, ResearchMessage, ResearchMessageRole, ResearchedTeamDraft,
+        ResearchedTeamRecord, ResearchedTeamSummary,
     },
 };
 use std::collections::HashMap;
@@ -87,6 +87,113 @@ pub async fn send_on_demand_message(
             Err(error)
         }
     }
+}
+
+#[tauri::command]
+pub async fn update_on_demand_conditions(
+    coordinator: State<'_, OnDemandResearchCoordinator>,
+    database: State<'_, Database>,
+    session_id: String,
+    members: Vec<ResearchMemberInput>,
+) -> Result<ResearchConversation, String> {
+    let active = coordinator.active.lock().await;
+    if active.contains_key(&session_id) {
+        return Err("調査中のため、完了またはキャンセル後に条件を変更してください".into());
+    }
+    let mut conversation = database
+        .load_on_demand_conversation(&session_id)
+        .map_err(|error| error.to_string())?
+        .ok_or_else(|| "指定された編成チャットが見つかりません".to_string())?;
+    if conversation.status == ResearchConversationStatus::Researching {
+        return Err("調査中のため、完了またはキャンセル後に条件を変更してください".into());
+    }
+    if apply_conditions(&mut conversation, members)? {
+        database
+            .save_on_demand_conversation(&conversation)
+            .map_err(|error| error.to_string())?;
+    }
+    Ok(conversation)
+}
+
+fn apply_conditions(
+    conversation: &mut ResearchConversation,
+    mut members: Vec<ResearchMemberInput>,
+) -> Result<bool, String> {
+    if conversation.members.len() != 4 || members.len() != 4 {
+        return Err("4人のキャラクターが揃ってから条件を選んでください".into());
+    }
+    for (original, member) in conversation.members.iter().zip(&mut members) {
+        if original.slot_index != member.slot_index || original.name.trim() != member.name.trim() {
+            return Err("キャラクターの変更はチャットから指定してください".into());
+        }
+        member.name = original.name.clone();
+        member.weapon = member
+            .weapon
+            .take()
+            .map(|weapon| weapon.trim().to_string())
+            .filter(|weapon| !weapon.is_empty());
+        if member.weapon.is_none() {
+            member.refinement = None;
+        }
+    }
+    ResearchIntake {
+        members: members.clone(),
+        missing_fields: Vec::new(),
+        ready_to_research: true,
+    }
+    .validate()?;
+    if conversation.members == members {
+        return Ok(false);
+    }
+
+    conversation.missing_fields = members
+        .iter()
+        .flat_map(|member| {
+            let mut missing = Vec::new();
+            if member.constellation.is_none() {
+                missing.push(format!("{}の凸", member.name));
+            }
+            if member.weapon.is_none() {
+                missing.push(format!("{}の武器", member.name));
+            } else if member.refinement.is_none() {
+                missing.push(format!("{}の精錬", member.name));
+            }
+            missing
+        })
+        .collect();
+    let description = members
+        .iter()
+        .map(|member| {
+            let constellation = member
+                .constellation
+                .map(|value| format!("{value}凸"))
+                .unwrap_or_else(|| "凸は指定なし".into());
+            let weapon = member
+                .weapon
+                .as_deref()
+                .map(|name| format!("武器は{name}"))
+                .unwrap_or_else(|| "武器は指定なし".into());
+            let refinement = member
+                .refinement
+                .map(|value| format!("R{value}"))
+                .unwrap_or_else(|| "精錬は指定なし".into());
+            format!(
+                "{}：{}、{}、{}",
+                member.name, constellation, weapon, refinement
+            )
+        })
+        .collect::<Vec<_>>()
+        .join("\n");
+    conversation.messages.push(ResearchMessage {
+        role: ResearchMessageRole::User,
+        content: format!("画面で選んだ条件（指定なしは未確定）：\n{description}"),
+        created_at: timestamp(),
+    });
+    conversation.members = members;
+    conversation.status = ResearchConversationStatus::Ready;
+    conversation.error = None;
+    conversation.updated_at = timestamp();
+    Ok(true)
 }
 
 #[tauri::command]
@@ -291,4 +398,75 @@ fn emit_progress(
             member_name,
         },
     );
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn conversation() -> ResearchConversation {
+        ResearchConversation {
+            session_id: "session-1".into(),
+            status: ResearchConversationStatus::Ready,
+            messages: Vec::new(),
+            members: ["アルレッキーノ", "夜蘭", "ベネット", "鍾離"]
+                .into_iter()
+                .enumerate()
+                .map(|(slot_index, name)| ResearchMemberInput {
+                    slot_index: slot_index as u8,
+                    name: name.into(),
+                    weapon: None,
+                    constellation: None,
+                    refinement: None,
+                })
+                .collect(),
+            missing_fields: Vec::new(),
+            team_id: None,
+            error: None,
+            created_at: "created".into(),
+            updated_at: "updated".into(),
+        }
+    }
+
+    #[test]
+    fn uiの凸と武器を保存し指定なしで古い精錬も消す() {
+        let mut conversation = conversation();
+        conversation.members[1].weapon = Some("若水".into());
+        conversation.members[1].refinement = Some(3);
+        let mut selected = conversation.members.clone();
+        selected[0].constellation = Some(2);
+        selected[0].weapon = Some("赤月のシルエット".into());
+        selected[1].weapon = None;
+
+        assert!(apply_conditions(&mut conversation, selected).unwrap());
+        assert_eq!(conversation.members[0].constellation, Some(2));
+        assert_eq!(
+            conversation.members[0].weapon.as_deref(),
+            Some("赤月のシルエット")
+        );
+        assert_eq!(conversation.members[1].weapon, None);
+        assert_eq!(conversation.members[1].refinement, None);
+        assert_eq!(conversation.status, ResearchConversationStatus::Ready);
+        assert!(conversation.missing_fields.contains(&"夜蘭の武器".into()));
+        assert!(conversation.messages[0].content.contains("武器は指定なし"));
+    }
+
+    #[test]
+    fn uiからキャラクター名を変更できない() {
+        let mut conversation = conversation();
+        let mut selected = conversation.members.clone();
+        selected[0].name = "別のキャラ".into();
+
+        assert!(apply_conditions(&mut conversation, selected).is_err());
+        assert!(conversation.messages.is_empty());
+    }
+
+    #[test]
+    fn 同じ条件なら会話に重複記録しない() {
+        let mut conversation = conversation();
+        let selected = conversation.members.clone();
+
+        assert!(!apply_conditions(&mut conversation, selected).unwrap());
+        assert!(conversation.messages.is_empty());
+    }
 }

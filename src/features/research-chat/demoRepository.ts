@@ -16,7 +16,7 @@ export function createDemoResearchRepository(): ResearchRepository {
       const previous = sessionId ? sessions.get(sessionId) : undefined;
       const conversation: ResearchConversation = {
         sessionId: sessionId ?? crypto.randomUUID(),
-        status: previous ? "ready" : "collecting",
+        status: "ready",
         members: DEMO_TEAM.map((member, slotIndex) => ({
           slotIndex,
           name: member.name,
@@ -28,7 +28,7 @@ export function createDemoResearchRepository(): ResearchRepository {
             role: "assistant",
             content: previous
               ? "デモの条件を確認しました。調査を開始できます。"
-              : "これは固定の4人を使うデモです。武器と凸数を教えてください。未指定でよければ、その旨を入力してください。",
+              : "これは固定の4人を使うデモです。下の画面で凸と武器を選んでください。指定なしでも進められます。",
             createdAt: now,
           },
         ],
@@ -36,6 +36,19 @@ export function createDemoResearchRepository(): ResearchRepository {
         updatedAt: now,
       };
       sessions.set(conversation.sessionId, conversation);
+      return conversation;
+    },
+    async updateConditions(sessionId, members) {
+      const previous = sessions.get(sessionId);
+      if (!previous) throw new Error("デモの会話が見つかりません。");
+      const now = new Date().toISOString();
+      const conversation: ResearchConversation = {
+        ...previous,
+        status: "ready",
+        members,
+        updatedAt: now,
+      };
+      sessions.set(sessionId, conversation);
       return conversation;
     },
     async startResearch(sessionId) {

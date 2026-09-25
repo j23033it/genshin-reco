@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type {
   ResearchConversation,
+  ResearchMemberInput,
   ResearchProgress,
   ResearchRepository,
   ResearchStage,
@@ -123,7 +124,7 @@ export function useResearchChat(repository: ResearchRepository) {
     }
   }
 
-  async function start() {
+  async function start(members?: ResearchMemberInput[]) {
     if (
       !conversation ||
       !["ready", "failed", "cancelled"].includes(conversation.status)
@@ -132,11 +133,16 @@ export function useResearchChat(repository: ResearchRepository) {
     const request = begin();
     if (request === null) return;
     setProgress(null);
-    setStage("researching");
     let stop: (() => void) | undefined;
     try {
+      const selectedConversation = members
+        ? await repository.updateConditions(conversation.sessionId, members)
+        : conversation;
+      if (!current(request)) return;
+      setConversation(selectedConversation);
+      setStage("researching");
       const unlisten = await repository.subscribeProgress((event) => {
-        if (current(request) && event.sessionId === conversation.sessionId)
+        if (current(request) && event.sessionId === selectedConversation.sessionId)
           setProgress(event);
       });
       let stopped = false;
@@ -148,7 +154,7 @@ export function useResearchChat(repository: ResearchRepository) {
       };
       if (!current(request)) return;
       unsubscribe.current = stop;
-      const result = await repository.startResearch(conversation.sessionId);
+      const result = await repository.startResearch(selectedConversation.sessionId);
       if (!current(request)) return;
       succeededOperation.current = request;
       setRecord(result);
