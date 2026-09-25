@@ -902,7 +902,7 @@ pub fn character_research_output_schema() -> serde_json::Value {
     schema
 }
 
-fn make_strict_output_schema(value: &mut serde_json::Value) {
+pub(crate) fn make_strict_output_schema(value: &mut serde_json::Value) {
     match value {
         serde_json::Value::Array(items) => {
             for item in items {

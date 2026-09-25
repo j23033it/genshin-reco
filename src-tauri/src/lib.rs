@@ -6,6 +6,9 @@ pub mod database;
 mod database_commands;
 pub mod domain;
 pub mod hashing;
+mod on_demand;
+pub mod on_demand_domain;
+mod on_demand_store;
 pub mod reconciler;
 pub mod research_provider;
 pub mod solver;
@@ -21,6 +24,7 @@ pub fn run() {
         })
         .manage(app_server::AppServerSupervisor::default())
         .manage(analysis::AnalysisCoordinator::default())
+        .manage(on_demand::OnDemandResearchCoordinator::default())
         .invoke_handler(tauri::generate_handler![
             app_server::probe_codex_environment,
             app_server::start_codex_device_login,
@@ -39,7 +43,13 @@ pub fn run() {
             database_commands::load_current_analysis_result,
             database_commands::save_analysis_variant_selection,
             analysis::start_analysis,
-            analysis::cancel_analysis
+            analysis::cancel_analysis,
+            on_demand::send_on_demand_message,
+            on_demand::start_on_demand_research,
+            on_demand::cancel_on_demand_research,
+            on_demand::list_researched_teams,
+            on_demand::load_researched_team,
+            on_demand::load_on_demand_conversation
         ])
         .run(tauri::generate_context!())
         .expect("Tauriアプリケーションを起動できませんでした");

@@ -18,7 +18,7 @@ use std::{
 };
 use thiserror::Error;
 
-pub const CURRENT_SCHEMA_VERSION: i64 = 4;
+pub const CURRENT_SCHEMA_VERSION: i64 = 5;
 pub const BUSY_TIMEOUT_MS: u64 = 5_000;
 
 const SCHEMA_SQL: &str = r#"
@@ -174,6 +174,38 @@ CREATE TABLE IF NOT EXISTS character_research_cache (
     UNIQUE(character_id, version_key, analysis_input_hash)
 );
 
+CREATE TABLE IF NOT EXISTS on_demand_research_sessions (
+    session_id TEXT PRIMARY KEY NOT NULL,
+    status TEXT NOT NULL,
+    conversation_json TEXT NOT NULL CHECK (json_valid(conversation_json)),
+    team_id TEXT,
+    error_message TEXT,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS researched_teams (
+    team_id TEXT PRIMARY KEY NOT NULL,
+    session_id TEXT NOT NULL UNIQUE,
+    title TEXT NOT NULL,
+    result_json TEXT NOT NULL CHECK (json_valid(result_json)),
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    FOREIGN KEY (session_id) REFERENCES on_demand_research_sessions(session_id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS on_demand_knowledge (
+    knowledge_id TEXT PRIMARY KEY NOT NULL,
+    entity_type TEXT NOT NULL,
+    name TEXT NOT NULL,
+    game_version TEXT NOT NULL,
+    payload_json TEXT NOT NULL CHECK (json_valid(payload_json)),
+    sources_json TEXT NOT NULL CHECK (json_valid(sources_json)),
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    UNIQUE(entity_type, name, game_version)
+);
+
 CREATE INDEX IF NOT EXISTS idx_parties_name ON parties(name);
 CREATE INDEX IF NOT EXISTS idx_party_members_character ON party_members(character_id);
 CREATE INDEX IF NOT EXISTS idx_analysis_runs_party ON analysis_runs(party_id, created_at DESC);
@@ -183,6 +215,12 @@ CREATE INDEX IF NOT EXISTS idx_evidence_claims_snapshot ON evidence_claims(snaps
 CREATE INDEX IF NOT EXISTS idx_build_results_run ON build_results(analysis_run_id);
 CREATE INDEX IF NOT EXISTS idx_character_research_cache_lookup
 ON character_research_cache(character_id, game_version, version_key, updated_at DESC);
+CREATE INDEX IF NOT EXISTS idx_on_demand_sessions_updated
+ON on_demand_research_sessions(updated_at DESC);
+CREATE INDEX IF NOT EXISTS idx_researched_teams_updated
+ON researched_teams(updated_at DESC);
+CREATE INDEX IF NOT EXISTS idx_on_demand_knowledge_lookup
+ON on_demand_knowledge(entity_type, name, game_version);
 
 CREATE TRIGGER IF NOT EXISTS evidence_snapshots_no_update
 BEFORE UPDATE ON evidence_snapshots
@@ -1294,14 +1332,14 @@ fn parse_analysis_status(value: &str) -> Result<AnalysisStatus, DatabaseError> {
     serde_json::from_str(&format!("\"{value}\"")).map_err(DatabaseError::from)
 }
 
-fn timestamp() -> String {
+pub(crate) fn timestamp() -> String {
     let elapsed = SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .unwrap_or_default();
     format!("{}.{:09}Z", elapsed.as_secs(), elapsed.subsec_nanos())
 }
 
-fn new_id(prefix: &str) -> String {
+pub(crate) fn new_id(prefix: &str) -> String {
     static NEXT_ID: OnceLock<Mutex<u64>> = OnceLock::new();
     let elapsed = SystemTime::now()
         .duration_since(UNIX_EPOCH)
