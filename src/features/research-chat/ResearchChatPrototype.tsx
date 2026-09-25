@@ -19,6 +19,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { cn } from "../../lib/cn";
+import { AppUpdateControl } from "./AppUpdateControl";
 import { ResearchConditionsEditor } from "./ResearchConditionsEditor";
 import { researchRepository } from "./researchRepository";
 import { useResearchChat } from "./useResearchChat";
@@ -676,9 +677,12 @@ export function ResearchChatPrototype({
               {chat.stage === "result" ? chat.record?.title : "新しい編成調査"}
             </p>
           </div>
-          <span className="py-2 text-xs text-slate-400">
-            {demo ? "デモ表示" : "Codexで編成調査"}
-          </span>
+          <div className="flex flex-wrap items-center justify-end gap-3">
+            <span className="py-2 text-xs text-slate-400">
+              {demo ? "デモ表示" : import.meta.env.DEV ? "開発版" : "正式版"}
+            </span>
+            <AppUpdateControl disabled={chat.busy} />
+          </div>
         </header>
         <div className="flex min-h-0 flex-1 flex-col">
           {chat.error ? (
