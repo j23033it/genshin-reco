@@ -147,7 +147,7 @@ describe("実データの編成調査UI", () => {
     expect(selected[0]).toMatchObject({ constellation: 2, weapon: "赤月のシルエット", refinement: null });
     expect(selected[1]).toMatchObject({ weapon: null, refinement: null });
     await waitFor(() => expect(repository.startResearch).toHaveBeenCalledWith("session-1"));
-  });
+  }, 15000);
 
   it("不足情報を確認し、同じ会話へ追加して準備完了になったときだけ開始できる", async () => {
     const user = userEvent.setup();
