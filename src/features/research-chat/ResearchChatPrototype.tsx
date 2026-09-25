@@ -1,154 +1,93 @@
-import { FormEvent, useEffect, useRef, useState } from "react";
+import {
+  FormEvent,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
 import {
   Bot,
-  Check,
   ChevronRight,
-  Clock3,
   Database,
   PanelLeftClose,
   PanelLeftOpen,
   Plus,
   RefreshCw,
   Send,
-  Settings2,
   ShieldCheck,
   Sparkles,
-  Users,
 } from "lucide-react";
 import { cn } from "../../lib/cn";
+import { researchRepository } from "./researchRepository";
+import { useResearchChat } from "./useResearchChat";
+import type {
+  ResearchConversation,
+  ResearchMember,
+  ResearchRepository,
+  ResearchedTeamRecord,
+  TeamMember,
+} from "./types";
 
-type ResearchStage = "empty" | "clarifying" | "researching" | "result";
 type ResultTab = "build" | "conversation";
-type TargetStat = {
-  label: string;
-  value: string;
-  primary?: boolean;
-};
-
-type TeamMember = {
-  id: string;
-  name: string;
-  element: string;
-  role: string;
-  constellation: string;
-  imageUrl: string;
-  weapon: string;
-  weaponImageUrl: string;
-  artifact: string;
-  artifactImageUrl: string;
-  mainStats: string;
-  subStats: string;
-  targetStats: TargetStat[];
-  accentClass: string;
-  badgeClass: string;
-};
-
-const TEAM: TeamMember[] = [
-  {
-    id: "arlecchino",
-    name: "アルレッキーノ",
-    element: "炎",
-    role: "メインアタッカー",
-    constellation: "無凸前提",
-    imageUrl: "https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Arlecchino.png",
-    weapon: "赤月のシルエット",
-    weaponImageUrl: "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Pole_BloodMoon.png",
-    artifact: "諧律奇想の断章",
-    artifactImageUrl: "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15035_4.png",
-    mainStats: "攻撃力% / 炎元素ダメージ / 会心",
-    subStats: "会心率 ＞ 会心ダメージ ＞ 攻撃力%",
-    targetStats: [
-      { label: "攻撃力", value: "2,000–2,300", primary: true },
-      { label: "会心率", value: "70–80%" },
-      { label: "会心ダメージ", value: "180%以上" },
-      { label: "元素熟知", value: "100–150" },
-      { label: "炎元素ダメージ", value: "46.6%" },
-    ],
-    accentClass: "border-rose-400/35",
-    badgeClass: "bg-rose-400/10 text-rose-200",
-  },
-  {
-    id: "yelan",
-    name: "夜蘭",
-    element: "水",
-    role: "サブアタッカー",
-    constellation: "無凸前提",
-    imageUrl: "https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Yelan.png",
-    weapon: "若水",
-    weaponImageUrl: "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Bow_Kirin.png",
-    artifact: "絶縁の旗印",
-    artifactImageUrl: "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15020_4.png",
-    mainStats: "元素チャージ / 水元素ダメージ / 会心",
-    subStats: "元素チャージ ＞ 会心率 ＞ 会心ダメージ",
-    targetStats: [
-      { label: "HP", value: "32,000–36,000", primary: true },
-      { label: "元素チャージ効率", value: "190–210%" },
-      { label: "会心率", value: "70%以上" },
-      { label: "水元素ダメージ", value: "46.6%" },
-    ],
-    accentClass: "border-sky-400/35",
-    badgeClass: "bg-sky-400/10 text-sky-200",
-  },
-  {
-    id: "bennett",
-    name: "ベネット",
-    element: "炎",
-    role: "攻撃支援・回復",
-    constellation: "無凸前提",
-    imageUrl: "https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Bennett.png",
-    weapon: "原木刀",
-    weaponImageUrl: "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Sword_Arakalari.png",
-    artifact: "旧貴族のしつけ",
-    artifactImageUrl: "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15007_4.png",
-    mainStats: "元素チャージ / HP% / 治療効果",
-    subStats: "元素チャージ ＞ HP% ＞ HP",
-    targetStats: [
-      { label: "基礎攻撃力", value: "756", primary: true },
-      { label: "元素チャージ効率", value: "230%以上" },
-      { label: "HP", value: "24,000以上" },
-      { label: "治療効果", value: "35.9%" },
-    ],
-    accentClass: "border-orange-400/35",
-    badgeClass: "bg-orange-400/10 text-orange-200",
-  },
-  {
-    id: "zhongli",
-    name: "鍾離",
-    element: "岩",
-    role: "シールド・耐性低下",
-    constellation: "無凸前提",
-    imageUrl: "https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Zhongli.png",
-    weapon: "西風長槍",
-    weaponImageUrl: "https://gi.yatta.moe/assets/UI/UI_EquipIcon_Pole_Zephyrus.png",
-    artifact: "千岩牢固",
-    artifactImageUrl: "https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15017_4.png",
-    mainStats: "HP% / HP% / HP%",
-    subStats: "HP% ＞ HP ＞ 会心率",
-    targetStats: [
-      { label: "HP", value: "45,000以上", primary: true },
-      { label: "会心率", value: "45%以上" },
-      { label: "元素チャージ効率", value: "140–160%" },
-    ],
-    accentClass: "border-amber-400/35",
-    badgeClass: "bg-amber-400/10 text-amber-200",
-  },
-];
+function subscribeViewport(callback: () => void) {
+  const query = window.matchMedia?.("(min-width: 1024px)");
+  query?.addEventListener("change", callback);
+  return () => query?.removeEventListener("change", callback);
+}
+function wideViewport() {
+  return window.matchMedia?.("(min-width: 1024px)").matches ?? true;
+}
 
 const EXAMPLE_PROMPT = "アルレッキーノ、夜蘭、ベネット、鍾離の4人を調べたい。";
+const actionClass =
+  "inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-amber-300 px-4 py-2 font-semibold text-slate-950 hover:bg-amber-200 disabled:cursor-not-allowed disabled:opacity-50";
 
-function Portrait({ member, size = "large" }: { member: TeamMember; size?: "small" | "large" }) {
+function AssetImage({
+  src,
+  label,
+  large = false,
+}: {
+  src?: string | null;
+  label: string;
+  large?: boolean;
+}) {
+  const [failedSrc, setFailedSrc] = useState<string | null>(null);
   return (
     <div
       className={cn(
-        "relative shrink-0 overflow-hidden rounded-xl border border-white/10 bg-slate-800",
-        size === "large" ? "size-16" : "size-10",
+        "relative grid shrink-0 place-items-center overflow-hidden rounded-xl border border-white/10 bg-slate-800 text-slate-400",
+        large ? "size-16" : "size-11",
       )}
     >
-      <span className="absolute inset-0 grid place-items-center text-sm font-bold text-slate-500" aria-hidden="true">
-        {member.name.slice(0, 1)}
-      </span>
-      <img className="relative size-full object-cover" src={member.imageUrl} alt={`${member.name}のアイコン`} />
+      <span aria-hidden="true">{label.slice(0, 1) || "?"}</span>
+      {src && failedSrc !== src ? (
+        <img
+          className="absolute inset-0 size-full object-cover"
+          src={src}
+          alt={label}
+          onError={() => setFailedSrc(src)}
+        />
+      ) : (
+        <span className="sr-only">{label}（画像なし）</span>
+      )}
     </div>
+  );
+}
+
+function Portrait({
+  member,
+  size = "large",
+}: {
+  member: ResearchMember;
+  size?: "small" | "large";
+}) {
+  return (
+    <AssetImage
+      src={member.imageUrl}
+      label={member.name}
+      large={size === "large"}
+    />
   );
 }
 
@@ -158,7 +97,9 @@ function EmptyConversation({ onUseExample }: { onUseExample: () => void }) {
       <div className="grid size-14 place-items-center rounded-2xl border border-amber-300/25 bg-amber-300/10 text-amber-300">
         <Sparkles aria-hidden="true" size={26} />
       </div>
-      <p className="mt-6 text-sm font-semibold text-amber-300">新しい編成調査</p>
+      <p className="mt-6 text-sm font-semibold text-amber-300">
+        新しい編成調査
+      </p>
       <h1 className="mt-2 text-balance text-3xl font-bold tracking-tight text-slate-50 sm:text-4xl">
         調べたい4人を教えてください
       </h1>
@@ -170,162 +111,169 @@ function EmptyConversation({ onUseExample }: { onUseExample: () => void }) {
         className="mt-8 max-w-xl rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-left text-sm leading-6 text-slate-300 hover:border-slate-500 hover:bg-slate-800"
         onClick={onUseExample}
       >
-        <span className="block text-xs font-semibold text-slate-500">入力例</span>
+        <span className="block text-xs font-semibold text-slate-500">
+          入力例
+        </span>
         <span className="mt-1 block">{EXAMPLE_PROMPT}</span>
       </button>
     </section>
   );
 }
 
-function MemberStrip() {
+function Conversation({
+  conversation,
+}: {
+  conversation: ResearchConversation;
+}) {
   return (
-    <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4" aria-label="確認した4人">
-      {TEAM.map((member, index) => (
-        <div key={member.id} className="flex min-w-0 items-center gap-3 rounded-xl border border-slate-700 bg-slate-950/60 p-3">
-          <Portrait member={member} size="small" />
-          <div className="min-w-0">
-            <p className="text-xs text-slate-500">スロット {index + 1}</p>
-            <p className="truncate font-semibold text-slate-100">{member.name}</p>
+    <div className="space-y-5" aria-label="調査の会話">
+      {conversation.messages.map((message, index) => (
+        <div
+          key={index}
+          className={cn(
+            "flex items-start gap-3",
+            message.role === "user" && "justify-end",
+          )}
+        >
+          {message.role === "assistant" ? (
+            <Bot
+              className="mt-3 shrink-0 text-amber-300"
+              size={20}
+              aria-hidden="true"
+            />
+          ) : null}
+          <div
+            className={cn(
+              "max-w-2xl min-w-0 whitespace-pre-wrap break-words rounded-2xl px-4 py-3 text-sm leading-7",
+              message.role === "user"
+                ? "bg-amber-300 text-slate-950"
+                : "border border-slate-700 bg-slate-900 text-slate-200",
+            )}
+          >
+            <span className="sr-only">
+              {message.role === "user" ? "あなた" : "Codex"}：
+            </span>
+            {message.content}
           </div>
         </div>
       ))}
+      {conversation.members.length ? (
+        <div
+          className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4"
+          aria-label="確認したメンバー"
+        >
+          {conversation.members.map((member, index) => (
+            <div
+              key={`${member.slotIndex}-${index}`}
+              className="flex min-w-0 items-center gap-3 rounded-xl border border-slate-700 p-3"
+            >
+              <Portrait
+                member={{ id: String(member.slotIndex), name: member.name }}
+                size="small"
+              />
+              <span className="min-w-0 break-words text-sm">{member.name}</span>
+            </div>
+          ))}
+        </div>
+      ) : null}
     </div>
   );
 }
 
-function ClarifyingConversation({ prompt, onStartResearch }: { prompt: string; onStartResearch: () => void }) {
-  return (
-    <section className="mx-auto w-full max-w-4xl flex-1 px-5 py-8 sm:px-8">
-      <div className="flex justify-end">
-        <div className="max-w-2xl rounded-2xl rounded-br-md bg-amber-300 px-4 py-3 text-sm leading-6 text-slate-950">
-          {prompt}
-        </div>
-      </div>
-
-      <div className="mt-7 flex items-start gap-3">
-        <div className="grid size-9 shrink-0 place-items-center rounded-xl border border-slate-700 bg-slate-800 text-amber-300">
-          <Bot aria-hidden="true" size={18} />
-        </div>
-        <div className="min-w-0 flex-1 rounded-2xl rounded-tl-md border border-slate-700 bg-slate-900 p-5">
-          <p className="font-semibold text-slate-100">4人を確認しました</p>
-          <p className="mt-2 text-pretty text-sm leading-6 text-slate-400">
-            武器と凸数がまだ分かりません。チャットで追加するか、未指定のまま候補を調査できます。
-          </p>
-          <MemberStrip />
-          <div className="mt-5 rounded-xl border-l-2 border-amber-300 bg-amber-300/5 px-4 py-3 text-sm leading-6 text-slate-300">
-            このまま始めると、アルレッキーノを主軸にした蒸発編成として調査します。
-          </div>
-          <div className="mt-5 flex flex-wrap gap-3">
-            <button
-              type="button"
-              className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-amber-300 px-4 py-2 font-semibold text-slate-950 hover:bg-amber-200"
-              onClick={onStartResearch}
-            >
-              この内容で調査する
-              <ChevronRight aria-hidden="true" size={17} />
-            </button>
-            <span className="inline-flex min-h-11 items-center text-sm text-slate-500">変更する場合は下のチャットへ入力</span>
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function ResearchingConversation() {
-  const steps = [
-    { label: "4人の基本情報", state: "完了" },
-    { label: "武器・聖遺物の候補", state: "調査中" },
-    { label: "編成内の効果と目標値", state: "待機中" },
-  ];
-
-  return (
-    <section className="mx-auto flex w-full max-w-3xl flex-1 flex-col justify-center px-5 py-12">
-      <div className="rounded-2xl border border-slate-700 bg-slate-900 p-6 sm:p-8" role="status" aria-live="polite">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <p className="text-sm font-semibold text-amber-300">Codexが調査中</p>
-            <h1 className="mt-2 text-balance text-2xl font-bold text-slate-50">4人の情報を集めています</h1>
-          </div>
-          <span className="rounded-full border border-slate-700 px-3 py-1 text-xs text-slate-400">通常 1〜3分</span>
-        </div>
-        <div className="mt-7 flex -space-x-2" aria-label="調査対象の4人">
-          {TEAM.map((member) => (
-            <div key={member.id} className="rounded-xl border-2 border-slate-900">
-              <Portrait member={member} size="small" />
-            </div>
-          ))}
-        </div>
-        <ol className="mt-7 divide-y divide-slate-800 border-y border-slate-800">
-          {steps.map((step) => (
-            <li key={step.label} className="flex items-center justify-between gap-4 py-4">
-              <span className="text-sm text-slate-300">{step.label}</span>
-              <span
-                className={cn(
-                  "inline-flex items-center gap-2 text-xs font-semibold",
-                  step.state === "完了" ? "text-emerald-300" : step.state === "調査中" ? "text-amber-300" : "text-slate-500",
-                )}
-              >
-                {step.state === "完了" ? <Check aria-hidden="true" size={15} /> : <Clock3 aria-hidden="true" size={15} />}
-                {step.state}
-              </span>
-            </li>
-          ))}
-        </ol>
-        <p className="mt-5 text-pretty text-sm leading-6 text-slate-500">
-          この画面を閉じても調査は続きます。完了した編成だけ保存されます。
-        </p>
-      </div>
-    </section>
-  );
-}
+const elementStyles: Record<string, { border: string; badge: string }> = {
+  炎: { border: "border-rose-400/35", badge: "bg-rose-400/10 text-rose-200" },
+  水: { border: "border-sky-400/35", badge: "bg-sky-400/10 text-sky-200" },
+  岩: {
+    border: "border-amber-400/35",
+    badge: "bg-amber-400/10 text-amber-200",
+  },
+  風: { border: "border-teal-400/35", badge: "bg-teal-400/10 text-teal-200" },
+  雷: {
+    border: "border-violet-400/35",
+    badge: "bg-violet-400/10 text-violet-200",
+  },
+  氷: { border: "border-cyan-400/35", badge: "bg-cyan-400/10 text-cyan-200" },
+  草: { border: "border-lime-400/35", badge: "bg-lime-400/10 text-lime-200" },
+};
 
 function BuildCard({ member, index }: { member: TeamMember; index: number }) {
   return (
-    <article className={cn("min-w-0 overflow-hidden rounded-2xl border bg-slate-900", member.accentClass)}>
+    <article
+      className={cn(
+        "min-w-0 overflow-hidden rounded-2xl border bg-slate-900",
+        elementStyles[member.element]?.border ?? "border-slate-700",
+      )}
+    >
       <div className="flex items-start gap-4 border-b border-slate-800 p-5">
         <Portrait member={member} />
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs font-semibold text-slate-500">#{index + 1}</span>
-            <span className={cn("rounded-md px-2 py-0.5 text-xs font-semibold", member.badgeClass)}>{member.element}</span>
+            <span className="text-xs font-semibold text-slate-500">
+              #{index + 1}
+            </span>
+            <span
+              className={cn(
+                "rounded-md px-2 py-0.5 text-xs font-semibold",
+                elementStyles[member.element]?.badge ??
+                  "bg-amber-300/10 text-amber-200",
+              )}
+            >
+              {member.element}
+            </span>
           </div>
-          <h3 className="mt-1 text-balance text-xl font-bold text-slate-50">{member.name}</h3>
-          <p className="mt-1 text-sm text-slate-400">{member.constellation}・{member.role}</p>
+          <h3 className="mt-1 text-balance text-xl font-bold text-slate-50">
+            {member.name}
+          </h3>
+          <p className="mt-1 text-sm text-slate-400">
+            {member.constellation}・{member.role}
+          </p>
         </div>
       </div>
       <div className="space-y-5 p-5">
         <div className="grid grid-cols-[44px_1fr] items-center gap-3">
-          <img className="size-11 rounded-lg bg-slate-800 object-cover" src={member.weaponImageUrl} alt="" />
+          <AssetImage src={member.weaponImageUrl} label={member.weapon} />
           <div className="min-w-0">
             <p className="text-xs text-slate-500">おすすめ武器</p>
-            <p className="truncate text-sm font-semibold text-slate-200">{member.weapon}</p>
+            <p className="break-words text-sm font-semibold text-slate-200">
+              {member.weapon}
+            </p>
           </div>
         </div>
         <div className="grid grid-cols-[44px_1fr] items-center gap-3">
-          <img className="size-11 rounded-lg bg-slate-800 object-cover" src={member.artifactImageUrl} alt="" />
+          <AssetImage src={member.artifactImageUrl} label={member.artifact} />
           <div className="min-w-0">
             <p className="text-xs text-slate-500">おすすめ聖遺物</p>
-            <p className="truncate text-sm font-semibold text-slate-200">{member.artifact}</p>
+            <p className="break-words text-sm font-semibold text-slate-200">
+              {member.artifact}
+            </p>
           </div>
         </div>
         <dl className="space-y-3 border-t border-slate-800 pt-4 text-sm">
           <div>
             <dt className="text-xs text-slate-500">メインステータス</dt>
-            <dd className="mt-1 break-words leading-6 text-slate-300">{member.mainStats}</dd>
+            <dd className="mt-1 break-words leading-6 text-slate-300">
+              {member.mainStats || "未確認"}
+            </dd>
           </div>
           <div>
             <dt className="text-xs text-slate-500">サブステータス優先度</dt>
-            <dd className="mt-1 break-words leading-6 text-slate-300">{member.subStats}</dd>
+            <dd className="mt-1 break-words leading-6 text-slate-300">
+              {member.subStats || "未確認"}
+            </dd>
           </div>
         </dl>
         <div className="border-t border-slate-800 pt-4">
           <div className="flex items-center justify-between gap-3">
-            <h4 className="text-sm font-semibold text-slate-200">目標ステータス</h4>
+            <h4 className="text-sm font-semibold text-slate-200">
+              目標ステータス
+            </h4>
             <span className="text-xs text-slate-500">戦闘前の目安</span>
           </div>
+          {!member.targetStats?.length ? (
+            <p className="mt-3 text-sm text-slate-400">目標値は未確認です。</p>
+          ) : null}
           <dl className="mt-3 grid grid-cols-2 gap-2">
-            {member.targetStats.map((target) => (
+            {(member.targetStats ?? []).map((target) => (
               <div
                 key={target.label}
                 className={cn(
@@ -335,13 +283,22 @@ function BuildCard({ member, index }: { member: TeamMember; index: number }) {
                     : "border-slate-800 bg-slate-950/50",
                 )}
               >
-                <dt className={cn("flex flex-wrap items-center gap-1.5 text-xs", target.primary ? "text-amber-200" : "text-slate-500")}>
+                <dt
+                  className={cn(
+                    "flex flex-wrap items-center gap-1.5 text-xs",
+                    target.primary ? "text-amber-200" : "text-slate-500",
+                  )}
+                >
                   {target.label}
                   {target.primary ? (
-                    <span className="rounded bg-amber-300/15 px-1.5 py-0.5 text-[10px] font-semibold">主参照</span>
+                    <span className="rounded bg-amber-300/15 px-1.5 py-0.5 text-[10px] font-semibold">
+                      主参照
+                    </span>
                   ) : null}
                 </dt>
-                <dd className="mt-1 break-words text-sm font-bold tabular-nums text-slate-100">{target.value}</dd>
+                <dd className="mt-1 break-words text-sm font-bold tabular-nums text-slate-100">
+                  {target.value || "数値は未確認"}
+                </dd>
               </div>
             ))}
           </dl>
@@ -351,174 +308,135 @@ function BuildCard({ member, index }: { member: TeamMember; index: number }) {
   );
 }
 
-function ResultView({ tab, onTabChange, onRevise }: { tab: ResultTab; onTabChange: (tab: ResultTab) => void; onRevise: () => void }) {
+function ResultView({
+  record,
+  tab,
+  onTabChange,
+  onRevise,
+  demo,
+  conversation,
+}: {
+  conversation: ResearchConversation | null;
+  record: ResearchedTeamRecord;
+  tab: ResultTab;
+  onTabChange: (tab: ResultTab) => void;
+  onRevise: () => void;
+  demo: boolean;
+}) {
   return (
     <section className="mx-auto w-full max-w-6xl flex-1 px-5 py-7 sm:px-8">
       <div className="flex flex-wrap items-start justify-between gap-5">
-        <div>
-          <div className="flex flex-wrap items-center gap-2 text-xs font-semibold text-emerald-300">
-            <ShieldCheck aria-hidden="true" size={16} />
-            調査済み・この端末に保存
-          </div>
-          <h1 className="mt-2 text-balance text-3xl font-bold tracking-tight text-slate-50">アルレッキーノ蒸発編成</h1>
-          <p className="mt-2 text-sm text-slate-400">Ver.7.0を対象に、12件の本文を確認しました。</p>
-          <p className="mt-1 max-w-2xl text-pretty text-xs leading-5 text-slate-500">
-            会心やダメージバフに加え、攻撃力・HP・防御力・元素熟知など、役割の土台になる数値も算出しています。
+        <div className="min-w-0">
+          <p className="flex items-center gap-2 text-xs font-semibold text-emerald-300">
+            <ShieldCheck size={16} aria-hidden="true" />
+            {demo
+              ? "デモの調査結果・端末への保存なし"
+              : "調査済み・この端末に保存"}
           </p>
+          <h1 className="mt-2 break-words text-3xl font-bold text-slate-50">
+            {record.title}
+          </h1>
+          {record.gameVersion ? (
+            <p className="mt-3 text-sm text-slate-400">
+              対象バージョン：{record.gameVersion}
+            </p>
+          ) : null}
+          {record.warnings.map((warning, index) => (
+            <p
+              key={index}
+              className="mt-3 max-w-3xl whitespace-pre-wrap break-words text-sm leading-7 text-amber-200"
+            >
+              {warning}
+            </p>
+          ))}
         </div>
-        <button
-          type="button"
-          className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-slate-700 px-4 py-2 text-sm font-semibold text-slate-200 hover:bg-slate-800"
-          onClick={onRevise}
-        >
-          <RefreshCw aria-hidden="true" size={16} />
+        <button className={actionClass} type="button" onClick={onRevise}>
+          <RefreshCw size={16} aria-hidden="true" />
           条件を変えて再調査
         </button>
       </div>
-
-      <div className="mt-7 flex gap-1 border-b border-slate-800" role="tablist" aria-label="編成の表示内容">
-        <button
-          type="button"
-          role="tab"
-          aria-selected={tab === "build"}
-          className={cn(
-            "min-h-11 border-b-2 px-4 text-sm font-semibold",
-            tab === "build" ? "border-amber-300 text-amber-200" : "border-transparent text-slate-500 hover:text-slate-300",
-          )}
-          onClick={() => onTabChange("build")}
-        >
-          ビルド
-        </button>
-        <button
-          type="button"
-          role="tab"
-          aria-selected={tab === "conversation"}
-          className={cn(
-            "min-h-11 border-b-2 px-4 text-sm font-semibold",
-            tab === "conversation" ? "border-amber-300 text-amber-200" : "border-transparent text-slate-500 hover:text-slate-300",
-          )}
-          onClick={() => onTabChange("conversation")}
-        >
-          会話と調査メモ
-        </button>
+      <div
+        className="mt-6 flex gap-2 border-b border-slate-800"
+        aria-label="結果の表示切り替え"
+      >
+        {(["build", "conversation"] as const).map((item) => (
+          <button
+            key={item}
+            type="button"
+            aria-pressed={tab === item}
+            className={cn(
+              "min-h-11 border-b-2 px-4 text-sm font-semibold",
+              tab === item
+                ? "border-amber-300 text-amber-300"
+                : "border-transparent text-slate-400",
+            )}
+            onClick={() => onTabChange(item)}
+          >
+            {item === "build" ? "ビルド" : "会話"}
+          </button>
+        ))}
       </div>
-
       {tab === "build" ? (
         <div className="mt-6 grid gap-4 lg:grid-cols-2">
-          {TEAM.map((member, index) => <BuildCard key={member.id} member={member} index={index} />)}
+          {record.members.map((member, index) => (
+            <BuildCard
+              key={`${member.id}-${index}`}
+              member={member}
+              index={index}
+            />
+          ))}
         </div>
       ) : (
-        <div className="mt-6 max-w-3xl space-y-5">
-          <div className="ml-auto max-w-2xl rounded-2xl rounded-br-md bg-amber-300 px-4 py-3 text-sm leading-6 text-slate-950">
-            {EXAMPLE_PROMPT}
-          </div>
-          <div className="flex items-start gap-3">
-            <div className="grid size-9 shrink-0 place-items-center rounded-xl border border-slate-700 bg-slate-800 text-amber-300">
-              <Bot aria-hidden="true" size={18} />
-            </div>
-            <div className="rounded-2xl rounded-tl-md border border-slate-700 bg-slate-900 p-5 text-sm leading-6 text-slate-300">
-              4人の役割、武器候補、聖遺物、目標ステータスを確認しました。結果は「ビルド」タブへ整理して保存しています。
-            </div>
-          </div>
-          <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
-            <div className="flex items-center gap-2 text-sm font-semibold text-slate-300">
-              <Database aria-hidden="true" size={16} />
-              保存した調査情報
-            </div>
-            <p className="mt-2 text-sm leading-6 text-slate-500">キャラクター4件・武器4件・聖遺物4件・確認済み本文12件</p>
-          </div>
+        <div className="mt-6">
+          {conversation?.messages.length ? (
+            <Conversation conversation={conversation} />
+          ) : (
+            <p className="text-sm leading-7 text-slate-400">
+              この画面では過去の会話を読み込めません。条件の変更は下のチャットへ入力してください。
+            </p>
+          )}
         </div>
       )}
+      {record.sources?.length ? (
+        <details className="mt-6 rounded-xl border border-slate-800 p-4">
+          <summary className="cursor-pointer text-sm text-slate-300">
+            確認した出典（{record.sources.length}件）
+          </summary>
+          <ul className="mt-3 space-y-3 text-sm">
+            {record.sources.map((source, index) => (
+              <li key={index} className="break-words">
+                {/^https?:\/\//i.test(source.url) ? (
+                  <a
+                    className="text-amber-200 underline"
+                    href={source.url}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    {source.title || source.url}
+                  </a>
+                ) : (
+                  source.title
+                )}
+              </li>
+            ))}
+          </ul>
+        </details>
+      ) : null}
     </section>
   );
 }
 
-function Sidebar({
-  open,
-  saved,
-  showingSaved,
-  onClose,
-  onNew,
-  onOpenSaved,
+function Composer({
+  value,
+  onChange,
+  onSubmit,
+  disabled,
 }: {
-  open: boolean;
-  saved: boolean;
-  showingSaved: boolean;
-  onClose: () => void;
-  onNew: () => void;
-  onOpenSaved: () => void;
+  value: string;
+  onChange: (value: string) => void;
+  onSubmit: () => void;
+  disabled: boolean;
 }) {
-  if (!open) return null;
-
-  return (
-    <aside className="fixed inset-y-0 left-0 z-30 flex w-[19rem] flex-col border-r border-slate-800 bg-slate-950 p-4 lg:static" aria-label="編成ナビゲーション">
-      <div className="flex items-center justify-between gap-3 px-1">
-        <div className="flex items-center gap-3">
-          <div className="grid size-9 place-items-center rounded-xl bg-amber-300 text-slate-950"><Sparkles aria-hidden="true" size={18} /></div>
-          <div>
-            <p className="font-bold text-slate-100">編成ノート</p>
-            <p className="text-xs text-slate-500">Codexで調べて保存</p>
-          </div>
-        </div>
-        <button type="button" className="grid size-10 place-items-center rounded-lg text-slate-400 hover:bg-slate-800 hover:text-slate-100" onClick={onClose} aria-label="サイドバーを閉じる">
-          <PanelLeftClose aria-hidden="true" size={18} />
-        </button>
-      </div>
-
-      <button
-        type="button"
-        className="mt-6 inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-slate-100 px-4 py-2 font-semibold text-slate-950 hover:bg-white"
-        onClick={onNew}
-      >
-        <Plus aria-hidden="true" size={18} />
-        新しい編成を調べる
-      </button>
-
-      <div className="mt-7 flex items-center justify-between px-2">
-        <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-500">保存した編成</h2>
-        {saved ? <span className="text-xs tabular-nums text-slate-600">1件</span> : null}
-      </div>
-
-      <div className="mt-3 min-h-0 flex-1 overflow-y-auto">
-        {saved ? (
-          <button
-            type="button"
-            className={cn(
-              "flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left",
-              showingSaved ? "bg-slate-800 text-slate-100" : "text-slate-400 hover:bg-slate-900 hover:text-slate-200",
-            )}
-            onClick={onOpenSaved}
-            aria-current={showingSaved ? "page" : undefined}
-          >
-            <div className="flex -space-x-2">
-              {TEAM.slice(0, 3).map((member) => (
-                <img key={member.id} className="size-8 rounded-lg border-2 border-slate-900 bg-slate-800 object-cover" src={member.imageUrl} alt="" />
-              ))}
-            </div>
-            <span className="min-w-0 flex-1">
-              <span className="block truncate text-sm font-semibold">アルレッキーノ蒸発編成</span>
-              <span className="mt-0.5 block text-xs text-slate-500">たった今更新</span>
-            </span>
-          </button>
-        ) : (
-          <div className="rounded-xl border border-dashed border-slate-800 px-4 py-5 text-center">
-            <Users className="mx-auto text-slate-700" aria-hidden="true" size={21} />
-            <p className="mt-2 text-xs leading-5 text-slate-600">調査が完了した編成が<br />ここに追加されます</p>
-          </div>
-        )}
-      </div>
-
-      <div className="border-t border-slate-800 pt-4">
-        <button type="button" className="flex min-h-11 w-full items-center gap-3 rounded-xl px-3 text-sm text-slate-400 hover:bg-slate-900 hover:text-slate-200">
-          <Settings2 aria-hidden="true" size={17} />
-          Codex接続と設定
-        </button>
-      </div>
-    </aside>
-  );
-}
-
-function Composer({ value, onChange, onSubmit, disabled }: { value: string; onChange: (value: string) => void; onSubmit: () => void; disabled: boolean }) {
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault();
     onSubmit();
@@ -526,8 +444,13 @@ function Composer({ value, onChange, onSubmit, disabled }: { value: string; onCh
 
   return (
     <div className="border-t border-slate-800 bg-slate-950/95 px-4 py-4 sm:px-8">
-      <form className="mx-auto flex max-w-4xl items-end gap-3 rounded-2xl border border-slate-700 bg-slate-900 p-2 focus-within:border-amber-300/70" onSubmit={handleSubmit}>
-        <label htmlFor="team-request" className="sr-only">調べたい編成</label>
+      <form
+        className="mx-auto flex max-w-4xl items-end gap-3 rounded-2xl border border-slate-700 bg-slate-900 p-2 focus-within:border-amber-300/70"
+        onSubmit={handleSubmit}
+      >
+        <label htmlFor="team-request" className="sr-only">
+          調べたい編成
+        </label>
         <textarea
           id="team-request"
           rows={2}
@@ -546,95 +469,327 @@ function Composer({ value, onChange, onSubmit, disabled }: { value: string; onCh
           <Send aria-hidden="true" size={18} />
         </button>
       </form>
-      <p className="mx-auto mt-2 max-w-4xl text-center text-xs text-slate-600">調査結果はCodexの回答を検証してから保存します</p>
+      <p className="mx-auto mt-2 max-w-4xl text-center text-xs text-slate-600">
+        調査結果はCodexの回答を検証してから保存します
+      </p>
     </div>
   );
 }
 
-export function ResearchChatPrototype() {
-  const [stage, setStage] = useState<ResearchStage>("empty");
+export function ResearchChatPrototype({
+  repository = researchRepository,
+}: {
+  repository?: ResearchRepository;
+}) {
+  const chat = useResearchChat(repository);
   const [composer, setComposer] = useState("");
-  const [submittedPrompt, setSubmittedPrompt] = useState("");
-  const [sidebarOpen, setSidebarOpen] = useState(() => (
-    typeof window.matchMedia === "function" ? window.matchMedia("(min-width: 1024px)").matches : true
-  ));
-  const [saved, setSaved] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(() =>
+    typeof window.matchMedia === "function"
+      ? window.matchMedia("(min-width: 1024px)").matches
+      : true,
+  );
   const [resultTab, setResultTab] = useState<ResultTab>("build");
   const composerRef = useRef<HTMLDivElement>(null);
-
+  const sidebarRef = useRef<HTMLElement>(null);
+  const sidebarTriggerRef = useRef<HTMLButtonElement>(null);
+  const wide = useSyncExternalStore(
+    subscribeViewport,
+    wideViewport,
+    () => true,
+  );
+  const restoreSidebarFocus = useCallback(
+    () => sidebarTriggerRef.current?.focus(),
+    [],
+  );
   useEffect(() => {
-    if (stage !== "researching") return;
-    const timer = window.setTimeout(() => {
-      setSaved(true);
+    if (!sidebarOpen || wide) return;
+    sidebarRef.current?.querySelector<HTMLButtonElement>("button")?.focus();
+    return () => {
+      queueMicrotask(restoreSidebarFocus);
+    };
+  }, [sidebarOpen, wide, restoreSidebarFocus]);
+  const demo = repository.mode === "demo";
+  const closeMobileSidebar = () => {
+    if (window.matchMedia?.("(max-width: 1023px)").matches)
+      setSidebarOpen(false);
+  };
+  const focusComposer = () =>
+    composerRef.current?.querySelector("textarea")?.focus();
+  const handleSubmit = async () => {
+    const message = composer.trim();
+    if (!message || chat.busy) return;
+    if (await chat.send(message)) {
+      setComposer("");
       setResultTab("build");
-      setStage("result");
-    }, 1800);
-    return () => window.clearTimeout(timer);
-  }, [stage]);
-
-  const handleSubmit = () => {
-    const nextPrompt = composer.trim();
-    if (!nextPrompt || stage === "researching") return;
-    setSubmittedPrompt(nextPrompt);
-    setComposer("");
-    setStage("clarifying");
+    }
   };
-
-  const handleNew = () => {
-    setStage("empty");
-    setComposer("");
-    setSubmittedPrompt("");
-    setResultTab("build");
-  };
-
-  const handleRevise = () => {
-    setResultTab("conversation");
-    setComposer("武器を星4だけにして、もう一度調べて");
-    window.setTimeout(() => composerRef.current?.querySelector("textarea")?.focus(), 0);
-  };
-
-  const showingSaved = stage === "result";
-
   return (
     <div className="flex min-h-dvh bg-slate-950 text-slate-100">
-      {sidebarOpen ? <button type="button" className="fixed inset-0 z-20 bg-black/60 lg:hidden" aria-label="サイドバーを閉じる" onClick={() => setSidebarOpen(false)} /> : null}
-      <Sidebar
-        open={sidebarOpen}
-        saved={saved}
-        showingSaved={showingSaved}
-        onClose={() => setSidebarOpen(false)}
-        onNew={handleNew}
-        onOpenSaved={() => { setStage("result"); setResultTab("build"); }}
-      />
-
-      <main className="flex min-h-dvh min-w-0 flex-1 flex-col">
-        <header className="flex min-h-16 items-center justify-between gap-4 border-b border-slate-800 px-4 sm:px-6">
+      {sidebarOpen ? (
+        <>
+          <button
+            type="button"
+            className="fixed inset-0 z-20 bg-black/60 lg:hidden"
+            aria-label="サイドバーの背景を閉じる"
+            onClick={() => setSidebarOpen(false)}
+          />
+          <aside
+            ref={sidebarRef}
+            className="fixed inset-y-0 left-0 z-30 flex w-[19rem] max-w-[85vw] flex-col border-r border-slate-800 bg-slate-950 p-4 lg:sticky lg:top-0 lg:h-dvh lg:shrink-0"
+            aria-label="編成ナビゲーション"
+            onKeyDown={(event) => {
+              if (event.key === "Escape") setSidebarOpen(false);
+              if (wide || event.key !== "Tab") return;
+              const buttons =
+                sidebarRef.current?.querySelectorAll<HTMLButtonElement>(
+                  "button:not(:disabled)",
+                );
+              if (!buttons?.length) return;
+              const first = buttons[0];
+              const last = buttons[buttons.length - 1];
+              if (event.shiftKey && document.activeElement === first) {
+                event.preventDefault();
+                last.focus();
+              }
+              if (!event.shiftKey && document.activeElement === last) {
+                event.preventDefault();
+                first.focus();
+              }
+            }}
+          >
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="font-bold">編成ノート</p>
+                <p className="text-xs text-slate-500">Codexで調べて保存</p>
+              </div>
+              <button
+                className="grid size-11 place-items-center rounded-lg hover:bg-slate-800"
+                type="button"
+                aria-label="サイドバーを閉じる"
+                onClick={() => setSidebarOpen(false)}
+              >
+                <PanelLeftClose size={18} />
+              </button>
+            </div>
+            <button
+              type="button"
+              disabled={chat.busy}
+              className={cn(actionClass, "mt-6")}
+              onClick={() => {
+                chat.reset();
+                setComposer("");
+                setResultTab("build");
+                closeMobileSidebar();
+              }}
+            >
+              <Plus size={18} aria-hidden="true" />
+              新しい編成を調べる
+            </button>
+            <div className="mt-7 flex items-center justify-between">
+              <h2 className="text-xs font-semibold text-slate-400">
+                保存した編成
+              </h2>
+              <button
+                type="button"
+                disabled={chat.listLoading}
+                aria-label="保存一覧を更新"
+                className="grid size-10 place-items-center rounded-lg hover:bg-slate-800 disabled:opacity-50"
+                onClick={() => void chat.refreshTeams()}
+              >
+                <RefreshCw size={15} />
+              </button>
+            </div>
+            <div className="mt-3 min-h-0 flex-1 space-y-2 overflow-y-auto">
+              {chat.listLoading ? (
+                <p role="status" className="text-sm text-slate-400">
+                  保存一覧を読み込み中…
+                </p>
+              ) : null}
+              {chat.listError ? (
+                <p
+                  role="alert"
+                  className="break-words text-sm leading-6 text-rose-300"
+                >
+                  保存一覧を取得できません。{chat.listError}
+                </p>
+              ) : null}
+              {!chat.listLoading && !chat.listError && !chat.teams.length ? (
+                <p className="rounded-xl border border-dashed border-slate-800 px-4 py-5 text-xs leading-6 text-slate-400">
+                  調査が完了した編成がここに追加されます
+                </p>
+              ) : null}
+              {chat.teams.map((team) => (
+                <button
+                  key={team.teamId}
+                  type="button"
+                  disabled={chat.busy}
+                  aria-current={
+                    chat.stage === "result" &&
+                    chat.record?.teamId === team.teamId
+                      ? "page"
+                      : undefined
+                  }
+                  className="w-full rounded-xl border border-slate-800 px-3 py-3 text-left hover:bg-slate-800 disabled:opacity-50 aria-[current=page]:bg-slate-800"
+                  onClick={() => {
+                    void chat.openTeam(team.teamId);
+                    setResultTab("build");
+                    closeMobileSidebar();
+                  }}
+                >
+                  <span className="block break-words text-sm font-semibold">
+                    {team.title}
+                  </span>
+                  <span className="mt-1 block break-words text-xs leading-5 text-slate-400">
+                    {team.memberNames.join(" / ")}
+                  </span>
+                </button>
+              ))}
+            </div>
+            <p className="mt-4 flex items-center gap-2 border-t border-slate-800 pt-4 text-xs text-slate-500">
+              <Database size={15} aria-hidden="true" />
+              {demo
+                ? "デモデータ・実際の調査は行いません"
+                : "調査完了時にこの端末へ保存"}
+            </p>
+          </aside>
+        </>
+      ) : null}
+      <main
+        inert={sidebarOpen && !wide}
+        className="flex min-h-dvh min-w-0 flex-1 flex-col"
+      >
+        <header className="flex min-h-16 flex-wrap items-center justify-between gap-3 border-b border-slate-800 px-4 sm:px-6">
           <div className="flex min-w-0 items-center gap-3">
             {!sidebarOpen ? (
-              <button type="button" className="grid size-10 shrink-0 place-items-center rounded-lg text-slate-400 hover:bg-slate-800 hover:text-slate-100" onClick={() => setSidebarOpen(true)} aria-label="サイドバーを開く">
-                <PanelLeftOpen aria-hidden="true" size={19} />
+              <button
+                type="button"
+                className="grid size-11 shrink-0 place-items-center rounded-lg hover:bg-slate-800"
+                ref={sidebarTriggerRef}
+                aria-label="サイドバーを開く"
+                onClick={() => setSidebarOpen(true)}
+              >
+                <PanelLeftOpen size={19} />
               </button>
             ) : null}
-            <div className="min-w-0">
-              <p className="truncate text-sm font-semibold text-slate-200">{stage === "result" ? "アルレッキーノ蒸発編成" : "新しい編成調査"}</p>
-              <p className="truncate text-xs text-slate-600">4人指定で調査</p>
-            </div>
+            <p className="min-w-0 break-words text-sm font-semibold">
+              {chat.stage === "result" ? chat.record?.title : "新しい編成調査"}
+            </p>
           </div>
-          <div className="flex items-center gap-2 rounded-full border border-slate-800 px-3 py-1.5 text-xs text-slate-400">
-            <span className="size-2 rounded-full bg-emerald-400" aria-hidden="true" />
-            Codex 接続済み
-          </div>
+          <span className="py-2 text-xs text-slate-400">
+            {demo ? "デモ表示" : "Codexで編成調査"}
+          </span>
         </header>
-
-        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
-          {stage === "empty" ? <EmptyConversation onUseExample={() => setComposer(EXAMPLE_PROMPT)} /> : null}
-          {stage === "clarifying" ? <ClarifyingConversation prompt={submittedPrompt} onStartResearch={() => setStage("researching")} /> : null}
-          {stage === "researching" ? <ResearchingConversation /> : null}
-          {stage === "result" ? <ResultView tab={resultTab} onTabChange={setResultTab} onRevise={handleRevise} /> : null}
+        <div className="flex min-h-0 flex-1 flex-col">
+          {chat.error ? (
+            <div
+              role="alert"
+              className="mx-5 mt-5 whitespace-pre-wrap break-words rounded-xl border border-rose-400/30 bg-rose-400/5 p-4 text-sm leading-6 text-rose-200"
+            >
+              {chat.error}
+              <p className="mt-2">
+                入力内容を確認して再送信するか、調査をやり直してください。
+              </p>
+            </div>
+          ) : null}
+          {chat.busy && chat.stage !== "researching" ? (
+            <p role="status" className="px-5 pt-5 text-sm text-amber-200">
+              読み込み中…
+            </p>
+          ) : null}
+          {!chat.conversation && chat.stage !== "result" ? (
+            <EmptyConversation
+              onUseExample={() => {
+                setComposer(EXAMPLE_PROMPT);
+                focusComposer();
+              }}
+            />
+          ) : null}
+          {chat.stage === "researching" ? (
+            <section className="mx-auto flex w-full max-w-3xl flex-1 flex-col justify-center px-5 py-12">
+              <div className="rounded-2xl border border-slate-700 bg-slate-900 p-6">
+                <div role="status" aria-live="polite">
+                  <p className="text-sm font-semibold text-amber-300">
+                    Codexが調査中
+                  </p>
+                  <h1 className="mt-2 text-2xl font-bold">
+                    4人の情報を集めています
+                  </h1>
+                  <p className="mt-5 whitespace-pre-wrap break-words text-sm leading-7 text-slate-300">
+                    {chat.progress?.memberName
+                      ? `${chat.progress.memberName}：`
+                      : ""}
+                    {chat.progress?.detail || "調査を開始しています…"}
+                  </p>
+                </div>
+                <p className="mt-5 text-xs leading-6 text-slate-400">
+                  完了した編成だけ保存されます。
+                </p>
+                <button
+                  type="button"
+                  className={cn(actionClass, "mt-5")}
+                  disabled={chat.cancelling}
+                  onClick={() => void chat.cancel()}
+                >
+                  {chat.cancelling ? "キャンセル中…" : "調査をキャンセル"}
+                </button>
+              </div>
+            </section>
+          ) : null}
+          {chat.conversation &&
+          chat.stage !== "researching" &&
+          chat.stage !== "result" ? (
+            <section className="mx-auto w-full max-w-4xl flex-1 px-5 py-8 sm:px-8">
+              <Conversation conversation={chat.conversation} />
+              {chat.stage === "cancelled" ? (
+                <p
+                  role="status"
+                  className="mt-5 rounded-xl border border-slate-700 p-4 text-sm text-slate-300"
+                >
+                  調査をキャンセルしました。条件を直すか、もう一度調査できます。
+                </p>
+              ) : null}
+              {["ready", "failed", "cancelled"].includes(
+                chat.conversation.status,
+              ) ? (
+                <button
+                  type="button"
+                  disabled={chat.busy}
+                  className={cn(actionClass, "mt-6")}
+                  onClick={() => void chat.start()}
+                >
+                  {chat.stage === "cancelled" || chat.stage === "error"
+                    ? "もう一度調査する"
+                    : "この内容で調査する"}
+                  <ChevronRight size={17} aria-hidden="true" />
+                </button>
+              ) : (
+                <p className="mt-5 text-sm text-slate-400">
+                  不足している情報を下のチャットへ入力してください。
+                </p>
+              )}
+            </section>
+          ) : null}
+          {chat.stage === "result" && chat.record ? (
+            <ResultView
+              conversation={chat.conversation}
+              record={chat.record}
+              tab={resultTab}
+              onTabChange={setResultTab}
+              demo={demo}
+              onRevise={() => {
+                setResultTab("conversation");
+                focusComposer();
+              }}
+            />
+          ) : null}
         </div>
-
         <div ref={composerRef}>
-          <Composer value={composer} onChange={setComposer} onSubmit={handleSubmit} disabled={stage === "researching"} />
+          <Composer
+            value={composer}
+            onChange={setComposer}
+            onSubmit={() => void handleSubmit()}
+            disabled={chat.busy}
+          />
         </div>
       </main>
     </div>
