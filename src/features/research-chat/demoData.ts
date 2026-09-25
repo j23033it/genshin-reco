@@ -18,7 +18,7 @@ export const DEMO_TEAM: TeamMember[] = [
     subStats: "会心率 ＞ 会心ダメージ ＞ 攻撃力%",
     targetStats: [
       { label: "攻撃力", value: "2,000–2,300", primary: true },
-      { label: "会心率", value: "70–80%" },
+      { label: "会心率", value: "70–80%", note: "デモ値。戦闘中に会心率が加算される場合は、合計が100%を超えないよう戦闘前の値を調整。" },
       { label: "会心ダメージ", value: "180%以上" },
       { label: "元素熟知", value: "100–150" },
       { label: "炎元素ダメージ", value: "46.6%" },
@@ -39,7 +39,7 @@ export const DEMO_TEAM: TeamMember[] = [
     mainStats: "元素チャージ / 水元素ダメージ / 会心",
     subStats: "元素チャージ ＞ 会心率 ＞ 会心ダメージ",
     targetStats: [
-      { label: "HP", value: "32,000–36,000", primary: true },
+      { label: "HP", value: "32,000–36,000", primary: true, note: "デモ値。編成効果や固有天賦で変わる値は、発動条件を確認してから調整。" },
       { label: "元素チャージ効率", value: "190–210%" },
       { label: "会心率", value: "70%以上" },
       { label: "水元素ダメージ", value: "46.6%" },
@@ -61,7 +61,7 @@ export const DEMO_TEAM: TeamMember[] = [
     mainStats: "元素チャージ / HP% / 治療効果",
     subStats: "元素チャージ ＞ HP% ＞ HP",
     targetStats: [
-      { label: "基礎攻撃力", value: "756", primary: true },
+      { label: "基礎攻撃力", value: "756", primary: true, note: "デモ値。基礎攻撃力と、効果を受けた後の総攻撃力を分けて確認。" },
       { label: "元素チャージ効率", value: "230%以上" },
       { label: "HP", value: "24,000以上" },
       { label: "治療効果", value: "35.9%" },
@@ -84,7 +84,7 @@ export const DEMO_TEAM: TeamMember[] = [
     subStats: "HP% ＞ HP ＞ 会心率",
     targetStats: [
       { label: "HP", value: "45,000以上", primary: true },
-      { label: "会心率", value: "45%以上" },
+      { label: "会心率", value: "45%以上", note: "デモ値。武器効果の発動条件と、戦闘中の会心率加算を確認。" },
       { label: "元素チャージ効率", value: "140–160%" },
     ],
   },

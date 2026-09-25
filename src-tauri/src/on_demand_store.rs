@@ -1,8 +1,9 @@
 use crate::{
+    catalog::load_embedded_catalog,
     database::{Database, DatabaseError, new_id, timestamp},
     on_demand_domain::{
         ResearchConversation, ResearchConversationStatus, ResearchedTeamRecord,
-        ResearchedTeamSummary,
+        ResearchedTeamSummary, validated_team_title,
     },
 };
 use rusqlite::{OptionalExtension, params};
@@ -22,6 +23,7 @@ impl Database {
             status: ResearchConversationStatus::Collecting,
             messages: Vec::new(),
             members: Vec::new(),
+            title: None,
             missing_fields: Vec::new(),
             team_id: None,
             error: None,
@@ -170,6 +172,8 @@ impl Database {
     pub fn list_researched_team_summaries(
         &self,
     ) -> Result<Vec<ResearchedTeamSummary>, DatabaseError> {
+        let catalog =
+            load_embedded_catalog().map_err(|error| DatabaseError::Invalid(error.to_string()))?;
         let connection = self.connection()?;
         let mut statement = connection.prepare(
             "SELECT result_json FROM researched_teams ORDER BY updated_at DESC, team_id DESC",
@@ -177,7 +181,10 @@ impl Database {
         let rows = statement.query_map([], |row| row.get::<_, String>(0))?;
         let mut summaries = Vec::new();
         for row in rows {
-            let record: ResearchedTeamRecord = serde_json::from_str(&row?)?;
+            let mut record: ResearchedTeamRecord = serde_json::from_str(&row?)?;
+            for member in &mut record.members {
+                member.apply_catalog_images(&catalog);
+            }
             summaries.push(ResearchedTeamSummary {
                 team_id: record.team_id,
                 title: record.title,
@@ -212,8 +219,64 @@ impl Database {
                 |row| row.get::<_, String>(0),
             )
             .optional()?;
-        json.map(|json| serde_json::from_str(&json).map_err(DatabaseError::from))
-            .transpose()
+        json.map(|json| {
+            let mut record: ResearchedTeamRecord = serde_json::from_str(&json)?;
+            let catalog = load_embedded_catalog()
+                .map_err(|error| DatabaseError::Invalid(error.to_string()))?;
+            for member in &mut record.members {
+                member.apply_catalog_images(&catalog);
+            }
+            Ok(record)
+        })
+        .transpose()
+    }
+
+    pub fn rename_researched_team(
+        &self,
+        team_id: &str,
+        title: &str,
+    ) -> Result<ResearchedTeamRecord, DatabaseError> {
+        let title = validated_team_title(title).map_err(DatabaseError::Invalid)?;
+        let catalog =
+            load_embedded_catalog().map_err(|error| DatabaseError::Invalid(error.to_string()))?;
+        let mut connection = self.connection()?;
+        let transaction = connection.transaction()?;
+        let record_json: String = transaction
+            .query_row(
+                "SELECT result_json FROM researched_teams WHERE team_id = ?1",
+                params![team_id],
+                |row| row.get(0),
+            )
+            .optional()?
+            .ok_or_else(|| DatabaseError::Invalid("この編成は見つかりません".into()))?;
+        let mut record: ResearchedTeamRecord = serde_json::from_str(&record_json)?;
+        let conversation_json: String = transaction
+            .query_row(
+                "SELECT conversation_json FROM on_demand_research_sessions WHERE session_id = ?1",
+                params![record.session_id],
+                |row| row.get(0),
+            )
+            .optional()?
+            .ok_or_else(|| DatabaseError::Invalid("編成の会話が見つかりません".into()))?;
+        let mut conversation: ResearchConversation = serde_json::from_str(&conversation_json)?;
+        let now = timestamp();
+        record.title = title.clone();
+        record.updated_at = now.clone();
+        conversation.title = Some(title);
+        conversation.updated_at = now;
+        transaction.execute(
+            "UPDATE researched_teams SET title = ?2, result_json = ?3, updated_at = ?4 WHERE team_id = ?1",
+            params![record.team_id, record.title, serde_json::to_string(&record)?, record.updated_at],
+        )?;
+        transaction.execute(
+            "UPDATE on_demand_research_sessions SET conversation_json = ?2, updated_at = ?3 WHERE session_id = ?1",
+            params![conversation.session_id, serde_json::to_string(&conversation)?, conversation.updated_at],
+        )?;
+        transaction.commit()?;
+        for member in &mut record.members {
+            member.apply_catalog_images(&catalog);
+        }
+        Ok(record)
     }
 
     #[cfg(test)]
@@ -230,6 +293,9 @@ impl Database {
 fn validate_conversation(conversation: &ResearchConversation) -> Result<(), DatabaseError> {
     if conversation.session_id.trim().is_empty() {
         return Err(DatabaseError::Invalid("会話IDは必須です".into()));
+    }
+    if let Some(title) = conversation.title.as_deref() {
+        validated_team_title(title).map_err(DatabaseError::Invalid)?;
     }
     if conversation.messages.len() > 200 {
         return Err(DatabaseError::Invalid(
@@ -314,6 +380,121 @@ mod tests {
     }
 
     #[test]
+    fn 画像は出力済みurlや不一致のidよりカタログの名称を優先する() {
+        let catalog = load_embedded_catalog().unwrap();
+        let mut member = member(0);
+        member.id = "yelan".into();
+        member.name = " ヴェスナ ".into();
+        member.weapon = "蝶の羽化（R１）".into();
+        member.artifact = "紅血の証　４セット".into();
+        member.image_url = Some("https://example.com/wrong.png".into());
+        member.weapon_image_url = Some("https://example.com/wrong.png".into());
+        member.apply_catalog_images(&catalog);
+
+        assert_eq!(
+            member.image_url.as_deref(),
+            Some("https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Vesna.png")
+        );
+        assert_eq!(
+            member.weapon_image_url.as_deref(),
+            Some("https://gi.yatta.moe/assets/UI/UI_EquipIcon_Sword_Samosvist.png")
+        );
+        assert_eq!(
+            member.artifact_image_url.as_deref(),
+            Some("https://gi.yatta.moe/assets/UI/reliquary/UI_RelicIcon_15047_4.png")
+        );
+    }
+
+    #[test]
+    fn 未登録名や複数装備候補の画像を推測しない() {
+        let catalog = load_embedded_catalog().unwrap();
+        let mut member = member(0);
+        member.id = "yelan".into();
+        member.weapon = "若水または西風猟弓".into();
+        member.artifact = "絶縁の旗印2セット＋旧貴族のしつけ2セット".into();
+        member.image_url = Some("https://example.com/old.png".into());
+        member.weapon_image_url = member.image_url.clone();
+        member.artifact_image_url = member.image_url.clone();
+        member.apply_catalog_images(&catalog);
+
+        assert!(member.image_url.is_none());
+        assert!(member.weapon_image_url.is_none());
+        assert!(member.artifact_image_url.is_none());
+
+        member.name = "旅人".into();
+        member.element = "風元素".into();
+        member.apply_catalog_images(&catalog);
+        assert!(member.image_url.is_some());
+        member.element = "不明".into();
+        member.apply_catalog_images(&catalog);
+        assert!(member.image_url.is_none());
+        member.name = "旅人(氷)".into();
+        member.apply_catalog_images(&catalog);
+        assert!(member.image_url.is_some());
+    }
+
+    #[test]
+    fn 画像なしの旧保存結果は再調査せず詳細と一覧で補完する() {
+        let database = Database::open_in_memory().unwrap();
+        let mut conversation = database.create_on_demand_conversation().unwrap();
+        conversation.status = ResearchConversationStatus::Succeeded;
+        conversation.team_id = Some("legacy-team".into());
+        let mut legacy_member = member(0);
+        legacy_member.name = "ヴォジャニーツァ".into();
+        legacy_member.weapon = "旋流の讃美歌".into();
+        legacy_member.artifact = "絶縁の旗印（4セット）".into();
+        let record = ResearchedTeamRecord {
+            team_id: "legacy-team".into(),
+            session_id: conversation.session_id.clone(),
+            title: "保存済み編成".into(),
+            game_version: "7.1".into(),
+            members: vec![legacy_member, member(1), member(2), member(3)],
+            sources: Vec::new(),
+            warnings: vec!["既存の注意事項".into()],
+            created_at: "created".into(),
+            updated_at: "updated".into(),
+        };
+        database
+            .save_researched_team(&conversation, &record)
+            .unwrap();
+
+        let loaded = database
+            .load_researched_team("legacy-team")
+            .unwrap()
+            .unwrap();
+        assert_eq!(
+            loaded.members[0].image_url.as_deref(),
+            Some("https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Vodyanitsa.png")
+        );
+        assert!(loaded.members[0].weapon_image_url.is_some());
+        assert!(loaded.members[0].artifact_image_url.is_some());
+        assert!(loaded.members[1].image_url.is_none());
+        assert_eq!(loaded.warnings, record.warnings);
+        assert_eq!(loaded.updated_at, record.updated_at);
+        let summaries = database.list_researched_team_summaries().unwrap();
+        assert_eq!(
+            summaries[0].member_image_urls[0],
+            loaded.members[0].image_url
+        );
+        assert_eq!(summaries[0].member_image_urls.len(), 4);
+
+        // 読み込み時の補完で、保存済みの本文や更新日時を書き換えない。
+        let stored_json: String = database
+            .connection()
+            .unwrap()
+            .query_row(
+                "SELECT result_json FROM researched_teams WHERE team_id = 'legacy-team'",
+                [],
+                |row| row.get(0),
+            )
+            .unwrap();
+        assert_eq!(
+            serde_json::from_str::<ResearchedTeamRecord>(&stored_json).unwrap(),
+            record
+        );
+    }
+
+    #[test]
     fn 会話を保存して読み戻せる() {
         let database = Database::open_in_memory().unwrap();
         let mut conversation = database.create_on_demand_conversation().unwrap();
@@ -367,5 +548,32 @@ mod tests {
         );
         assert_eq!(database.list_researched_team_summaries().unwrap().len(), 1);
         assert_eq!(database.count_on_demand_knowledge().unwrap(), 12);
+
+        let renamed = database
+            .rename_researched_team(&team_id, " 変更後 ")
+            .unwrap();
+        assert_eq!(renamed.title, "変更後");
+        assert_eq!(
+            database
+                .load_researched_team(&team_id)
+                .unwrap()
+                .unwrap()
+                .title,
+            "変更後"
+        );
+        assert_eq!(
+            database.list_researched_team_summaries().unwrap()[0].title,
+            "変更後"
+        );
+        assert_eq!(
+            database
+                .load_on_demand_conversation(&conversation.session_id)
+                .unwrap()
+                .unwrap()
+                .title
+                .as_deref(),
+            Some("変更後")
+        );
+        assert!(database.rename_researched_team(&team_id, " ").is_err());
     }
 }

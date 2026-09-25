@@ -14,6 +14,7 @@ use serde::{Serialize, de::DeserializeOwned};
 use serde_json::{Value, json};
 use std::{
     collections::{HashMap, HashSet, VecDeque},
+    ffi::OsStr,
     path::{Path, PathBuf},
     sync::{
         Arc,
@@ -42,6 +43,16 @@ const MAX_DIAGNOSTIC_LINES: usize = 100;
 const MAX_NOTIFICATION_MESSAGES: usize = 256;
 const MAX_TURN_COMPLETIONS: usize = 64;
 const RESPONSE_CHANNEL_CAPACITY: usize = 16;
+#[cfg(windows)]
+const CREATE_NO_WINDOW: u32 = 0x0800_0000;
+
+fn command_without_console(program: impl AsRef<OsStr>) -> Command {
+    let mut command = Command::new(program);
+    #[cfg(windows)]
+    command.creation_flags(CREATE_NO_WINDOW);
+    command
+}
+
 const APP_CODEX_CONFIG: &str = r#"forced_login_method = "chatgpt"
 cli_auth_credentials_store = "file"
 web_search = "live"
@@ -512,7 +523,7 @@ fn take_matching_notification(
 
 impl JsonlRpcSession {
     async fn start(codex: &CodexBinary, codex_home: &Path) -> Result<Self, AppServerError> {
-        let mut command = Command::new(&codex.path);
+        let mut command = command_without_console(&codex.path);
         command
             .args(["app-server", "--listen", "stdio://"])
             .env("CODEX_HOME", codex_home)
@@ -949,7 +960,7 @@ pub(crate) async fn research_on_demand_team(
 ) -> Result<ResearchedTeamDraft, String> {
     let intake_json = serde_json::to_string(intake).map_err(|error| error.to_string())?;
     let prompt = format!(
-        "次のユーザー指定4人だけを対象に、現在の編成内で噛み合う武器、聖遺物、メインステータス、サブステータス優先度、目標ステータスを調査してください。別キャラクターへの差し替え案は出さないでください。武器・命ノ星座・精錬が未指定なら、一般的で入手現実性のある前提を選びwarningsへ明記してください。各メンバーのtargetStatsには会心や元素ダメージだけでなく、その役割の計算元になる攻撃力、HP、防御力、元素熟知、基礎攻撃力などを必ず1件含め、primaryをtrueにしてください。数値目標は編成効果、武器、聖遺物、命ノ星座を考慮し、valueへ『2,000〜2,300』『180%以上』のように表示可能な文字列で入れてください。画像URLは実際に閲覧した本文で確認できたHTTPS URLだけを使い、確認できなければnullにしてください。根拠はwiki.hoyolab.com、game8.jp、wikiwiki.jp/genshinwikiの個別本文ページだけに限定し、検索結果やトップページはsourcesへ入れないでください。調査対象JSON: {intake_json}"
+        "次のユーザー指定4人だけを対象に、現在の編成内で噛み合う武器、聖遺物、メインステータス、サブステータス優先度、目標ステータスを調査してください。別キャラクターへの差し替え案は出さないでください。武器・命ノ星座・精錬が未指定なら、一般的で入手現実性のある前提を選びwarningsへ明記してください。各メンバーのtargetStatsには会心や元素ダメージだけでなく、その役割の計算元になる攻撃力、HP、防御力、元素熟知、基礎攻撃力などを必ず1件含め、primaryをtrueにしてください。数値目標は編成効果、武器、聖遺物、命ノ星座を考慮し、valueへ戦闘前のキャラクター詳細画面で確認する目安を『2,000〜2,300』『180%以上』のように表示可能な文字列で入れてください。戦闘中だけ発動する効果はvalueへ直接足さず、必要に応じてnoteで加算後の見込みと発動条件を示してください。各メンバーのtargetStatsのうち関係する目標には、noteへその目標値の前提と注意点を短く具体的に記載してください。特に会心率は、該当する元素共鳴、キャラクターの固有天賦、武器、聖遺物、命ノ星座、味方の効果について、発動条件・加算量・戦闘前の目標値に含めたかを確認し、戦闘中の合計が100%を超えないように説明してください。他の目標も、固有天賦や編成効果で必要量が変わる場合はその条件をnoteに明記してください。確認できない効果や発動しない効果を推測で書かず、補足が不要な目標だけnoteをnullにしてください。画像はアプリがJSONカタログから設定するため、画像の検索は不要です。imageUrl、weaponImageUrl、artifactImageUrlはすべてnullにし、画像がないことをwarningsへ入れないでください。nameとweaponは日本語の正式名称だけにし、武器の精錬などの注釈を名称へ付けないでください。artifactは単一の4セットなら聖遺物の正式名称だけにし、2セット同士の組み合わせなら両方の正式名称とセット数を明記してください。根拠はwiki.hoyolab.com、game8.jp、wikiwiki.jp/genshinwikiの個別本文ページだけに限定し、検索結果やトップページはsourcesへ入れないでください。調査対象JSON: {intake_json}"
     );
     let observed: ObservedOnDemandOutput<ResearchedTeamDraft> = run_on_demand_structured_turn(
         app,
@@ -1369,7 +1380,7 @@ fn build_character_research_prompt(
     });
     let input = serde_json::to_string(&context)?;
     Ok(format!(
-        "調査コンテキストJSONに含まれるtargetCharacterの聖遺物ビルドと目標ステータスを調査・算出してください。prefetchedVerifiedPagesがある場合はその本文を最初の根拠として使い、足りない主張だけWeb検索してください。cachedVerifiedResearchがある場合は前回の検証済みURL・抜粋・claimを調査の出発点として利用できますが、現在の編成・武器・凸・精錬に合うか再評価してください。wiki.hoyolab.com、game8.jp、wikiwiki.jp/genshinwikiの3サイトの個別本文ページだけを根拠にして、聖遺物構成、メインステータス一式、サブステータス優先度、目標値の計算に使うキャラクター・武器・天賦・命ノ星座・聖遺物・元素共鳴・チーム効果の数値を確認してください。必要な追加検索と本文閲覧は可能な限りまとめて並列に行ってください。各variantのtargetStatsは2件以上8件以下とし、役割に応じた主要参照ステータス、会心、元素熟知、元素チャージ効率などから期待火力と安定性に有効なものを偏りなく選んでください。各目標にはminimumまたはmaximumの数値を必ず設定し、noteへ計算に含めた効果、成立条件、逆算を短く記載してください。会心率を利用するビルドではscopeをcharacter_sheet_unbuffed、maximumを戦闘前上限にしてください。氷共鳴、聖遺物セット、武器、天賦、命ノ星座など実戦で適用可能な会心率加算をincludedBonusesへsource・amount・conditionで漏れなく列挙し、maximumとamount合計が100%以下になるよう逆算してください。会心を利用しない反応主体ビルドでは、その理由をnoteへ記載して別の有効ステータスを提示してください。元素チャージ効率は爆発を安定使用できる下限として算出し、過剰に盛って火力配分を崩さないようにしてください。全claimのevidence.sourceUrlはsourcesに同じ文字列で必ず1件登録してください。sourcesの全項目は少なくとも1件のclaimから参照し、未使用ページはsourcesへ含めないでください。normalizedValueには候補本体の複雑な値を複製しないでください。artifact_planは{{\"kind\":\"artifact_plan\"}}、main_stat_packageは{{\"kind\":\"main_stat_package\"}}、substat_priorityは{{\"kind\":\"substat_priority\"}}とします。targetStatsの各項目には、そのstatとscopeだけを参照する{{\"kind\":\"target_stat\",\"stat\":対象のstat,\"scope\":対象のscope}}のclaimを最低1件作成し、evidenceSummaryに根拠数値と計算内容を記載してください。現在のanalysisInputで成立しないvariantを出力しないでください。個別claimのconditionsは、そのclaimだけに適用される条件として記録し、候補全体の成立条件と混同しないでください。役割、反応担当、元素エネルギー方針、耐久方針はユーザー指定ではありません。4人編成、武器、命ノ星座、精錬と検証済み根拠から判断し、推測で固定しないでください。artifactPlanのIDとteamBuffKeysはartifactCatalogの値だけをそのまま使ってください。各sourceのgameVersionはanalysisInput.gameVersionと完全一致させてください。条件付き推奨はconditionsへ型付きで記録し、fieldにはconstellation、refinement、characterLevel、weaponLevel、artifactLevel、artifactRarity、gameVersion、finalAscension、allTalentsAvailable、witchTeachingWhenApplicableだけを使用してください。URLやIDを推測せず、確認できなければ候補を作らないでください。調査コンテキストJSON: {input}"
+        "調査コンテキストJSONに含まれるtargetCharacterの聖遺物ビルドと目標ステータスを調査・算出してください。prefetchedVerifiedPagesがある場合はその本文を最初の根拠として使い、足りない主張だけWeb検索してください。cachedVerifiedResearchがある場合は前回の検証済みURL・抜粋・claimを調査の出発点として利用できますが、現在の編成・武器・凸・精錬に合うか再評価してください。wiki.hoyolab.com、game8.jp、wikiwiki.jp/genshinwikiの3サイトの個別本文ページだけを根拠にして、聖遺物構成、メインステータス一式、サブステータス優先度、目標値の計算に使うキャラクター・武器・天賦・命ノ星座・聖遺物・元素共鳴・チーム効果の数値を確認してください。必要な追加検索と本文閲覧は可能な限りまとめて並列に行ってください。各variantのtargetStatsは2件以上8件以下とし、役割に応じた主要参照ステータス、会心、元素熟知、元素チャージ効率などから期待火力と安定性に有効なものを偏りなく選んでください。各目標にはminimumまたはmaximumの数値を必ず設定し、noteへ計算に含めた効果、成立条件、逆算を短く記載してください。元素共鳴とキャラクターの固有天賦が現在の4人編成で実際に適用されるかを確認し、目標値に関係する場合は戦闘前と戦闘中の扱いをnoteに明記してください。会心率を利用するビルドではscopeをcharacter_sheet_unbuffed、maximumを戦闘前上限にしてください。氷共鳴、聖遺物セット、武器、天賦、命ノ星座など実戦で適用可能な会心率加算をincludedBonusesへsource・amount・conditionで漏れなく列挙し、maximumとamount合計が100%以下になるよう逆算してください。会心を利用しない反応主体ビルドでは、その理由をnoteへ記載して別の有効ステータスを提示してください。元素チャージ効率は爆発を安定使用できる下限として算出し、過剰に盛って火力配分を崩さないようにしてください。全claimのevidence.sourceUrlはsourcesに同じ文字列で必ず1件登録してください。sourcesの全項目は少なくとも1件のclaimから参照し、未使用ページはsourcesへ含めないでください。normalizedValueには候補本体の複雑な値を複製しないでください。artifact_planは{{\"kind\":\"artifact_plan\"}}、main_stat_packageは{{\"kind\":\"main_stat_package\"}}、substat_priorityは{{\"kind\":\"substat_priority\"}}とします。targetStatsの各項目には、そのstatとscopeだけを参照する{{\"kind\":\"target_stat\",\"stat\":対象のstat,\"scope\":対象のscope}}のclaimを最低1件作成し、evidenceSummaryに根拠数値と計算内容を記載してください。現在のanalysisInputで成立しないvariantを出力しないでください。個別claimのconditionsは、そのclaimだけに適用される条件として記録し、候補全体の成立条件と混同しないでください。役割、反応担当、元素エネルギー方針、耐久方針はユーザー指定ではありません。4人編成、武器、命ノ星座、精錬と検証済み根拠から判断し、推測で固定しないでください。artifactPlanのIDとteamBuffKeysはartifactCatalogの値だけをそのまま使ってください。各sourceのgameVersionはanalysisInput.gameVersionと完全一致させてください。条件付き推奨はconditionsへ型付きで記録し、fieldにはconstellation、refinement、characterLevel、weaponLevel、artifactLevel、artifactRarity、gameVersion、finalAscension、allTalentsAvailable、witchTeachingWhenApplicableだけを使用してください。URLやIDを推測せず、確認できなければ候補を作らないでください。調査コンテキストJSON: {input}"
     ))
 }
 
@@ -1909,7 +1920,10 @@ async fn start_managed_session(app: &tauri::AppHandle) -> Result<ManagedAppServe
 
 async fn detect_codex() -> Result<CodexBinary, AppServerError> {
     let mut candidate_paths = Vec::new();
-    if let Ok(where_output) = Command::new("where.exe").arg("codex").output().await
+    if let Ok(where_output) = command_without_console("where.exe")
+        .arg("codex")
+        .output()
+        .await
         && where_output.status.success()
     {
         candidate_paths.extend(
@@ -1945,7 +1959,7 @@ async fn detect_codex() -> Result<CodexBinary, AppServerError> {
         if !seen_paths.insert(path_key) {
             continue;
         }
-        let mut command = Command::new(&path);
+        let mut command = command_without_console(&path);
         let Ok(version_output) = command.arg("--version").output().await else {
             continue;
         };

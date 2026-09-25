@@ -189,6 +189,12 @@ function TargetSummary({ targets }: { targets: TargetStatRange[] }) {
             <li key={`${target.stat}-${target.minimum}-${target.maximum}`} className="break-words">
               {localizeStatLabel(target.stat)}：<span className="tabular-nums">{formatTargetRange(target)}</span>
               <span className="ml-2 text-xs text-slate-400">（{TARGET_SCOPE_LABELS[target.scope]}）</span>
+              {target.includedBonuses.length > 0 ? (
+                <p className="mt-1 break-words text-xs leading-5 text-slate-400">含める効果：{formatIncludedBonus(target)}</p>
+              ) : null}
+              {target.note?.trim() ? (
+                <p className="mt-1 whitespace-pre-wrap break-words text-xs leading-5 text-slate-400">{target.note}</p>
+              ) : null}
             </li>
           ))}
           {calculatedTargets.length < targets.length ? (

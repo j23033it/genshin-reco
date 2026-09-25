@@ -9,6 +9,7 @@
 
 ## 正式版の公開前
 
+- ユーザーからアプリ更新をGitHub経由で公開する明示的な依頼がない限り、GitHub Releasesや更新配信への公開操作を行わない。実機確認の成功や公開準備の完了は、公開の依頼・承認とはみなさない。
 - `main` と `origin/main` の一致、未コミット変更の有無、GitHub の全体検査成功を確認する。
 - `scripts/release.ps1 -Stage prepare` の出力先が現在の作業場所に対応したビルド先であることを確認する。版番号、インストーラー、署名、`latest.json` を照合し、下書きのまま実機確認する。
-- 実機確認に成功した場合だけ `scripts/release.ps1 -Stage publish -ConfirmedTested` を実行する。公開後は更新情報とインストーラーを認証なしで取得できることを確認する。
+- ユーザーから今回の公開について明示的な依頼があり、実機確認にも成功した場合だけ `scripts/release.ps1 -Stage publish -ConfirmedTested` を実行する。公開後は更新情報とインストーラーを認証なしで取得できることを確認する。

@@ -1,4 +1,4 @@
-use crate::domain::make_strict_output_schema;
+use crate::{catalog::Catalog, domain::make_strict_output_schema};
 use schemars::{JsonSchema, schema_for};
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
@@ -60,6 +60,8 @@ pub struct ResearchConversation {
     pub status: ResearchConversationStatus,
     pub messages: Vec<ResearchMessage>,
     pub members: Vec<ResearchMemberInput>,
+    #[serde(default)]
+    pub title: Option<String>,
     pub missing_fields: Vec<String>,
     pub team_id: Option<String>,
     pub error: Option<String>,
@@ -110,6 +112,83 @@ pub struct ResearchedTeamMember {
     pub target_stats: Vec<ResearchedTargetStat>,
 }
 
+impl ResearchedTeamMember {
+    pub(crate) fn apply_catalog_images(&mut self, catalog: &Catalog) {
+        let name = normalize_asset_name(&self.name);
+        self.image_url = catalog
+            .characters
+            .iter()
+            .find(|character| {
+                normalize_asset_name(&character.name) == name
+                    || (name == "旅人"
+                        && character.id.starts_with("traveler-")
+                        && character.element == self.element.trim().trim_end_matches("元素"))
+            })
+            .map(|character| character.image_url.clone());
+
+        let weapon = normalize_asset_name(&self.weapon);
+        self.weapon_image_url = catalog
+            .weapons
+            .iter()
+            .find(|candidate| {
+                matches_asset_name(
+                    &weapon,
+                    &candidate.name,
+                    &[
+                        "R1", "R2", "R3", "R4", "R5", "精錬1", "精錬2", "精錬3", "精錬4", "精錬5",
+                    ],
+                )
+            })
+            .map(|weapon| weapon.image_url.clone());
+
+        let artifact = normalize_asset_name(&self.artifact);
+        self.artifact_image_url = catalog
+            .artifact_sets
+            .iter()
+            .find(|candidate| {
+                matches_asset_name(
+                    &artifact,
+                    &candidate.name,
+                    &["4セット", "4セット効果", "4件", "4"],
+                )
+            })
+            .map(|artifact| artifact.piece_image_urls.flower.clone());
+    }
+}
+
+fn normalize_asset_name(value: &str) -> String {
+    value
+        .chars()
+        .filter(|character| !character.is_whitespace())
+        .map(|character| match character {
+            '（' => '(',
+            '）' => ')',
+            '１' => '1',
+            '２' => '2',
+            '３' => '3',
+            '４' => '4',
+            '５' => '5',
+            _ => character,
+        })
+        .collect()
+}
+
+fn matches_asset_name(label: &str, name: &str, suffixes: &[&str]) -> bool {
+    let name = normalize_asset_name(name);
+    let Some(suffix) = label.strip_prefix(&name) else {
+        return false;
+    };
+    // 複数候補や2+2セットを、先頭の名前だけで単一の画像に決めない。
+    suffix.is_empty()
+        || suffixes.iter().any(|allowed| {
+            suffix == *allowed
+                || suffix
+                    .strip_prefix('(')
+                    .and_then(|value| value.strip_suffix(')'))
+                    == Some(*allowed)
+        })
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct ResearchedTeamDraft {
@@ -154,6 +233,14 @@ pub struct OnDemandResearchProgress {
     pub stage: String,
     pub detail: String,
     pub member_name: Option<String>,
+}
+
+pub fn validated_team_title(title: &str) -> Result<String, String> {
+    let title = title.trim();
+    if title.is_empty() || title.chars().count() > 80 {
+        return Err("編成名は1〜80文字で入力してください".into());
+    }
+    Ok(title.to_owned())
 }
 
 pub fn intake_output_schema() -> serde_json::Value {

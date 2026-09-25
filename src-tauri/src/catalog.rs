@@ -10,20 +10,20 @@ const EXPECTED_SOURCE_SPECS: [(&str, &str, usize, &str); 3] = [
     (
         "characters",
         "キャラクターカタログ.md",
-        126,
-        "ffaa6467e0e02fd5af1ad8403e76a273f2477a2921746e12e7ad0a482f2a0e4b",
+        128,
+        "17f36462ddd545d68418e7414609d00e2bc26222c3f2fadf17063b0b21970787",
     ),
     (
         "weapons",
         "武器カタログ.md",
-        246,
-        "848fdd6deb2c5075812fdb43ebf9e6f6389145ee8dc3edd3fba8de8b43fc94ba",
+        252,
+        "47959d88de440fda0ef52093988af124b750ce21faa12e6c2d3eb2409ffbb0ca",
     ),
     (
         "artifactSets",
         "聖遺物セットカタログ.md",
         63,
-        "23e046452c203f81ff572485203ef60e99ce4f83441b18fd5377034958751888",
+        "4b181b59aecd782abb506324fa2243db624d33139a56155528457b5f51e1693f",
     ),
 ];
 
@@ -416,8 +416,9 @@ mod tests {
     #[test]
     fn 埋込カタログの件数と旅人を検証できる() {
         let catalog = load_embedded_catalog().expect("埋込カタログが有効であること");
-        assert_eq!(catalog.characters.len(), 126);
-        assert_eq!(catalog.weapons.len(), 246);
+        assert_eq!(catalog.game_version, "7.1");
+        assert_eq!(catalog.characters.len(), 128);
+        assert_eq!(catalog.weapons.len(), 252);
         assert_eq!(catalog.artifact_sets.len(), 63);
         assert_eq!(
             catalog

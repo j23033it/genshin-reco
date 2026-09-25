@@ -173,12 +173,25 @@ describe("TeamResultPanel", () => {
     expect(screen.getAllByText(/砂：元素チャージ効率/).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/優先サブ：会心ダメージ > 会心率/).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/戦闘中・条件付き/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText("爆発を毎回使う条件").length).toBeGreaterThan(0);
     expect(screen.queryByText(/set-crimson/)).not.toBeInTheDocument();
     expect(screen.queryByText(/4セット/)).not.toBeInTheDocument();
     expect(screen.queryByText(/EvidenceGrade|verification|根拠|推薦理由/)).not.toBeInTheDocument();
     expect(screen.getAllByText("C0").length).toBeGreaterThan(0);
     expect(screen.getAllByText("R1").length).toBeGreaterThan(0);
   }, 30_000);
+
+  it("目標値の直下に編成効果の加算量と条件を表示する", () => {
+    const resolution = structuredClone(createResolution("resolved", "character-1-variant-a"));
+    resolution.members[0].alternatives[0].mainStatPackage.targetStats[0].includedBonuses = [
+      { source: "氷共鳴", amount: 15, condition: "氷元素付着中" },
+    ];
+
+    render(<TeamResultPanel catalog={catalog} party={party} resolution={resolution} validity="current" />);
+
+    const characterOneCard = screen.getByRole("article", { name: "キャラクター1の分析結果" });
+    expect(within(characterOneCard).getByText("含める効果：氷共鳴 +15%（氷元素付着中）")).toBeInTheDocument();
+  });
 
   it("候補未選択時は候補ボタンをキーボード操作し、選択を通知する", async () => {
     const user = userEvent.setup();
@@ -271,7 +284,7 @@ describe("TeamResultPanel", () => {
 
     expect(screen.getAllByText(/未対応ステータス/).length).toBeGreaterThan(0);
     expect(screen.getByText(/キャラクター：条件を確認してください/)).toBeInTheDocument();
-    expect(screen.getByText(/編成効果 \+10%（適用条件あり）/)).toBeInTheDocument();
+    expect(screen.getAllByText(/編成効果 \+10%（適用条件あり）/).length).toBeGreaterThan(0);
     expect(screen.queryByText(/future_stat_id|future_target_id|unknown_bonus_1|condition_id_2|unknown_character_1/)).not.toBeInTheDocument();
   });
 

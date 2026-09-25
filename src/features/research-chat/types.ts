@@ -36,6 +36,7 @@ export interface ResearchConversation {
     createdAt: string;
   }[];
   members: ResearchMemberInput[];
+  title?: string | null;
   teamId?: string | null;
   error?: string | null;
   createdAt: string;
@@ -53,7 +54,7 @@ export interface TeamMember extends ResearchMember {
   mainStats: string;
   subStats: string;
   targetStats?:
-    { label: string; value?: string | null; primary?: boolean }[] | null;
+    { label: string; value?: string | null; primary?: boolean; note?: string | null }[] | null;
 }
 
 export interface ResearchedTeamSummary {
@@ -92,12 +93,14 @@ export interface ResearchRepository {
   updateConditions(
     sessionId: string,
     members: ResearchMemberInput[],
+    title: string | null,
   ): Promise<ResearchConversation>;
   startResearch(sessionId: string): Promise<ResearchedTeamRecord>;
   cancelResearch(sessionId: string): Promise<void>;
   listTeams(): Promise<ResearchedTeamSummary[]>;
   loadConversation(sessionId: string): Promise<ResearchConversation | null>;
   loadTeam(teamId: string): Promise<ResearchedTeamRecord | null>;
+  renameTeam(teamId: string, title: string): Promise<ResearchedTeamRecord>;
   subscribeProgress(
     callback: (progress: ResearchProgress) => void,
   ): Promise<() => void>;

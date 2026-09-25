@@ -12,6 +12,7 @@ import {
   Database,
   PanelLeftClose,
   PanelLeftOpen,
+  Pencil,
   Plus,
   RefreshCw,
   Send,
@@ -274,7 +275,7 @@ function BuildCard({ member, index }: { member: TeamMember; index: number }) {
           {!member.targetStats?.length ? (
             <p className="mt-3 text-sm text-slate-400">目標値は未確認です。</p>
           ) : null}
-          <dl className="mt-3 grid grid-cols-2 gap-2">
+          <dl className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
             {(member.targetStats ?? []).map((target) => (
               <div
                 key={target.label}
@@ -301,9 +302,19 @@ function BuildCard({ member, index }: { member: TeamMember; index: number }) {
                 <dd className="mt-1 break-words text-sm font-bold tabular-nums text-slate-100">
                   {target.value || "数値は未確認"}
                 </dd>
+                {target.note?.trim() ? (
+                  <dd className="mt-2 whitespace-pre-wrap break-words text-xs leading-5 text-slate-300">
+                    {target.note}
+                  </dd>
+                ) : null}
               </div>
             ))}
           </dl>
+          {Boolean(member.targetStats?.length) && !member.targetStats?.some((target) => target.note?.trim()) ? (
+            <p className="mt-3 text-xs leading-5 text-slate-400">
+              この結果には目標値の個別の注意点がありません。元素共鳴や固有天賦などの影響は再調査で確認してください。
+            </p>
+          ) : null}
         </div>
       </div>
     </article>
@@ -317,6 +328,8 @@ function ResultView({
   onRevise,
   demo,
   conversation,
+  onRename,
+  disabled,
 }: {
   conversation: ResearchConversation | null;
   record: ResearchedTeamRecord;
@@ -324,7 +337,40 @@ function ResultView({
   onTabChange: (tab: ResultTab) => void;
   onRevise: () => void;
   demo: boolean;
+  onRename: (teamId: string, title: string) => Promise<void>;
+  disabled: boolean;
 }) {
+  const [editingTitle, setEditingTitle] = useState(false);
+  const [titleInput, setTitleInput] = useState(record.title);
+  const [titleError, setTitleError] = useState("");
+  const [savingTitle, setSavingTitle] = useState(false);
+  const editTitleButtonRef = useRef<HTMLButtonElement>(null);
+  const restoreTitleFocus = useRef(false);
+  useEffect(() => {
+    if (!editingTitle && restoreTitleFocus.current) {
+      restoreTitleFocus.current = false;
+      editTitleButtonRef.current?.focus();
+    }
+  }, [editingTitle]);
+  const saveTitle = async (event: FormEvent) => {
+    event.preventDefault();
+    const title = titleInput.trim();
+    if (!title || Array.from(title).length > 80) {
+      setTitleError("編成名は1〜80文字で入力してください。");
+      return;
+    }
+    setSavingTitle(true);
+    setTitleError("");
+    try {
+      await onRename(record.teamId, title);
+      restoreTitleFocus.current = true;
+      setEditingTitle(false);
+    } catch (error) {
+      setTitleError(error instanceof Error ? error.message : "編成名を変更できませんでした。");
+    } finally {
+      setSavingTitle(false);
+    }
+  };
   return (
     <section className="mx-auto w-full max-w-6xl flex-1 px-5 py-7 sm:px-8">
       <div className="flex flex-wrap items-start justify-between gap-5">
@@ -335,9 +381,46 @@ function ResultView({
               ? "デモの調査結果・端末への保存なし"
               : "調査済み・この端末に保存"}
           </p>
-          <h1 className="mt-2 break-words text-3xl font-bold text-slate-50">
-            {record.title}
-          </h1>
+          <div className="mt-2 flex flex-wrap items-center gap-3">
+            <h1 className="min-w-0 break-words text-3xl font-bold text-slate-50">{record.title}</h1>
+            {!editingTitle ? (
+              <button
+                ref={editTitleButtonRef}
+                type="button"
+                disabled={disabled}
+                className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-slate-600 px-3 text-sm text-slate-200 hover:bg-slate-800 disabled:opacity-50"
+                onClick={() => {
+                  setTitleInput(record.title);
+                  setTitleError("");
+                  setEditingTitle(true);
+                }}
+              >
+                <Pencil size={15} aria-hidden="true" />編成名を編集
+              </button>
+            ) : null}
+          </div>
+          {editingTitle ? (
+            <form className="mt-4 max-w-xl" onSubmit={(event) => void saveTitle(event)}>
+              <label htmlFor="saved-team-title" className="mb-2 block text-sm font-medium text-slate-300">保存済みの編成名</label>
+              <input
+                id="saved-team-title"
+                autoFocus
+                type="text"
+                value={titleInput}
+                maxLength={80}
+                disabled={savingTitle}
+                aria-invalid={Boolean(titleError)}
+                aria-describedby={titleError ? "saved-team-title-error" : undefined}
+                onChange={(event) => setTitleInput(event.target.value)}
+                className="min-h-11 w-full rounded-lg border border-slate-600 bg-slate-950 px-3 text-sm text-slate-100 focus-visible:outline-2 focus-visible:outline-amber-300 disabled:opacity-50"
+              />
+              {titleError ? <p id="saved-team-title-error" role="alert" className="mt-2 text-sm text-rose-300">{titleError}</p> : null}
+              <div className="mt-3 flex flex-wrap gap-2">
+                <button type="submit" disabled={savingTitle || !titleInput.trim()} className="min-h-11 rounded-lg bg-amber-300 px-4 font-semibold text-slate-950 hover:bg-amber-200 disabled:opacity-50">{savingTitle ? "保存中…" : "保存"}</button>
+                <button type="button" disabled={savingTitle} className="min-h-11 rounded-lg border border-slate-600 px-4 text-slate-200 hover:bg-slate-800 disabled:opacity-50" onClick={() => { restoreTitleFocus.current = true; setEditingTitle(false); }}>キャンセル</button>
+              </div>
+            </form>
+          ) : null}
           {record.gameVersion ? (
             <p className="mt-3 text-sm text-slate-400">
               対象バージョン：{record.gameVersion}
@@ -761,7 +844,7 @@ export function ResearchChatPrototype({
                   key={`${chat.conversation.sessionId}:${chat.conversation.updatedAt}`}
                   conversation={chat.conversation}
                   disabled={chat.busy}
-                  onResearch={(members) => void chat.start(members)}
+                  onResearch={(members, title) => void chat.start(members, title)}
                 />
               ) : ["ready", "failed", "cancelled"].includes(
                 chat.conversation.status,
@@ -786,11 +869,14 @@ export function ResearchChatPrototype({
           ) : null}
           {chat.stage === "result" && chat.record ? (
             <ResultView
+              key={chat.record.teamId}
               conversation={chat.conversation}
               record={chat.record}
               tab={resultTab}
               onTabChange={setResultTab}
               demo={demo}
+              onRename={chat.renameTeam}
+              disabled={chat.busy}
               onRevise={() => {
                 setResultTab("conversation");
                 focusComposer();

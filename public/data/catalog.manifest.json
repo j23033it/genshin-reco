@@ -1,31 +1,31 @@
 {
   "schemaVersion": "catalog-manifest-v2",
-  "gameVersion": "7.0",
-  "catalogUpdatedAt": "2026-08-24",
+  "gameVersion": "7.1",
+  "catalogUpdatedAt": "2026-09-26",
   "counts": {
-    "characters": 126,
-    "weapons": 246,
+    "characters": 128,
+    "weapons": 252,
     "artifactSets": 63
   },
-  "catalogSha256": "1b4c2a0fb87843eeb51734db6c878faede8b4729e3b9b7fa5bfd539b4f82b32f",
+  "catalogSha256": "7e8a035280e5648a136e24fa510db0c74c87fa5538f87e168edbdd48456f31c1",
   "sources": [
     {
       "kind": "characters",
       "fileName": "キャラクターカタログ.md",
-      "declaredCount": 126,
-      "sha256": "ffaa6467e0e02fd5af1ad8403e76a273f2477a2921746e12e7ad0a482f2a0e4b"
+      "declaredCount": 128,
+      "sha256": "17f36462ddd545d68418e7414609d00e2bc26222c3f2fadf17063b0b21970787"
     },
     {
       "kind": "weapons",
       "fileName": "武器カタログ.md",
-      "declaredCount": 246,
-      "sha256": "848fdd6deb2c5075812fdb43ebf9e6f6389145ee8dc3edd3fba8de8b43fc94ba"
+      "declaredCount": 252,
+      "sha256": "47959d88de440fda0ef52093988af124b750ce21faa12e6c2d3eb2409ffbb0ca"
     },
     {
       "kind": "artifactSets",
       "fileName": "聖遺物セットカタログ.md",
       "declaredCount": 63,
-      "sha256": "23e046452c203f81ff572485203ef60e99ce4f83441b18fd5377034958751888"
+      "sha256": "4b181b59aecd782abb506324fa2243db624d33139a56155528457b5f51e1693f"
     }
   ]
 }

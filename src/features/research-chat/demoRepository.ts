@@ -17,6 +17,7 @@ export function createDemoResearchRepository(): ResearchRepository {
       const conversation: ResearchConversation = {
         sessionId: sessionId ?? crypto.randomUUID(),
         status: "ready",
+        title: previous?.title ?? null,
         members: DEMO_TEAM.map((member, slotIndex) => ({
           slotIndex,
           name: member.name,
@@ -38,7 +39,7 @@ export function createDemoResearchRepository(): ResearchRepository {
       sessions.set(conversation.sessionId, conversation);
       return conversation;
     },
-    async updateConditions(sessionId, members) {
+    async updateConditions(sessionId, members, title) {
       const previous = sessions.get(sessionId);
       if (!previous) throw new Error("デモの会話が見つかりません。");
       const now = new Date().toISOString();
@@ -46,6 +47,7 @@ export function createDemoResearchRepository(): ResearchRepository {
         ...previous,
         status: "ready",
         members,
+        title,
         updatedAt: now,
       };
       sessions.set(sessionId, conversation);
@@ -58,7 +60,7 @@ export function createDemoResearchRepository(): ResearchRepository {
       const record: ResearchedTeamRecord = {
         teamId: crypto.randomUUID(),
         sessionId,
-        title: "アルレッキーノ蒸発編成（デモ）",
+        title: sessions.get(sessionId)?.title || "アルレッキーノ蒸発編成（デモ）",
         members: DEMO_TEAM,
         sources: [],
         warnings: ["表示確認用のサンプルです。実際の調査結果ではありません。"],
@@ -66,6 +68,8 @@ export function createDemoResearchRepository(): ResearchRepository {
         updatedAt: now,
       };
       records.set(record.teamId, record);
+      const conversation = sessions.get(sessionId)!;
+      sessions.set(sessionId, { ...conversation, title: record.title, teamId: record.teamId, status: "succeeded" });
       return record;
     },
     async cancelResearch() {},
@@ -85,6 +89,15 @@ export function createDemoResearchRepository(): ResearchRepository {
     },
     async loadTeam(teamId) {
       return records.get(teamId) ?? null;
+    },
+    async renameTeam(teamId, title) {
+      const record = records.get(teamId);
+      if (!record) throw new Error("この編成は見つかりません。");
+      const updated = { ...record, title: title.trim(), updatedAt: new Date().toISOString() };
+      records.set(teamId, updated);
+      const conversation = sessions.get(record.sessionId);
+      if (conversation) sessions.set(record.sessionId, { ...conversation, title: updated.title });
+      return updated;
     },
     async subscribeProgress() {
       return () => {};

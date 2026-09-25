@@ -14,19 +14,21 @@ describe("オンデマンド調査のTauri契約", () => {
   it("コマンド名とcamelCase引数を渡す", async () => {
     await researchRepository.sendMessage("条件", "s1");
     const members = [{ slotIndex: 0, name: "テスト", weapon: null }];
-    await researchRepository.updateConditions("s1", members);
+    await researchRepository.updateConditions("s1", members, "新しい編成");
     await researchRepository.startResearch("s1");
     await researchRepository.cancelResearch("s1");
     await researchRepository.listTeams();
     await researchRepository.loadTeam("t1");
+    await researchRepository.renameTeam("t1", "変更後");
     await researchRepository.loadConversation("s1");
     expect(vi.mocked(invoke).mock.calls).toEqual([
       ["send_on_demand_message", { sessionId: "s1", message: "条件" }],
-      ["update_on_demand_conditions", { sessionId: "s1", members }],
+      ["update_on_demand_conditions", { sessionId: "s1", members, title: "新しい編成" }],
       ["start_on_demand_research", { sessionId: "s1" }],
       ["cancel_on_demand_research", { sessionId: "s1" }],
       ["list_researched_teams"],
       ["load_researched_team", { teamId: "t1" }],
+      ["rename_researched_team", { teamId: "t1", title: "変更後" }],
       ["load_on_demand_conversation", { sessionId: "s1" }],
     ]);
   });

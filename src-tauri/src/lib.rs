@@ -52,6 +52,7 @@ pub fn run() {
             on_demand::cancel_on_demand_research,
             on_demand::list_researched_teams,
             on_demand::load_researched_team,
+            on_demand::rename_researched_team,
             on_demand::load_on_demand_conversation
         ])
         .run(tauri::generate_context!())

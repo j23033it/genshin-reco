@@ -100,7 +100,10 @@ export function useResearchChat(repository: ResearchRepository) {
         conversation?.sessionId,
       );
       if (!current(request)) return false;
-      setConversation(result);
+      setConversation({
+        ...result,
+        title: result.title ?? (record?.sessionId === result.sessionId ? record.title : null),
+      });
       setRecord(null);
       setStage(
         result.status === "ready"
@@ -124,7 +127,7 @@ export function useResearchChat(repository: ResearchRepository) {
     }
   }
 
-  async function start(members?: ResearchMemberInput[]) {
+  async function start(members?: ResearchMemberInput[], title?: string | null) {
     if (
       !conversation ||
       !["ready", "failed", "cancelled"].includes(conversation.status)
@@ -136,7 +139,7 @@ export function useResearchChat(repository: ResearchRepository) {
     let stop: (() => void) | undefined;
     try {
       const selectedConversation = members
-        ? await repository.updateConditions(conversation.sessionId, members)
+        ? await repository.updateConditions(conversation.sessionId, members, title ?? null)
         : conversation;
       if (!current(request)) return;
       setConversation(selectedConversation);
@@ -229,7 +232,7 @@ export function useResearchChat(repository: ResearchRepository) {
       setRecord(result);
       setConversation(
         (previous) =>
-          restored ??
+          (restored ? { ...restored, title: restored.title ?? result.title } : null) ??
           (previous?.sessionId === result.sessionId
             ? previous
             : {
@@ -240,6 +243,7 @@ export function useResearchChat(repository: ResearchRepository) {
                   slotIndex,
                   name: member.name,
                 })),
+                title: result.title,
                 createdAt: result.createdAt,
                 updatedAt: result.updatedAt,
               }),
@@ -251,6 +255,25 @@ export function useResearchChat(repository: ResearchRepository) {
         setError(errorText(failure));
         setStage("error");
       }
+    } finally {
+      finish(request);
+    }
+  }
+
+  async function renameTeam(teamId: string, title: string) {
+    const request = begin();
+    if (request === null) throw new Error("別の処理が完了してから変更してください。");
+    try {
+      const result = await repository.renameTeam(teamId, title);
+      if (!current(request)) return;
+      setRecord((previous) => previous?.teamId === teamId ? result : previous);
+      setConversation((previous) => previous?.sessionId === result.sessionId
+        ? { ...previous, title: result.title }
+        : previous);
+      setTeams((previous) => previous.map((team) => team.teamId === teamId
+        ? { ...team, title: result.title, updatedAt: result.updatedAt }
+        : team));
+      void refreshTeams();
     } finally {
       finish(request);
     }
@@ -281,6 +304,7 @@ export function useResearchChat(repository: ResearchRepository) {
     start,
     cancel,
     openTeam,
+    renameTeam,
     reset,
     refreshTeams: () => {
       setListLoading(true);

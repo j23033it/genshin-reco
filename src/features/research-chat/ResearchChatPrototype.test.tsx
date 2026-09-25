@@ -64,7 +64,7 @@ const record: ResearchedTeamRecord = {
       mainStats: "HP% / HP% / HP%",
       subStats: "HP",
       targetStats: [
-        { label: "HP", value: "45,000", primary: true },
+        { label: "HP", value: "45,000", primary: true, note: "固有天賦の発動条件を確認し、編成効果を含めず戦闘前に合わせる。" },
         { label: "元素熟知" },
       ],
     },
@@ -85,15 +85,17 @@ function setupRepository() {
   const repository: ResearchRepository = {
     mode: "tauri",
     sendMessage: vi.fn(async () => conversation),
-    updateConditions: vi.fn(async (_sessionId, members) => ({
+    updateConditions: vi.fn(async (_sessionId, members, title) => ({
       ...conversation,
       members,
+      title,
     })),
     startResearch: vi.fn(async () => record),
     cancelResearch: vi.fn(async () => {}),
     listTeams: vi.fn(async () => []),
     loadConversation: vi.fn(async () => null),
     loadTeam: vi.fn(async () => record),
+    renameTeam: vi.fn(async (_teamId, title) => ({ ...record, title })),
     subscribeProgress: vi.fn(async (callback) => {
       progress = callback;
       return stop;
@@ -130,6 +132,7 @@ describe("実データの編成調査UI", () => {
     });
     render(<ResearchChatPrototype repository={repository} />);
     await send(user, "アルレッキーノ、夜蘭、ベネット、鍾離");
+    await user.type(await screen.findByRole("textbox", { name: "編成名" }), "蒸発編成");
     const attacker = await screen.findByRole("group", { name: "アルレッキーノの条件" });
     expect(within(attacker).getByRole("button", { name: "アルレッキーノ：指定なし" })).toHaveAttribute("aria-pressed", "true");
     await user.click(within(attacker).getByRole("button", { name: "アルレッキーノ：2凸" }));
@@ -142,8 +145,9 @@ describe("実データの編成調査UI", () => {
     await user.selectOptions(within(hydro).getByRole("combobox", { name: "武器" }), "");
     await user.click(screen.getByRole("button", { name: "この条件で調査する" }));
     await waitFor(() => expect(repository.updateConditions).toHaveBeenCalledOnce());
-    const [sessionId, selected] = vi.mocked(repository.updateConditions).mock.calls[0];
+    const [sessionId, selected, title] = vi.mocked(repository.updateConditions).mock.calls[0];
     expect(sessionId).toBe("session-1");
+    expect(title).toBe("蒸発編成");
     expect(selected[0]).toMatchObject({ constellation: 2, weapon: "赤月のシルエット", refinement: null });
     expect(selected[1]).toMatchObject({ weapon: null, refinement: null });
     await waitFor(() => expect(repository.startResearch).toHaveBeenCalledWith("session-1"));
@@ -229,6 +233,7 @@ describe("実データの編成調査UI", () => {
     ).toBeInTheDocument();
     expect(screen.getByText("主参照")).toBeInTheDocument();
     expect(screen.getByText("45,000")).toBeInTheDocument();
+    expect(screen.getByText("固有天賦の発動条件を確認し、編成効果を含めず戦闘前に合わせる。")).toBeInTheDocument();
     expect(screen.getByText("数値は未確認")).toBeInTheDocument();
     expect(screen.getByText("テストキャラ（画像なし）")).toBeInTheDocument();
     expect(stop).toHaveBeenCalled();
@@ -359,6 +364,51 @@ describe("実データの編成調査UI", () => {
     await user.click(await screen.findByRole("button", { name: "会話" }));
     expect(screen.getByText("保存されていた指定条件")).toBeInTheDocument();
     expect(repository.loadConversation).toHaveBeenCalledWith("session-1");
+  });
+
+  it("注意点のない保存結果には再調査の案内を表示する", async () => {
+    const user = userEvent.setup();
+    const { repository } = setupRepository();
+    vi.mocked(repository.startResearch).mockResolvedValue({
+      ...record,
+      members: [{
+        ...record.members[0],
+        targetStats: [{ label: "会心率", value: "70%", note: null }],
+      }],
+    });
+
+    render(<ResearchChatPrototype repository={repository} />);
+    await send(user);
+    await user.click(screen.getByRole("button", { name: /この内容で調査する/ }));
+
+    expect(await screen.findByText(/目標値の個別の注意点がありません/)).toBeInTheDocument();
+  });
+
+  it("保存済みの編成名を変更し、結果と一覧へ反映する", async () => {
+    const user = userEvent.setup();
+    const { repository } = setupRepository();
+    let title = "テスト編成";
+    vi.mocked(repository.listTeams).mockImplementation(async () => [{
+      teamId: "team-1",
+      title,
+      memberNames: ["テストキャラ"],
+      memberImageUrls: [],
+      updatedAt: "now",
+    }]);
+    vi.mocked(repository.renameTeam).mockImplementation(async (_teamId, nextTitle) => {
+      title = nextTitle;
+      return { ...record, title };
+    });
+    render(<ResearchChatPrototype repository={repository} />);
+    await user.click(await screen.findByRole("button", { name: /テスト編成/ }));
+    await user.click(await screen.findByRole("button", { name: "編成名を編集" }));
+    const input = screen.getByRole("textbox", { name: "保存済みの編成名" });
+    await user.clear(input);
+    await user.type(input, "新しい編成名");
+    await user.click(screen.getByRole("button", { name: "保存" }));
+    expect(repository.renameTeam).toHaveBeenCalledWith("team-1", "新しい編成名");
+    expect(await screen.findByRole("heading", { name: "新しい編成名" })).toBeInTheDocument();
+    expect(await screen.findByRole("button", { name: /新しい編成名/ })).toBeInTheDocument();
   });
 
   it("キャンセル失敗を表示して調査の完了を待てる", async () => {

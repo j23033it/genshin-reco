@@ -3,11 +3,12 @@ use crate::{
         AppServerSupervisor, ResearchCancellation, collect_on_demand_intake,
         research_on_demand_team,
     },
+    catalog::load_embedded_catalog,
     database::{Database, new_id, timestamp},
     on_demand_domain::{
         OnDemandResearchProgress, ResearchConversation, ResearchConversationStatus, ResearchIntake,
         ResearchMemberInput, ResearchMessage, ResearchMessageRole, ResearchedTeamDraft,
-        ResearchedTeamRecord, ResearchedTeamSummary,
+        ResearchedTeamRecord, ResearchedTeamSummary, validated_team_title,
     },
 };
 use std::collections::HashMap;
@@ -95,6 +96,7 @@ pub async fn update_on_demand_conditions(
     database: State<'_, Database>,
     session_id: String,
     members: Vec<ResearchMemberInput>,
+    title: Option<String>,
 ) -> Result<ResearchConversation, String> {
     let active = coordinator.active.lock().await;
     if active.contains_key(&session_id) {
@@ -107,7 +109,7 @@ pub async fn update_on_demand_conditions(
     if conversation.status == ResearchConversationStatus::Researching {
         return Err("調査中のため、完了またはキャンセル後に条件を変更してください".into());
     }
-    if apply_conditions(&mut conversation, members)? {
+    if apply_conditions(&mut conversation, members, title)? {
         database
             .save_on_demand_conversation(&conversation)
             .map_err(|error| error.to_string())?;
@@ -118,6 +120,7 @@ pub async fn update_on_demand_conditions(
 fn apply_conditions(
     conversation: &mut ResearchConversation,
     mut members: Vec<ResearchMemberInput>,
+    title: Option<String>,
 ) -> Result<bool, String> {
     if conversation.members.len() != 4 || members.len() != 4 {
         return Err("4人のキャラクターが揃ってから条件を選んでください".into());
@@ -142,7 +145,11 @@ fn apply_conditions(
         ready_to_research: true,
     }
     .validate()?;
-    if conversation.members == members {
+    let title = title
+        .filter(|title| !title.trim().is_empty())
+        .map(|title| validated_team_title(&title))
+        .transpose()?;
+    if conversation.members == members && conversation.title == title {
         return Ok(false);
     }
 
@@ -190,6 +197,7 @@ fn apply_conditions(
         created_at: timestamp(),
     });
     conversation.members = members;
+    conversation.title = title;
     conversation.status = ResearchConversationStatus::Ready;
     conversation.error = None;
     conversation.updated_at = timestamp();
@@ -294,8 +302,12 @@ pub async fn start_on_demand_research(
 fn finalize_researched_team(
     database: &Database,
     conversation: &mut ResearchConversation,
-    draft: ResearchedTeamDraft,
+    mut draft: ResearchedTeamDraft,
 ) -> Result<ResearchedTeamRecord, String> {
+    let catalog = load_embedded_catalog().map_err(|error| error.to_string())?;
+    for member in &mut draft.members {
+        member.apply_catalog_images(&catalog);
+    }
     draft.validate()?;
     let now = timestamp();
     let existing = if let Some(team_id) = conversation.team_id.as_deref() {
@@ -311,7 +323,7 @@ fn finalize_researched_team(
             .map(|record| record.team_id.clone())
             .unwrap_or_else(|| new_id("researched-team")),
         session_id: conversation.session_id.clone(),
-        title: draft.title,
+        title: conversation.title.clone().unwrap_or(draft.title),
         game_version: draft.game_version,
         members: draft.members,
         sources: draft.sources,
@@ -323,6 +335,7 @@ fn finalize_researched_team(
         updated_at: now.clone(),
     };
     conversation.status = ResearchConversationStatus::Succeeded;
+    conversation.title = Some(record.title.clone());
     conversation.team_id = Some(record.team_id.clone());
     conversation.error = None;
     conversation.updated_at = now;
@@ -369,6 +382,26 @@ pub fn load_researched_team(
 ) -> Result<Option<ResearchedTeamRecord>, String> {
     database
         .load_researched_team(&team_id)
+        .map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+pub async fn rename_researched_team(
+    coordinator: State<'_, OnDemandResearchCoordinator>,
+    database: State<'_, Database>,
+    team_id: String,
+    title: String,
+) -> Result<ResearchedTeamRecord, String> {
+    let record = database
+        .load_researched_team(&team_id)
+        .map_err(|error| error.to_string())?
+        .ok_or_else(|| "この編成は見つかりません".to_string())?;
+    let active = coordinator.active.lock().await;
+    if active.contains_key(&record.session_id) {
+        return Err("調査中のため、完了またはキャンセル後に編成名を変更してください".into());
+    }
+    database
+        .rename_researched_team(&team_id, &title)
         .map_err(|error| error.to_string())
 }
 
@@ -420,12 +453,76 @@ mod tests {
                     refinement: None,
                 })
                 .collect(),
+            title: None,
             missing_fields: Vec::new(),
             team_id: None,
             error: None,
             created_at: "created".into(),
             updated_at: "updated".into(),
         }
+    }
+
+    #[test]
+    fn 調査完了時にカタログ画像を返して編成と再利用知識へ保存する() {
+        let database = Database::open_in_memory().unwrap();
+        let mut conversation = conversation();
+        conversation.title = Some("入力した編成名".into());
+        database.save_on_demand_conversation(&conversation).unwrap();
+        let members = conversation.members.iter().map(|member| serde_json::json!({
+            "slotIndex": member.slot_index,
+            "id": format!("member-{}", member.slot_index),
+            "name": member.name,
+            "element": "炎",
+            "role": "支援",
+            "constellation": "無凸",
+            "imageUrl": null,
+            "weapon": "西風長槍",
+            "weaponImageUrl": "推測された不正なURL",
+            "artifact": "旧貴族のしつけ",
+            "artifactImageUrl": null,
+            "mainStats": "HP / HP / HP",
+            "subStats": "HP",
+            "targetStats": [
+                {"label": "HP", "value": "30,000以上", "primary": true, "note": null},
+                {"label": "元素チャージ効率", "value": "180%以上", "primary": false, "note": null}
+            ]
+        })).collect::<Vec<_>>();
+        let draft = serde_json::from_value(serde_json::json!({
+            "title": "画像補完テスト", "gameVersion": "7.1", "members": members,
+            "sources": [{"title": "根拠", "url": "https://game8.jp/genshin/12345"}],
+            "warnings": []
+        }))
+        .unwrap();
+        let record = finalize_researched_team(&database, &mut conversation, draft).unwrap();
+        assert_eq!(record.title, "入力した編成名");
+        assert!(
+            record
+                .members
+                .iter()
+                .all(|member| member.image_url.is_some()
+                    && member.weapon_image_url.is_some()
+                    && member.artifact_image_url.is_some())
+        );
+        let connection = database.connection().unwrap();
+        let stored_json: String = connection
+            .query_row(
+                "SELECT result_json FROM researched_teams WHERE team_id = ?1",
+                [&record.team_id],
+                |row| row.get(0),
+            )
+            .unwrap();
+        assert_eq!(
+            serde_json::from_str::<ResearchedTeamRecord>(&stored_json).unwrap(),
+            record
+        );
+        let weapon_json: String = connection.query_row(
+            "SELECT payload_json FROM on_demand_knowledge WHERE entity_type = 'weapon' AND name = '西風長槍'", [], |row| row.get(0)
+        ).unwrap();
+        let weapon: serde_json::Value = serde_json::from_str(&weapon_json).unwrap();
+        assert_eq!(
+            weapon["imageUrl"].as_str(),
+            record.members[0].weapon_image_url.as_deref()
+        );
     }
 
     #[test]
@@ -438,7 +535,8 @@ mod tests {
         selected[0].weapon = Some("赤月のシルエット".into());
         selected[1].weapon = None;
 
-        assert!(apply_conditions(&mut conversation, selected).unwrap());
+        assert!(apply_conditions(&mut conversation, selected, Some(" 蒸発編成 ".into())).unwrap());
+        assert_eq!(conversation.title.as_deref(), Some("蒸発編成"));
         assert_eq!(conversation.members[0].constellation, Some(2));
         assert_eq!(
             conversation.members[0].weapon.as_deref(),
@@ -457,7 +555,7 @@ mod tests {
         let mut selected = conversation.members.clone();
         selected[0].name = "別のキャラ".into();
 
-        assert!(apply_conditions(&mut conversation, selected).is_err());
+        assert!(apply_conditions(&mut conversation, selected, None).is_err());
         assert!(conversation.messages.is_empty());
     }
 
@@ -466,7 +564,20 @@ mod tests {
         let mut conversation = conversation();
         let selected = conversation.members.clone();
 
-        assert!(!apply_conditions(&mut conversation, selected).unwrap());
+        assert!(!apply_conditions(&mut conversation, selected, None).unwrap());
         assert!(conversation.messages.is_empty());
+    }
+
+    #[test]
+    fn 編成名だけ変更しても保存対象になる() {
+        let mut conversation = conversation();
+        let selected = conversation.members.clone();
+        assert!(apply_conditions(&mut conversation, selected, Some("新しい名前".into())).unwrap());
+        assert_eq!(conversation.title.as_deref(), Some("新しい名前"));
+        let selected_again = conversation.members.clone();
+        assert!(
+            !apply_conditions(&mut conversation, selected_again, Some("新しい名前".into()))
+                .unwrap()
+        );
     }
 }
