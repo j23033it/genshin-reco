@@ -7,6 +7,7 @@ mod database_commands;
 pub mod domain;
 pub mod hashing;
 mod on_demand;
+mod on_demand_cache;
 pub mod on_demand_domain;
 mod on_demand_store;
 pub mod reconciler;

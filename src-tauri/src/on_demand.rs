@@ -1,10 +1,11 @@
 use crate::{
     app_server::{
         AppServerSupervisor, ResearchCancellation, collect_on_demand_intake,
-        research_on_demand_team,
+        on_demand_research_revision, research_on_demand_team,
     },
     catalog::load_embedded_catalog,
     database::{Database, new_id, timestamp},
+    on_demand_cache::{CachedTeamResearch, research_cache_key, resolve_team_research},
     on_demand_domain::{
         OnDemandResearchProgress, ResearchConversation, ResearchConversationStatus, ResearchIntake,
         ResearchMemberInput, ResearchMessage, ResearchMessageRole, ResearchedTeamDraft,
@@ -222,6 +223,10 @@ pub async fn start_on_demand_research(
         ready_to_research: conversation.members.len() == 4,
     };
     intake.validate()?;
+    let catalog = load_embedded_catalog().map_err(|error| error.to_string())?;
+    let cache_key = research_cache_key(&intake, &catalog, &on_demand_research_revision()?)?;
+    // 保存済み編成からの再調査は、同じ条件でもWebで新しい情報を取り直す。
+    let refresh = conversation.team_id.is_some();
 
     let cancellation = ResearchCancellation::default();
     {
@@ -242,21 +247,66 @@ pub async fn start_on_demand_research(
         &app,
         &session_id,
         "started",
-        "4人の指定を確認し、根拠ページの調査を始めました",
+        "4人の指定と、この端末で過去に調べた結果を確認しています",
         None,
     );
 
-    let researched = research_on_demand_team(&app, &supervisor, &intake, &cancellation).await;
+    let researched = resolve_team_research(
+        &database,
+        &intake,
+        &cache_key,
+        &catalog.game_version,
+        refresh,
+        |known_sources| {
+            let app = &app;
+            let session_id = &session_id;
+            let supervisor = &supervisor;
+            let intake = &intake;
+            let cancellation = &cancellation;
+            let catalog = &catalog;
+            async move {
+                emit_progress(
+                    app,
+                    session_id,
+                    "researching",
+                    if known_sources.is_empty() {
+                        "根拠ページを調査しています"
+                    } else {
+                        "過去に確認した根拠ページを使い、今回の条件で確認し直しています"
+                    },
+                    None,
+                );
+                let mut draft =
+                    research_on_demand_team(app, supervisor, intake, cancellation, &known_sources)
+                        .await?;
+                for member in &mut draft.members {
+                    member.apply_catalog_images(catalog);
+                }
+                Ok(draft)
+            }
+        },
+    )
+    .await;
     let result = match researched {
-        Ok(draft) => {
+        Ok(outcome) if !cancellation.is_cancelled() => {
             emit_progress(
                 &app,
                 &session_id,
                 "validating",
-                "目標ステータスと根拠ページを確認しています",
+                if outcome.reused {
+                    "同じ4人・武器・凸・精錬の調査結果を再利用し、保存しています"
+                } else {
+                    "目標ステータスと根拠ページを確認しています"
+                },
                 None,
             );
-            match finalize_researched_team(&database, &mut conversation, draft) {
+            match finalize_researched_team(
+                &database,
+                &mut conversation,
+                outcome.draft,
+                outcome.cache.as_ref(),
+                outcome.reused,
+            ) {
                 Ok(record) => {
                     emit_progress(
                         &app,
@@ -270,6 +320,7 @@ pub async fn start_on_demand_research(
                 Err(error) => Err(error),
             }
         }
+        Ok(_) => Err("調査をキャンセルしました".into()),
         Err(error) => Err(error),
     };
 
@@ -303,12 +354,19 @@ fn finalize_researched_team(
     database: &Database,
     conversation: &mut ResearchConversation,
     mut draft: ResearchedTeamDraft,
+    cache: Option<&CachedTeamResearch>,
+    reused: bool,
 ) -> Result<ResearchedTeamRecord, String> {
     let catalog = load_embedded_catalog().map_err(|error| error.to_string())?;
     for member in &mut draft.members {
         member.apply_catalog_images(&catalog);
     }
     draft.validate()?;
+    if reused {
+        draft.warnings.push(
+            "過去7日以内に同じ4人・武器・凸・精錬で調べた結果を再利用しました。最新の情報は「条件を変えて再調査」で確認できます。".into(),
+        );
+    }
     let now = timestamp();
     let existing = if let Some(team_id) = conversation.team_id.as_deref() {
         database
@@ -342,13 +400,18 @@ fn finalize_researched_team(
     conversation.messages.push(ResearchMessage {
         role: ResearchMessageRole::Assistant,
         content: format!(
-            "「{}」の調査が完了しました。画像付きカードと目標ステータスを保存しました。",
-            record.title
+            "「{}」の{}。画像付きカードと目標ステータスを保存しました。",
+            record.title,
+            if reused {
+                "過去の調査結果を再利用しました"
+            } else {
+                "調査が完了しました"
+            },
         ),
         created_at: timestamp(),
     });
     database
-        .save_researched_team(conversation, &record)
+        .save_researched_team_with_cache(conversation, &record, cache)
         .map_err(|error| error.to_string())?;
     Ok(record)
 }
@@ -493,7 +556,8 @@ mod tests {
             "warnings": []
         }))
         .unwrap();
-        let record = finalize_researched_team(&database, &mut conversation, draft).unwrap();
+        let record =
+            finalize_researched_team(&database, &mut conversation, draft, None, false).unwrap();
         assert_eq!(record.title, "入力した編成名");
         assert!(
             record

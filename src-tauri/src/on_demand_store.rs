@@ -1,6 +1,7 @@
 use crate::{
     catalog::load_embedded_catalog,
     database::{Database, DatabaseError, new_id, timestamp},
+    on_demand_cache::{CachedTeamResearch, save_research_cache},
     on_demand_domain::{
         ResearchConversation, ResearchConversationStatus, ResearchedTeamRecord,
         ResearchedTeamSummary, validated_team_title,
@@ -87,6 +88,15 @@ impl Database {
         conversation: &ResearchConversation,
         record: &ResearchedTeamRecord,
     ) -> Result<(), DatabaseError> {
+        self.save_researched_team_with_cache(conversation, record, None)
+    }
+
+    pub(crate) fn save_researched_team_with_cache(
+        &self,
+        conversation: &ResearchConversation,
+        record: &ResearchedTeamRecord,
+        cache: Option<&CachedTeamResearch>,
+    ) -> Result<(), DatabaseError> {
         validate_conversation(conversation)?;
         if conversation.session_id != record.session_id
             || conversation.team_id.as_deref() != Some(record.team_id.as_str())
@@ -130,6 +140,10 @@ impl Database {
         )?;
 
         let sources_json = serde_json::to_string(&record.sources)?;
+        // 再利用や編成名の変更では、根拠を調べた日時を新しくしない。
+        let researched_at = cache.map_or(record.updated_at.as_str(), |cache| {
+            cache.researched_at.as_str()
+        });
         for member in &record.members {
             upsert_knowledge(
                 &transaction,
@@ -138,7 +152,7 @@ impl Database {
                 &record.game_version,
                 &serde_json::to_string(member)?,
                 &sources_json,
-                &record.updated_at,
+                researched_at,
             )?;
             upsert_knowledge(
                 &transaction,
@@ -150,7 +164,7 @@ impl Database {
                     "imageUrl": member.weapon_image_url,
                 }))?,
                 &sources_json,
-                &record.updated_at,
+                researched_at,
             )?;
             upsert_knowledge(
                 &transaction,
@@ -162,8 +176,11 @@ impl Database {
                     "imageUrl": member.artifact_image_url,
                 }))?,
                 &sources_json,
-                &record.updated_at,
+                researched_at,
             )?;
+        }
+        if let Some(cache) = cache {
+            save_research_cache(&transaction, cache)?;
         }
         transaction.commit()?;
         Ok(())
@@ -325,7 +342,8 @@ fn upsert_knowledge(
          ON CONFLICT(entity_type, name, game_version) DO UPDATE SET
             payload_json = excluded.payload_json,
             sources_json = excluded.sources_json,
-            updated_at = excluded.updated_at",
+            updated_at = excluded.updated_at
+         WHERE CAST(excluded.updated_at AS REAL) >= CAST(on_demand_knowledge.updated_at AS REAL)",
         params![
             new_id("knowledge"),
             entity_type,
