@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import type { Catalog } from "../../domain/catalogTypes";
 import { loadCatalog } from "../catalog/loadCatalog";
 import { cn } from "../../lib/cn";
+import { OperationProgress } from "../../components/OperationProgress";
 import type { ResearchConversation, ResearchMemberInput } from "./types";
 
 const CONSTELLATIONS = [null, 0, 1, 2, 3, 4, 5, 6] as const;
@@ -73,6 +74,9 @@ export function ResearchConditionsEditor({
         <p role="status" className="mt-3 text-sm text-amber-200">
           武器一覧を読み込めないため、武器名は手入力できます。
         </p>
+      ) : null}
+      {!catalog && !catalogFailed ? (
+        <OperationProgress className="mt-3" label="武器一覧を読み込み中…" />
       ) : null}
       <div className="mt-5 grid gap-4 xl:grid-cols-2">
         {members.map((member) => {

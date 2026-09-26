@@ -20,7 +20,9 @@ import {
   Sparkles,
 } from "lucide-react";
 import { cn } from "../../lib/cn";
+import { OperationProgress } from "../../components/OperationProgress";
 import { AppUpdateControl } from "./AppUpdateControl";
+import { ResearchProgressPanel } from "./ResearchProgressPanel";
 import { ResearchConditionsEditor } from "./ResearchConditionsEditor";
 import { researchRepository } from "./researchRepository";
 import { useResearchChat } from "./useResearchChat";
@@ -543,6 +545,19 @@ function Composer({
           placeholder="例：アルレッキーノ、夜蘭、ベネット、鍾離を調べたい"
           value={value}
           onChange={(event) => onChange(event.target.value)}
+          onKeyDown={(event) => {
+            if (
+              event.key !== "Enter" ||
+              event.shiftKey ||
+              event.nativeEvent.isComposing ||
+              event.nativeEvent.keyCode === 229
+            ) return;
+            event.preventDefault();
+            if (!event.repeat && !disabled && value.trim()) {
+              event.currentTarget.form?.requestSubmit();
+            }
+          }}
+          aria-describedby="team-request-hint"
           disabled={disabled}
         />
         <button
@@ -554,8 +569,8 @@ function Composer({
           <Send aria-hidden="true" size={18} />
         </button>
       </form>
-      <p className="mx-auto mt-2 max-w-4xl text-center text-xs text-slate-600">
-        調査結果はCodexの回答を検証してから保存します
+      <p id="team-request-hint" className="mx-auto mt-2 max-w-4xl text-center text-xs text-slate-600">
+        Enterで送信・Shift+Enterで改行。調査結果はCodexの回答を検証してから保存します
       </p>
     </div>
   );
@@ -575,6 +590,8 @@ export function ResearchChatPrototype({
   );
   const [resultTab, setResultTab] = useState<ResultTab>("build");
   const composerRef = useRef<HTMLDivElement>(null);
+  const pendingComposerFocus = useRef<{ source: Element | null } | null>({ source: null });
+  const [composerFocusRequest, setComposerFocusRequest] = useState(0);
   const sidebarRef = useRef<HTMLElement>(null);
   const sidebarTriggerRef = useRef<HTMLButtonElement>(null);
   const wide = useSyncExternalStore(
@@ -583,7 +600,12 @@ export function ResearchChatPrototype({
     () => true,
   );
   const restoreSidebarFocus = useCallback(
-    () => sidebarTriggerRef.current?.focus(),
+    () => {
+      if (
+        document.activeElement === document.body ||
+        sidebarRef.current?.contains(document.activeElement)
+      ) sidebarTriggerRef.current?.focus();
+    },
     [],
   );
   useEffect(() => {
@@ -600,9 +622,27 @@ export function ResearchChatPrototype({
   };
   const focusComposer = () =>
     composerRef.current?.querySelector("textarea")?.focus();
+  const requestComposerFocus = () => {
+    pendingComposerFocus.current = { source: document.activeElement };
+    setComposerFocusRequest((request) => request + 1);
+  };
+  useEffect(() => {
+    if (chat.busy || (sidebarOpen && !wide)) return;
+    const pending = pendingComposerFocus.current;
+    if (!pending) return;
+    pendingComposerFocus.current = null;
+    const active = document.activeElement;
+    // 無効状態の解除後に戻す。待機中に選ばれた別の操作先からは奪わない。
+    if (
+      active === document.body ||
+      active === pending.source ||
+      composerRef.current?.contains(active)
+    ) composerRef.current?.querySelector("textarea")?.focus();
+  }, [composerFocusRequest, chat.busy, sidebarOpen, wide]);
   const handleSubmit = async () => {
     const message = composer.trim();
     if (!message || chat.busy) return;
+    requestComposerFocus();
     if (await chat.send(message)) {
       setComposer("");
       setResultTab("build");
@@ -665,6 +705,7 @@ export function ResearchChatPrototype({
                 setComposer("");
                 setResultTab("build");
                 closeMobileSidebar();
+                requestComposerFocus();
               }}
             >
               <Plus size={18} aria-hidden="true" />
@@ -686,9 +727,7 @@ export function ResearchChatPrototype({
             </div>
             <div className="mt-3 min-h-0 flex-1 space-y-2 overflow-y-auto">
               {chat.listLoading ? (
-                <p role="status" className="text-sm text-slate-400">
-                  保存一覧を読み込み中…
-                </p>
+                <OperationProgress label="保存一覧を読み込み中…" className="text-slate-400" />
               ) : null}
               {chat.listError ? (
                 <p
@@ -780,9 +819,7 @@ export function ResearchChatPrototype({
             </div>
           ) : null}
           {chat.busy && chat.stage !== "researching" ? (
-            <p role="status" className="px-5 pt-5 text-sm text-amber-200">
-              読み込み中…
-            </p>
+            <OperationProgress label={chat.activityLabel} className="px-5 pt-5" />
           ) : null}
           {!chat.conversation && chat.stage !== "result" ? (
             <EmptyConversation
@@ -795,20 +832,7 @@ export function ResearchChatPrototype({
           {chat.stage === "researching" ? (
             <section className="mx-auto flex w-full max-w-3xl flex-1 flex-col justify-center px-5 py-12">
               <div className="rounded-2xl border border-slate-700 bg-slate-900 p-6">
-                <div role="status" aria-live="polite">
-                  <p className="text-sm font-semibold text-amber-300">
-                    Codexが調査中
-                  </p>
-                  <h1 className="mt-2 text-2xl font-bold">
-                    4人の情報を集めています
-                  </h1>
-                  <p className="mt-5 whitespace-pre-wrap break-words text-sm leading-7 text-slate-300">
-                    {chat.progress?.memberName
-                      ? `${chat.progress.memberName}：`
-                      : ""}
-                    {chat.progress?.detail || "調査を開始しています…"}
-                  </p>
-                </div>
+                <ResearchProgressPanel progress={chat.progress} cancelling={chat.cancelling} />
                 <p className="mt-5 text-xs leading-6 text-slate-400">
                   完了した編成だけ保存されます。
                 </p>

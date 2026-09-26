@@ -1469,7 +1469,7 @@ dependencies = [
 
 [[package]]
 name = "genshin-reco"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "keyring",
  "reqwest",
@@ -1486,6 +1486,8 @@ dependencies = [
  "thiserror 2.0.20",
  "tokio",
  "url",
+ "webview2-com",
+ "windows",
 ]
 
 [[package]]

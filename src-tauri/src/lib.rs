@@ -15,6 +15,7 @@ pub mod research_provider;
 pub mod solver;
 pub mod source_policy;
 mod tavily;
+mod windows_ime;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -25,10 +26,16 @@ pub fn run() {
             database_commands::initialize_database(app.handle()).map_err(std::io::Error::other)?;
             Ok(())
         })
+        .on_page_load(|webview, payload| {
+            if payload.event() == tauri::webview::PageLoadEvent::Finished {
+                windows_ime::install(webview);
+            }
+        })
         .manage(app_server::AppServerSupervisor::default())
         .manage(analysis::AnalysisCoordinator::default())
         .manage(on_demand::OnDemandResearchCoordinator::default())
         .invoke_handler(tauri::generate_handler![
+            windows_ime::repair_windows_ime_focus,
             app_server::probe_codex_environment,
             app_server::start_codex_device_login,
             app_server::read_codex_login_status,

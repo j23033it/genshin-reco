@@ -28,6 +28,7 @@ export function useResearchChat(repository: ResearchRepository) {
   const [listError, setListError] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [activityLabel, setActivityLabel] = useState("読み込み中…");
   const [cancelling, setCancelling] = useState(false);
   const [progress, setProgress] = useState<ResearchProgress | null>(null);
   const operation = useRef({ id: 0 });
@@ -74,10 +75,11 @@ export function useResearchChat(repository: ResearchRepository) {
     };
   }, [refreshTeams]);
 
-  function begin() {
+  function begin(label: string) {
     if (locked.current || cancelLocked.current) return null;
     locked.current = true;
     setBusy(true);
+    setActivityLabel(label);
     setError("");
     return ++operation.current.id;
   }
@@ -92,7 +94,7 @@ export function useResearchChat(repository: ResearchRepository) {
   }
 
   async function send(message: string) {
-    const request = begin();
+    const request = begin("編成の条件を確認中…");
     if (request === null) return false;
     try {
       const result = await repository.sendMessage(
@@ -133,7 +135,7 @@ export function useResearchChat(repository: ResearchRepository) {
       !["ready", "failed", "cancelled"].includes(conversation.status)
     )
       return;
-    const request = begin();
+    const request = begin("調査の条件を準備中…");
     if (request === null) return;
     setProgress(null);
     let stop: (() => void) | undefined;
@@ -218,7 +220,7 @@ export function useResearchChat(repository: ResearchRepository) {
   }
 
   async function openTeam(teamId: string) {
-    const request = begin();
+    const request = begin("保存した編成を読み込み中…");
     if (request === null) return;
     try {
       const result = await repository.loadTeam(teamId);
@@ -261,7 +263,7 @@ export function useResearchChat(repository: ResearchRepository) {
   }
 
   async function renameTeam(teamId: string, title: string) {
-    const request = begin();
+    const request = begin("編成名を保存中…");
     if (request === null) throw new Error("別の処理が完了してから変更してください。");
     try {
       const result = await repository.renameTeam(teamId, title);
@@ -295,6 +297,7 @@ export function useResearchChat(repository: ResearchRepository) {
     record,
     teams,
     busy: busy || cancelling,
+    activityLabel: cancelling ? "調査をキャンセル中…" : activityLabel,
     cancelling,
     error,
     progress,

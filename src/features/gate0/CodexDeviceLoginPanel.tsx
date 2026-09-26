@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { cn } from "../../lib/cn";
+import { OperationProgress } from "../../components/OperationProgress";
 import {
   cancelCodexDeviceLogin,
   readCodexLoginStatus,
@@ -147,9 +148,7 @@ export function CodexDeviceLoginPanel({ onRecheck }: { onRecheck: () => void }) 
       ) : null}
 
       {loginState.status === "starting" && (
-        <p className="mt-3 text-pretty text-sm leading-6 text-amber-200" role="status" aria-live="polite">
-          ログイン情報を準備しています…
-        </p>
+        <OperationProgress className="mt-3" label="ログイン情報を準備しています…" />
       )}
 
       {(loginState.status === "active" || loginState.status === "cancelling") && (
@@ -196,16 +195,16 @@ export function CodexDeviceLoginPanel({ onRecheck }: { onRecheck: () => void }) 
               {loginState.status === "cancelling" ? "取消中…" : "ログインを取消"}
             </button>
           </div>
-          <p className={cn("text-pretty text-sm leading-6", copyState === "failed" ? "text-amber-200" : "text-slate-400")} role="status" aria-live="polite">
-            {copyState === "copied"
+          <OperationProgress
+            className={cn("text-pretty leading-6", copyState === "failed" ? "text-amber-200" : "text-slate-400")}
+            label={loginState.status === "cancelling" ? "ログインを取消しています…" : "ログイン状態を確認しています。"}
+            detail={copyState === "copied"
               ? "コードをクリップボードへコピーしました。"
               : copyState === "failed"
                 ? "コードをコピーできませんでした。表示されたコードを手入力してください。"
-                : loginState.status === "cancelling"
-                  ? "ログインを取消しています…"
-                  : "ログイン状態を確認しています。"
+                : undefined
             }
-          </p>
+          />
         </div>
       )}
 

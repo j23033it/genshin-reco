@@ -1,13 +1,14 @@
 import { useState } from "react";
 import { check, type Update } from "@tauri-apps/plugin-updater";
 import { relaunch } from "@tauri-apps/plugin-process";
+import { OperationProgress } from "../../components/OperationProgress";
 
 type UpdateState =
   | { kind: "idle" }
   | { kind: "checking" }
   | { kind: "latest" }
   | { kind: "available"; update: Update }
-  | { kind: "installing"; message: string }
+  | { kind: "installing"; message: string; progress?: number }
   | { kind: "error"; message: string };
 
 function errorMessage(error: unknown) {
@@ -35,9 +36,18 @@ export function AppUpdateControl({ disabled = false }: { disabled?: boolean }) {
 
   async function installUpdate(update: Update) {
     setState({ kind: "installing", message: "更新ファイルを取得中…" });
+    let downloaded = 0;
+    let total: number | undefined;
     try {
       await update.downloadAndInstall((event) => {
-        if (event.event === "Finished") {
+        if (event.event === "Started") {
+          downloaded = 0;
+          total = event.data.contentLength;
+          setState({ kind: "installing", message: "更新ファイルを取得中…", progress: total && total > 0 ? 0 : undefined });
+        } else if (event.event === "Progress") {
+          downloaded += event.data.chunkLength;
+          setState({ kind: "installing", message: "更新ファイルを取得中…", progress: total && total > 0 ? downloaded * 100 / total : undefined });
+        } else if (event.event === "Finished") {
           setState({ kind: "installing", message: "更新を適用中…" });
         }
       });
@@ -79,7 +89,9 @@ export function AppUpdateControl({ disabled = false }: { disabled?: boolean }) {
         <span role="status" className="text-slate-400">最新版です</span>
       ) : null}
       {state.kind === "installing" ? (
-        <span role="status" className="text-amber-200">{state.message}</span>
+        <OperationProgress label={state.message} value={state.progress} className="w-full max-w-72" />
+      ) : state.kind === "checking" ? (
+        <OperationProgress label="更新を確認中…" />
       ) : null}
       {state.kind === "error" ? (
         <span role="alert" className="max-w-72 break-words text-rose-200">{state.message}</span>

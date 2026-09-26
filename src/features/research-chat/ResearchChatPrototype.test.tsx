@@ -119,6 +119,154 @@ async function send(
 }
 
 describe("実データの編成調査UI", () => {
+  it("初回表示と新規ボタン操作後はクリックせず入力できる", async () => {
+    const user = userEvent.setup();
+    const { repository } = setupRepository();
+    render(<ResearchChatPrototype repository={repository} />);
+    const input = screen.getByRole("textbox", { name: "調べたい編成" });
+    expect(input).toHaveFocus();
+    await user.keyboard("サンドローネ、");
+    expect(input).toHaveValue("サンドローネ、");
+
+    await user.click(screen.getByRole("button", { name: "新しい編成を調べる" }));
+    expect(input).toHaveValue("");
+    expect(input).toHaveFocus();
+    await user.keyboard("あ");
+    expect(input).toHaveValue("あ");
+    expect(repository.sendMessage).not.toHaveBeenCalled();
+  });
+
+  it("初回表示でも既に選ばれた別の入力からフォーカスを奪わない", () => {
+    const { repository } = setupRepository();
+    render(<input aria-label="別の入力" />);
+    const other = screen.getByRole("textbox", { name: "別の入力" });
+    other.focus();
+    render(<ResearchChatPrototype repository={repository} />);
+    expect(other).toHaveFocus();
+  });
+
+  it("狭い画面の新規操作はサイドバーを閉じて入力欄へ移る", async () => {
+    vi.stubGlobal("matchMedia", vi.fn((query: string) => ({
+      matches: query.includes("max-width"),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    })));
+    try {
+      const user = userEvent.setup();
+      const { repository } = setupRepository();
+      const view = render(<ResearchChatPrototype repository={repository} />);
+      await user.click(screen.getByRole("button", { name: "サイドバーを開く" }));
+      await user.click(screen.getByRole("button", { name: "新しい編成を調べる" }));
+      expect(screen.queryByRole("complementary")).not.toBeInTheDocument();
+      expect(screen.getByRole("textbox", { name: "調べたい編成" })).toHaveFocus();
+      view.unmount();
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it.each(["成功", "失敗"])("送信%s後は無効状態が解除されてから入力欄へ戻る", async (outcome) => {
+    const user = userEvent.setup();
+    const { repository } = setupRepository();
+    const request = deferred<ResearchConversation>();
+    vi.mocked(repository.sendMessage).mockReturnValueOnce(request.promise);
+    render(<ResearchChatPrototype repository={repository} />);
+    await send(user, "入力を保持");
+    const input = screen.getByRole("textbox", { name: "調べたい編成" });
+    expect(screen.getByRole("progressbar", { name: "編成の条件を確認中…" })).not.toHaveAttribute("aria-valuenow");
+    expect(input).toBeDisabled();
+    // 実ブラウザでは無効になった送信ボタンのフォーカスが外れる。
+    (document.activeElement as HTMLElement).blur();
+    await act(async () => {
+      if (outcome === "成功") request.resolve(conversation);
+      else request.reject(new Error("接続に失敗"));
+    });
+    expect(input).toBeEnabled();
+    expect(input).toHaveFocus();
+    expect(input).toHaveValue(outcome === "成功" ? "" : "入力を保持");
+  });
+
+  it("送信待ちに別の入力を選んだ場合は完了後もそこに留まる", async () => {
+    const user = userEvent.setup();
+    const { repository } = setupRepository();
+    const request = deferred<ResearchConversation>();
+    vi.mocked(repository.sendMessage).mockReturnValueOnce(request.promise);
+    render(<><input aria-label="別の入力" /><ResearchChatPrototype repository={repository} /></>);
+    await send(user);
+    const other = screen.getByRole("textbox", { name: "別の入力" });
+    await user.click(other);
+    await act(async () => request.resolve(conversation));
+    expect(other).toHaveFocus();
+  });
+
+  it("Enterで送信し、成功したら入力欄を空にする", async () => {
+    const user = userEvent.setup();
+    const { repository } = setupRepository();
+    render(<ResearchChatPrototype repository={repository} />);
+    const input = screen.getByRole("textbox", { name: "調べたい編成" });
+
+    await user.type(input, "  4人を調べたい  {Enter}");
+
+    expect(repository.sendMessage).toHaveBeenCalledExactlyOnceWith(
+      "4人を調べたい",
+      undefined,
+    );
+    await waitFor(() => expect(input).toHaveValue(""));
+  });
+
+  it("Shift+Enterで改行し、Enterで複数行をまとめて送信する", async () => {
+    const user = userEvent.setup();
+    const { repository } = setupRepository();
+    render(<ResearchChatPrototype repository={repository} />);
+    const input = screen.getByRole("textbox", { name: "調べたい編成" });
+
+    await user.type(input, "4人を調べたい{Shift>}{Enter}{/Shift}全員無凸です");
+
+    expect(input).toHaveValue("4人を調べたい\n全員無凸です");
+    expect(repository.sendMessage).not.toHaveBeenCalled();
+    await user.keyboard("{Enter}");
+    expect(repository.sendMessage).toHaveBeenCalledExactlyOnceWith(
+      "4人を調べたい\n全員無凸です",
+      undefined,
+    );
+  });
+
+  it.each([
+    { isComposing: true },
+    { keyCode: 229 },
+  ])("日本語変換中のEnterでは送信しない（%j）", async (composition) => {
+    const user = userEvent.setup();
+    const { repository } = setupRepository();
+    render(<ResearchChatPrototype repository={repository} />);
+    const input = screen.getByRole("textbox", { name: "調べたい編成" });
+    await user.type(input, "全員無凸です");
+
+    expect(fireEvent.keyDown(input, { key: "Enter", ...composition })).toBe(true);
+    expect(repository.sendMessage).not.toHaveBeenCalled();
+    expect(input).toHaveValue("全員無凸です");
+    await user.keyboard("{Enter}");
+    expect(repository.sendMessage).toHaveBeenCalledExactlyOnceWith(
+      "全員無凸です",
+      undefined,
+    );
+  });
+
+  it("空欄や空白だけの入力、Enterの長押しでは送信しない", async () => {
+    const user = userEvent.setup();
+    const { repository } = setupRepository();
+    render(<ResearchChatPrototype repository={repository} />);
+    const input = screen.getByRole("textbox", { name: "調べたい編成" });
+
+    await user.type(input, "{Enter}   {Enter}");
+    expect(input).toHaveValue("   ");
+    expect(repository.sendMessage).not.toHaveBeenCalled();
+    await user.clear(input);
+    await user.type(input, "4人を調べたい");
+    fireEvent.keyDown(input, { key: "Enter", repeat: true });
+    expect(repository.sendMessage).not.toHaveBeenCalled();
+    expect(input).toHaveValue("4人を調べたい");
+  });
+
   it("4人が揃うと凸と武器を選べ、指定なしを保ったまま保存してから調査する", async () => {
     const user = userEvent.setup();
     const { repository } = setupRepository();
@@ -191,13 +339,14 @@ describe("実データの編成調査UI", () => {
     const request = deferred<ResearchConversation>();
     vi.mocked(repository.sendMessage).mockReturnValueOnce(request.promise);
     render(<ResearchChatPrototype repository={repository} />);
-    await send(user, "入力を保持");
+    await user.type(screen.getByRole("textbox"), "入力を保持{Enter}");
+    fireEvent.keyDown(screen.getByRole("textbox"), { key: "Enter" });
     fireEvent.submit(screen.getByRole("textbox").closest("form")!);
     expect(repository.sendMessage).toHaveBeenCalledTimes(1);
     await act(async () => request.reject(new Error("接続に失敗")));
     expect(screen.getByRole("textbox")).toHaveValue("入力を保持");
     expect(screen.getByRole("alert")).toHaveTextContent("接続に失敗");
-    await user.click(screen.getByRole("button", { name: "送信" }));
+    await user.keyboard("{Enter}");
     expect(
       await screen.findByRole("button", { name: /この内容で調査する/ }),
     ).toBeEnabled();
@@ -214,6 +363,9 @@ describe("実データの編成調査UI", () => {
       screen.getByRole("button", { name: /この内容で調査する/ }),
     );
     expect(repository.subscribeProgress).toHaveBeenCalledTimes(1);
+    const steps = screen.getByRole("list", { name: "調査の段階" });
+    expect(within(steps).getByText("準備").closest("li")).toHaveAttribute("aria-current", "step");
+    expect(screen.getByRole("progressbar")).not.toHaveAttribute("aria-valuenow");
     act(() => emit({ sessionId: "old", stage: "weapons", detail: "古い進捗" }));
     expect(screen.queryByText("古い進捗")).not.toBeInTheDocument();
     act(() =>
@@ -227,6 +379,11 @@ describe("実データの編成調査UI", () => {
     expect(screen.getByRole("status")).toHaveTextContent(
       "テストキャラ：武器を確認中",
     );
+    expect(within(steps).getByText("調査").closest("li")).toHaveAttribute("aria-current", "step");
+    act(() => emit({ sessionId: "session-1", stage: "validating", detail: "結果を確認中" }));
+    expect(within(steps).getByText("検証・保存").closest("li")).toHaveAttribute("aria-current", "step");
+    expect(screen.getByRole("status")).toHaveTextContent("結果を確認中");
+    expect(screen.getByRole("progressbar")).not.toHaveAttribute("aria-valuenow");
     await act(async () => request.resolve(record));
     expect(
       screen.getByRole("heading", { name: "テスト編成" }),
@@ -237,6 +394,7 @@ describe("実データの編成調査UI", () => {
     expect(screen.getByText("数値は未確認")).toBeInTheDocument();
     expect(screen.getByText("テストキャラ（画像なし）")).toBeInTheDocument();
     expect(stop).toHaveBeenCalled();
+    expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();
     expect(repository.listTeams).toHaveBeenCalledTimes(2);
     await user.click(
       screen.getByRole("button", { name: "条件を変えて再調査" }),
@@ -264,6 +422,7 @@ describe("実データの編成調査UI", () => {
     expect(
       await screen.findByText(/調査をキャンセルしました/),
     ).toBeInTheDocument();
+    expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();
     await act(async () => request.resolve(record));
     expect(
       screen.queryByRole("heading", { name: "テスト編成" }),

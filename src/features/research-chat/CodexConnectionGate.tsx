@@ -3,6 +3,7 @@ import { CodexDeviceLoginPanel } from "../gate0/CodexDeviceLoginPanel";
 import { readCodexLoginStatus } from "../gate0/codexDeviceLogin";
 import ResearchChatPrototype from "./ResearchChatPrototype";
 import { AppUpdateControl } from "./AppUpdateControl";
+import { OperationProgress } from "../../components/OperationProgress";
 
 type ConnectionState =
   | { status: "checking" }
@@ -56,9 +57,7 @@ export function CodexConnectionGate() {
             で起動してください。
           </p>
         ) : state.status === "checking" ? (
-          <p className="mt-4 text-sm text-slate-300" role="status">
-            認証状態を確認しています…
-          </p>
+          <OperationProgress className="mt-4" label="認証状態を確認しています…" />
         ) : state.status === "login" ? (
           <>
             <p className="mt-4 text-pretty text-sm leading-7 text-slate-300">

@@ -1,6 +1,6 @@
 [package]
 name = "genshin-reco"
-version = "0.1.1"
+version = "0.1.2"
 description = "原神の根拠付き・編成連動ビルド推薦デスクトップアプリ"
 authors = ["taiki"]
 edition = "2024"
@@ -29,3 +29,7 @@ serde_json = "1"
 thiserror = "2"
 tokio = { version = "1", features = ["io-util", "macros", "process", "rt-multi-thread", "sync", "time"] }
 url = "2"
+
+[target.'cfg(windows)'.dependencies]
+webview2-com = "=0.38.2"
+windows = { version = "=0.61.3", features = ["Win32_UI_Input_Ime", "Win32_UI_Input_KeyboardAndMouse", "Win32_UI_WindowsAndMessaging"] }
