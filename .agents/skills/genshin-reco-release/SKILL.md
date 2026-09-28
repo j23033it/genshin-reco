@@ -52,9 +52,9 @@ foreach ($edit in $edits) {
   [IO.File]::WriteAllText($edit.Path, $edit.Content, [Text.UTF8Encoding]::new($false))
 }
 $package = Get-Content package.json -Raw | ConvertFrom-Json
-$lock = Get-Content package-lock.json -Raw | ConvertFrom-Json
-if ($package.version -ne $nextVersion -or $lock.version -ne $nextVersion -or
-    $lock.packages.''.version -ne $nextVersion) {
+$lock = Get-Content package-lock.json -Raw | ConvertFrom-Json -AsHashtable
+if ($package.version -ne $nextVersion -or $lock['version'] -ne $nextVersion -or
+    $lock['packages']['']['version'] -ne $nextVersion) {
   throw 'Node 側の版番号が一致しません。'
 }
 git diff --check
@@ -82,11 +82,11 @@ if ((git branch --show-current).Trim() -ne 'main' -or (git status --porcelain)) 
 }
 $config = Get-Content src-tauri/tauri.conf.json -Raw | ConvertFrom-Json
 $package = Get-Content package.json -Raw | ConvertFrom-Json
-$lock = Get-Content package-lock.json -Raw | ConvertFrom-Json
+$lock = Get-Content package-lock.json -Raw | ConvertFrom-Json -AsHashtable
 $manifestVersion = [regex]::Match((Get-Content src-tauri/Cargo.toml -Raw), '(?m)^version = "([^"]+)"$').Groups[1].Value
 $cargoLockVersion = [regex]::Match((Get-Content src-tauri/Cargo.lock -Raw), '(?m)^\[\[package\]\]\r?\nname = "genshin-reco"\r?\nversion = "([^"]+)"').Groups[1].Value
 $version = $config.version
-$otherVersions = @($package.version, $lock.version, $lock.packages.''.version, $manifestVersion, $cargoLockVersion)
+$otherVersions = @($package.version, $lock['version'], $lock['packages']['']['version'], $manifestVersion, $cargoLockVersion)
 if ($version -notmatch '^\d+\.\d+\.\d+$' -or
     @($otherVersions | Where-Object { $_ -ne $version }).Count -gt 0) {
   throw '5ファイルの版番号を確認してください。'
