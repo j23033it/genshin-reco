@@ -1,0 +1,34 @@
+{
+  "date": "2026-09-28",
+  "freshHome": true,
+  "suppliedSavedResults": false,
+  "suppliedSourceCandidates": false,
+  "testSettingOverrides": false,
+  "elapsedSeconds": 273.0421477,
+  "evidenceSeconds": 187.6698171,
+  "finalSeconds": 80.9659287,
+  "resolutionSecondsFromLog": 3.7,
+  "selectedOutsideCollectionChoices": 0,
+  "sourceChanges": [
+    {
+      "sourceIndex": 1,
+      "before": null,
+      "after": "https://game8.jp/genshin/446094"
+    }
+  ],
+  "onlySourceUrlsChanged": true,
+  "previousSolLowSeconds": 239.5699203,
+  "differenceSeconds": 33.47222739999998,
+  "baseTier": "default",
+  "baseFastMode": false,
+  "requestedTier": "fast",
+  "threadModel": "gpt-6-sol",
+  "threadTier": "priority",
+  "frontendTestsPassed": 109,
+  "rustLibraryTestsPassed": 146,
+  "catalogImporterTestsPassed": 3,
+  "liveResearchTestsPassed": 1,
+  "temporaryHomesRemoved": true,
+  "originalAuthUnchanged": true,
+  "preparationFailure": "最初の起動は試験用環境変数が空文字で残り、調査開始前に停止。環境変数を削除し、別の新規ホームで実調査した。"
+}

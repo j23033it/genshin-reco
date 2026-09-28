@@ -1,0 +1,327 @@
+{
+  "allowedDomains": [
+    "wikiwiki.jp",
+    "game8.jp",
+    "wiki.hoyolab.com",
+    "gamewith.jp"
+  ],
+  "codexVersion": "0.158.0-alpha.2.1",
+  "effectiveFastMode": true,
+  "effectiveSearchConfig": {
+    "allowed_domains": [
+      "wikiwiki.jp",
+      "game8.jp",
+      "wiki.hoyolab.com",
+      "gamewith.jp"
+    ],
+    "context_size": "low",
+    "location": null
+  },
+  "effectiveServiceTier": "fast",
+  "elapsedSeconds": 622.7128482,
+  "evidenceEffort": "medium",
+  "evidenceOnly": false,
+  "fastMode": true,
+  "finalEffort": "max",
+  "intake": {
+    "members": [
+      {
+        "constellation": 0,
+        "name": "アルレッキーノ",
+        "refinement": 5,
+        "slotIndex": 0,
+        "weapon": "白纓槍"
+      },
+      {
+        "constellation": 0,
+        "name": "夜蘭",
+        "refinement": 1,
+        "slotIndex": 1,
+        "weapon": "西風猟弓"
+      },
+      {
+        "constellation": 1,
+        "name": "ベネット",
+        "refinement": 1,
+        "slotIndex": 2,
+        "weapon": "原木刀"
+      },
+      {
+        "constellation": 0,
+        "name": "鍾離",
+        "refinement": 5,
+        "slotIndex": 3,
+        "weapon": "黒纓槍"
+      }
+    ],
+    "missingFields": [],
+    "readyToResearch": true
+  },
+  "model": "gpt-6-luna",
+  "openedUrls": [
+    "https://game8.jp/genshin/558856",
+    "https://game8.jp/genshin/471120",
+    "https://game8.jp/genshin/352609",
+    "https://game8.jp/genshin/354867",
+    "https://game8.jp/genshin/359620",
+    "https://game8.jp/genshin/364799",
+    "https://gamewith.jp/genshin/article/show/235612",
+    "https://game8.jp/genshin/356101",
+    "https://game8.jp/genshin/395526",
+    "https://game8.jp/genshin/350089",
+    "https://game8.jp/genshin/520816",
+    "https://gamewith.jp/genshin/article/show/326055",
+    "https://game8.jp/genshin/466954",
+    "https://gamewith.jp/genshin/article/show/326055",
+    "https://game8.jp/genshin/352609",
+    "https://game8.jp/genshin/358212",
+    "https://wikiwiki.jp/genshinwiki/%E3%83%99%E3%83%8D%E3%83%83%E3%83%88",
+    "https://gamewith.jp/genshin/article/show/230381",
+    "https://gamewith.jp/genshin/article/show/420288",
+    "https://game8.jp/genshin/446094",
+    "https://game8.jp/genshin/471120",
+    "https://game8.jp/genshin/354889",
+    "https://game8.jp/genshin/383128",
+    "https://game8.jp/genshin/355626"
+  ],
+  "output": {
+    "gameVersion": "Ver.7.1（2026年9月28日時点）",
+    "members": [
+      {
+        "artifact": "諧律奇想の断章",
+        "artifactImageUrl": null,
+        "constellation": "C0",
+        "element": "炎元素",
+        "id": "arlecchino",
+        "imageUrl": null,
+        "mainStats": "時計：攻撃力%／杯：炎元素ダメージ／冠：会心系",
+        "name": "アルレッキーノ",
+        "role": "通常攻撃を軸に蒸発を狙うメインアタッカー",
+        "slotIndex": 0,
+        "subStats": "会心系＞攻撃力%＞元素熟知＞元素チャージ効率",
+        "targetStats": [
+          {
+            "label": "攻撃力",
+            "note": "炎共鳴（炎元素2名）の攻撃力+25%を有効にした編成で見る戦闘前の目安。白纓槍の低い基礎攻撃力を踏まえた実用範囲です。固有天賦の耐性上昇を最大にする3,000は別の上限目標。ベネットの元素爆発と旧貴族のしつけ発動後の増加分は含めません。",
+            "primary": true,
+            "value": "2,000〜2,300"
+          },
+          {
+            "label": "会心率",
+            "note": "表示値の目安。白纓槍の会心率+23.4%とキャラの基礎分を含めます。指定C0・この編成には会心率を加える共鳴や味方効果が確認できないため、戦闘中に足し算せず上限100%以内に保ちます。",
+            "primary": false,
+            "value": "70〜80%"
+          },
+          {
+            "label": "会心ダメージ",
+            "note": "表示値の目安で、突破ステータスの会心ダメージ+38.4%を含みます。C0と今回の装備・味方に、条件付きの会心ダメージ加算は確認できません。",
+            "primary": false,
+            "value": "140〜170%"
+          },
+          {
+            "label": "炎元素ダメージ",
+            "note": "★5・+20の炎元素ダメージ杯を使う場合の表示値。戦闘状態では固有天賦で+40%されますが、この値には加えません。断章4セットの最大与ダメージ+54%も別効果です。",
+            "primary": false,
+            "value": "46.6%"
+          },
+          {
+            "label": "元素チャージ効率",
+            "note": "確認したビルド資料では固定目標値なし。元素爆発は自己回復にも使えますが、サブステータス優先度は最下位です。爆発の回転を見て必要なら追加します。",
+            "primary": false,
+            "value": "100%以上（優先度低）"
+          }
+        ],
+        "weapon": "白纓槍",
+        "weaponImageUrl": null
+      },
+      {
+        "artifact": "絶縁の旗印",
+        "artifactImageUrl": null,
+        "constellation": "C0",
+        "element": "水元素",
+        "id": "yelan",
+        "imageUrl": null,
+        "mainStats": "時計：HP%（元素チャージ効率が不足する場合は元素チャージ効率）／杯：水元素ダメージ／冠：会心系",
+        "name": "夜蘭",
+        "role": "元素爆発の連携攻撃と水付着を担うHP参照サブアタッカー",
+        "slotIndex": 1,
+        "subStats": "元素チャージ効率＞会心系≧HP%",
+        "targetStats": [
+          {
+            "label": "HP",
+            "note": "HP時計を使う場合の実用目安。今回の編成は炎・水・岩の3元素なので、固有天賦によりHP上限+18%を含む前提です。元素チャージ効率を確保するため時計をチャージにした場合はHPが下がって構いません。水元素共鳴はありません。",
+            "primary": true,
+            "value": "28,000〜33,000"
+          },
+          {
+            "label": "元素チャージ効率",
+            "note": "水共鳴なし・C0で元素スキルを1回使う想定の高め側の目標。西風猟弓Lv.90の+61.3%と絶縁2セットの+20%を含む総表示値です。西風R1は会心攻撃時に60%で粒子を生成し、元素エネルギー6回復（CT12秒）しますが確率発動なので、目標値を低く見積もりすぎないようにします。220%なら絶縁4セットの元素爆発ダメージ加算は+55%で、水元素ダメージ表示値には足しません。",
+            "primary": false,
+            "value": "220%以上"
+          },
+          {
+            "label": "会心率",
+            "note": "表示値の目安。夜蘭の突破ステータス+19.2%と基礎分を含みます。西風猟弓の粒子生成は会心攻撃が条件ですが、効果自体は会心率を加算しません。今回、会心率を上げる元素共鳴・味方効果・C0星座効果は確認できないため、戦闘中の加算なしで100%以内にします。",
+            "primary": false,
+            "value": "65〜75%"
+          },
+          {
+            "label": "会心ダメージ",
+            "note": "表示値の実用目安。武器と絶縁4セットに会心ダメージ加算はありません。条件付きの会心ダメージ効果もこの編成では確認できません。",
+            "primary": false,
+            "value": "120〜150%"
+          },
+          {
+            "label": "水元素ダメージ",
+            "note": "★5・+20の水元素ダメージ杯を使う場合の表示値。絶縁4セットの爆発ダメージ効果は別枠です。",
+            "primary": false,
+            "value": "46.6%"
+          }
+        ],
+        "weapon": "西風猟弓",
+        "weaponImageUrl": null
+      },
+      {
+        "artifact": "旧貴族のしつけ",
+        "artifactImageUrl": null,
+        "constellation": "C1",
+        "element": "炎元素",
+        "id": "bennett",
+        "imageUrl": null,
+        "mainStats": "時計：元素チャージ効率／杯：HP%／冠：与える治療効果",
+        "name": "ベネット",
+        "role": "基礎攻撃力参照の元素爆発バフと回復を担うサポート",
+        "slotIndex": 2,
+        "subStats": "元素チャージ効率＞HP%＞HP固定値＞会心系",
+        "targetStats": [
+          {
+            "label": "基礎攻撃力",
+            "note": "Lv.90のベネット本体191と、Lv.90原木刀565の合計です。元素爆発バフの計算元なのでキャラ・武器レベルで伸ばします。聖遺物の攻撃力%や炎共鳴は基礎攻撃力に加算せず、発動後のバフもこの値には含めません。",
+            "primary": true,
+            "value": "756"
+          },
+          {
+            "label": "元素チャージ効率",
+            "note": "元素爆発の必要エネルギーは80。Lv.90突破ステータス+26.7%、原木刀Lv.90の+30.6%、元素チャージ効率時計+51.8%なら、サブ効果前に約209%になります。旧貴族4セットの攻撃力+20%は元素爆発発動後12秒間の効果で、戦闘前の表示値には加えません。",
+            "primary": false,
+            "value": "200〜220%"
+          }
+        ],
+        "weapon": "原木刀",
+        "weaponImageUrl": null
+      },
+      {
+        "artifact": "千岩牢固2セット＋花海甘露の光2セット",
+        "artifactImageUrl": null,
+        "constellation": "C0",
+        "element": "岩元素",
+        "id": "zhongli",
+        "imageUrl": null,
+        "mainStats": "時計：HP%／杯：HP%／冠：HP%",
+        "name": "鍾離",
+        "role": "玉璋シールドと周囲の敵への耐性低下を担う耐久サポート",
+        "slotIndex": 3,
+        "subStats": "HP%＞HP固定値＞元素チャージ効率＞会心系",
+        "targetStats": [
+          {
+            "label": "HP",
+            "note": "Lv.90、★5・+20のHPメイン3部位、2セット効果各HP+20%、黒纓槍Lv.90のHP+46.9%を前提にした戦闘前目安です。固定HPの花も含めるとサブHP前に約52,800になります。一般的なサポート目安35,000〜40,000を超える盾特化構成で、水元素共鳴によるHP上昇はありません。",
+            "primary": true,
+            "value": "52,000〜56,000"
+          },
+          {
+            "label": "元素チャージ効率",
+            "note": "シールド役の元素チャージ効率は確認したビルド資料で優先度が低く、固定目標値もありません。元素爆発を頻繁に使う場合だけ、実際の回転に応じてサブ効果で調整します。",
+            "primary": false,
+            "value": "100%以上（優先度低）"
+          }
+        ],
+        "weapon": "黒纓槍",
+        "weaponImageUrl": null
+      }
+    ],
+    "sources": [
+      {
+        "title": "アルレッキーノ(召使)の評価とおすすめ聖遺物・武器",
+        "url": "https://game8.jp/genshin/466954"
+      },
+      {
+        "title": "アルレッキーノ(召使)の評価とおすすめ聖遺物・武器",
+        "url": "https://gamewith.jp/genshin/article/show/420288"
+      },
+      {
+        "title": "白纓槍の評価と装備おすすめキャラ",
+        "url": "https://game8.jp/genshin/359620"
+      },
+      {
+        "title": "聖遺物の効果一覧とおすすめ",
+        "url": "https://game8.jp/genshin/350089"
+      },
+      {
+        "title": "元素共鳴のおすすめと効果一覧",
+        "url": "https://game8.jp/genshin/355626"
+      },
+      {
+        "title": "イェラン(夜蘭)の評価とおすすめ聖遺物・武器",
+        "url": "https://gamewith.jp/genshin/article/show/326055"
+      },
+      {
+        "title": "夜蘭(イェラン)の評価とおすすめ聖遺物・武器",
+        "url": "https://game8.jp/genshin/446094"
+      },
+      {
+        "title": "夜蘭(イェラン)のパーティ編成",
+        "url": "https://game8.jp/genshin/558856"
+      },
+      {
+        "title": "絶縁の旗印の効果解説とおすすめキャラ",
+        "url": "https://game8.jp/genshin/395526"
+      },
+      {
+        "title": "西風猟弓の評価と装備おすすめキャラ",
+        "url": "https://game8.jp/genshin/354867"
+      },
+      {
+        "title": "ベネットの評価とおすすめ聖遺物・武器",
+        "url": "https://game8.jp/genshin/352609"
+      },
+      {
+        "title": "原木刀の評価と装備おすすめキャラ",
+        "url": "https://game8.jp/genshin/471120"
+      },
+      {
+        "title": "キャラの基礎攻撃力・ステータスランキング",
+        "url": "https://game8.jp/genshin/364799"
+      },
+      {
+        "title": "旧貴族のしつけの入手方法とおすすめキャラ",
+        "url": "https://game8.jp/genshin/356101"
+      },
+      {
+        "title": "鍾離(しょうり)の評価とおすすめ聖遺物・武器",
+        "url": "https://game8.jp/genshin/358212"
+      },
+      {
+        "title": "花海甘露の光のおすすめキャラと効果",
+        "url": "https://game8.jp/genshin/520816"
+      },
+      {
+        "title": "黒纓槍の評価と装備おすすめキャラ",
+        "url": "https://game8.jp/genshin/354889"
+      }
+    ],
+    "title": "指定4人編成のビルドと戦闘前目標ステータス",
+    "warnings": [
+      "キャラクター・武器レベルの指定がないため、キャラLv.90、武器Lv.90、★5聖遺物Lv.20を前提にした目安です。",
+      "アルレッキーノと鍾離の元素チャージ効率は、確認したビルド本文に編成固有の固定値がありません。100%は基礎値を下限目安として示し、爆発の回転に応じた追加分は個別調整としています。",
+      "白纓槍の精錬5は通常攻撃ダメージ+48%。+24%は精錬1の値です。",
+      "アルレッキーノの攻撃力・会心目標と夜蘭のHP・会心目標は、本文の優先度、指定装備、今回の編成効果から導いた実用的な範囲です。"
+    ]
+  },
+  "profile": "gamewith",
+  "searchContextSize": "low",
+  "serviceTier": "fast",
+  "sourceValidationError": null,
+  "structuralValidationError": null,
+  "threadServiceTier": "priority"
+}

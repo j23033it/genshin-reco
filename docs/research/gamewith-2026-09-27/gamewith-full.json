@@ -1,0 +1,317 @@
+{
+  "allowedDomains": [
+    "wikiwiki.jp",
+    "game8.jp",
+    "wiki.hoyolab.com",
+    "gamewith.jp"
+  ],
+  "codexVersion": "0.158.0-alpha.2.1",
+  "effectiveSearchConfig": {
+    "allowed_domains": [
+      "wikiwiki.jp",
+      "game8.jp",
+      "wiki.hoyolab.com",
+      "gamewith.jp"
+    ],
+    "context_size": "low",
+    "location": null
+  },
+  "elapsedSeconds": 929.5519449,
+  "evidenceOnly": false,
+  "fastMode": false,
+  "intake": {
+    "members": [
+      {
+        "constellation": 0,
+        "name": "アルレッキーノ",
+        "refinement": 5,
+        "slotIndex": 0,
+        "weapon": "白纓槍"
+      },
+      {
+        "constellation": 0,
+        "name": "夜蘭",
+        "refinement": 1,
+        "slotIndex": 1,
+        "weapon": "西風猟弓"
+      },
+      {
+        "constellation": 1,
+        "name": "ベネット",
+        "refinement": 1,
+        "slotIndex": 2,
+        "weapon": "原木刀"
+      },
+      {
+        "constellation": 0,
+        "name": "鍾離",
+        "refinement": 5,
+        "slotIndex": 3,
+        "weapon": "黒纓槍"
+      }
+    ],
+    "missingFields": [],
+    "readyToResearch": true
+  },
+  "model": "gpt-6-luna",
+  "openedUrls": [
+    "https://game8.jp/genshin/355626",
+    "https://wikiwiki.jp/genshinwiki/%E3%82%A2%E3%83%AB%E3%83%AC%E3%83%83%E3%82%AD%E3%83%BC%E3%83%8E",
+    "https://gamewith.jp/genshin/article/show/326055",
+    "https://game8.jp/genshin/383128",
+    "https://game8.jp/genshin/446094",
+    "https://game8.jp/genshin/466954",
+    "https://gamewith.jp/genshin/article/show/326055",
+    "https://game8.jp/genshin/352609",
+    "https://game8.jp/genshin/358212",
+    "https://gamewith.jp/genshin/article/show/420288",
+    "https://gamewith.jp/genshin/article/show/230381",
+    "https://gamewith.jp/genshin/article/show/235612",
+    "https://wikiwiki.jp/genshinwiki/%E3%83%99%E3%83%8D%E3%83%83%E3%83%88",
+    "https://gamewith.jp/genshin/article/show/231920",
+    "https://gamewith.jp/genshin/article/show/231936",
+    "https://gamewith.jp/genshin/article/show/359610",
+    "https://gamewith.jp/genshin/article/show/231960",
+    "https://gamewith.jp/genshin/article/show/445137",
+    "https://gamewith.jp/genshin/article/show/345732",
+    "https://gamewith.jp/genshin/article/show/313282"
+  ],
+  "output": {
+    "gameVersion": "Ver.7.1",
+    "members": [
+      {
+        "artifact": "諧律奇想の断章",
+        "artifactImageUrl": null,
+        "constellation": "無凸",
+        "element": "炎元素",
+        "id": "arlecchino",
+        "imageUrl": null,
+        "mainStats": "時計：攻撃力%／杯：炎元素ダメージ／冠：会心率または会心ダメージ（花・羽は固定）",
+        "name": "アルレッキーノ",
+        "role": "表アタッカー／蒸発",
+        "slotIndex": 0,
+        "subStats": "会心率・会心ダメージ＞攻撃力%＞元素熟知＞元素チャージ効率",
+        "targetStats": [
+          {
+            "label": "攻撃力",
+            "note": "Lv90・白纓槍Lv90と攻撃力時計、断章2セットを想定。炎元素2名の共鳴による基礎攻撃力+25%を含む画面目安。白纓槍R5の通常攻撃ダメージ+48%は攻撃力欄には加算されない。戦闘中はベネット爆発（天賦倍率依存、C1でベネット基礎攻撃力の20%分を追加）、旧貴族4セット（爆発後12秒）、鍾離の千岩4セット（元素スキル命中後3秒）が発動すれば別途上がる。固有天賦の攻撃力3000目安は戦闘中の最大耐性上昇条件で、画面値には加算していない。",
+            "primary": true,
+            "value": "1,900〜2,200"
+          },
+          {
+            "label": "会心率",
+            "note": "戦闘前の画面目標に白纓槍R5の会心率+23.4%を含む。今回の編成に氷共鳴はなく、味方・固有天賦・断章4セット・無凸命ノ星座から追加される会心率も確認できないため、戦闘中の上乗せを見込まない。目標上限を80%程度に抑えれば会心率100%を超えにくい。",
+            "primary": false,
+            "value": "70〜80%"
+          },
+          {
+            "label": "会心ダメージ",
+            "note": "アルレッキーノの突破ステータス会心ダメージ+38.4%を含む画面値。",
+            "primary": false,
+            "value": "140〜160%"
+          },
+          {
+            "label": "炎元素ダメージ",
+            "note": "炎元素ダメージ杯のメイン効果+46.6%を画面目標とする。戦闘中の固有天賦+40%、断章4セットの最大+54%、夜蘭の爆発中の出場キャラ与ダメージバフ（初期+1%、毎秒+3.5%、最大+50%）は条件付きの与ダメージ効果なので、この値には加算していない。",
+            "primary": false,
+            "value": "+46.6%以上"
+          }
+        ],
+        "weapon": "白纓槍",
+        "weaponImageUrl": null
+      },
+      {
+        "artifact": "絶縁の旗印",
+        "artifactImageUrl": null,
+        "constellation": "無凸",
+        "element": "水元素",
+        "id": "yelan",
+        "imageUrl": null,
+        "mainStats": "時計：元素チャージ効率／杯：水元素ダメージ／冠：会心率または会心ダメージ",
+        "name": "夜蘭",
+        "role": "水サブアタッカー／元素爆発追撃",
+        "slotIndex": 1,
+        "subStats": "元素チャージ効率（目標到達まで）＞会心率（西風猟弓の発動用）＞会心ダメージ・HP%",
+        "targetStats": [
+          {
+            "label": "HP上限",
+            "note": "HP参照のスキル・爆発火力を伸ばす目安。現在の編成は炎・水・岩の3元素なので、固有天賦による自身のHP上限+18%を含める。水元素キャラは夜蘭1人のため、水共鳴の+25%は含めない。元素チャージ効率を先に確保し、届いていればHP時計も選択肢。",
+            "primary": true,
+            "value": "24,000〜28,000"
+          },
+          {
+            "label": "元素チャージ効率",
+            "note": "西風猟弓Lv90の+61.3%と絶縁2セットの+20%を含むと、聖遺物なしの基準は181.3%。元素チャージ効率時計ならさらに+51.8%で約233.1%。一般的な200%目安は水共鳴や追加の元素スキル使用を想定し、今回の無凸・水1人では不足する場合があるため、220〜240%を保守的な目安とする。実際の必要量は粒子回収・ローテーションで変わる。",
+            "primary": false,
+            "value": "220〜240%"
+          },
+          {
+            "label": "会心率",
+            "note": "夜蘭の突破ステータス会心率+19.2%を含む画面値。氷共鳴はなく、味方からの会心率加算も確認できない。西風猟弓R1は会心攻撃時に60%で粒子を生成し元素エネルギー6回復、12秒に1回なので、この目標は発動用の会心率も兼ねる。武器の60%は発動確率で会心率加算ではない。",
+            "primary": false,
+            "value": "65〜75%"
+          },
+          {
+            "label": "会心ダメージ",
+            "note": null,
+            "primary": false,
+            "value": "130〜160%"
+          },
+          {
+            "label": "水元素ダメージ",
+            "note": "水元素ダメージ杯のメイン効果を採用する場合の画面値。",
+            "primary": false,
+            "value": "+46.6%以上"
+          }
+        ],
+        "weapon": "西風猟弓",
+        "weaponImageUrl": null
+      },
+      {
+        "artifact": "旧貴族のしつけ",
+        "artifactImageUrl": null,
+        "constellation": "1凸",
+        "element": "炎元素",
+        "id": "bennett",
+        "imageUrl": null,
+        "mainStats": "時計：元素チャージ効率／杯：HP%／冠：与える治療効果",
+        "name": "ベネット",
+        "role": "攻撃力バッファー／回復",
+        "slotIndex": 2,
+        "subStats": "元素チャージ効率＞HP%＞HP固定値",
+        "targetStats": [
+          {
+            "label": "基礎攻撃力",
+            "note": "Lv90想定。ベネット自身の基礎攻撃力191と原木刀Lv90の基礎攻撃力565の合計。元素爆発の攻撃力バフはこの基礎攻撃力と爆発天賦倍率を参照し、1凸でHP条件がなくなり、さらに基礎攻撃力の20%分がバフへ加算される（756の20%は151.2）。爆発の天賦レベルが未指定なのでバフ総量は算出していない。原木刀R1の「唯識の葉」は草反応が発動条件のため、この編成では元素熟知+60を見込まない。",
+            "primary": true,
+            "value": "756（Lv90想定）"
+          },
+          {
+            "label": "元素チャージ効率",
+            "note": "ベネットの突破ステータス+26.7%、原木刀Lv90の+30.6%を含む。元素チャージ効率時計+51.8%なら約209.1%となる。今回1凸のため、HP70%以下で発動する2凸の元素チャージ効率+30%は適用しない。",
+            "primary": false,
+            "value": "200〜220%"
+          },
+          {
+            "label": "HP上限",
+            "note": "回復量はベネットのHP上限を参照するための副目標。HP%杯と治療冠を使う回復寄りビルドの目安で、厳密な必要値ではない。",
+            "primary": false,
+            "value": "24,000〜28,000"
+          }
+        ],
+        "weapon": "原木刀",
+        "weaponImageUrl": null
+      },
+      {
+        "artifact": "千岩牢固",
+        "artifactImageUrl": null,
+        "constellation": "無凸",
+        "element": "岩元素",
+        "id": "zhongli",
+        "imageUrl": null,
+        "mainStats": "時計：HP%／杯：HP%／冠：HP%（花・羽は固定）",
+        "name": "鍾離",
+        "role": "シールド／耐性デバフ",
+        "slotIndex": 3,
+        "subStats": "HP%＞HP固定値＞元素チャージ効率",
+        "targetStats": [
+          {
+            "label": "HP上限",
+            "note": "Lv90鍾離（基礎HP14,695）、黒纓槍Lv90（HP+46.9%）、HPメイン3部位（合計+139.8%）、千岩牢固2セット（+20%）、花の固定HP4,780で約49,850。HPサブ効果を含めた耐久型の目安。水元素共鳴は水キャラ2人が条件だが、今回は夜蘭1人なので加算しない。千岩4セットの攻撃力+20%・シールド強化+30%は元素スキルが敵に命中した後3秒間の効果で、画面HPには含めない。黒纓槍R5の+80%はスライムタイプへのダメージ効果で、HPやシールド量は増やさない。",
+            "primary": true,
+            "value": "50,000〜54,000"
+          },
+          {
+            "label": "元素チャージ効率",
+            "note": "元素爆発の必要エネルギーは40だが、今回のHP特化・黒纓槍では編成固有の必要量を確定できない。シールドを主目的とし、爆発を回す頻度に応じてサブ効果で調整する。",
+            "primary": false,
+            "value": "固定目標なし"
+          }
+        ],
+        "weapon": "黒纓槍",
+        "weaponImageUrl": null
+      }
+    ],
+    "sources": [
+      {
+        "title": "〖原神〗アルレッキーノ(召使)の評価とおすすめ聖遺物・武器｜ゲームエイト",
+        "url": "https://game8.jp/genshin/466954"
+      },
+      {
+        "title": "〖原神〗アルレッキーノ(召使)の評価とおすすめ聖遺物・武器 - ゲームウィズ",
+        "url": "https://gamewith.jp/genshin/article/show/420288"
+      },
+      {
+        "title": "〖原神〗アルレッキーノ(召使)のパーティとおすすめビルド - ゲームウィズ",
+        "url": "https://gamewith.jp/genshin/article/show/445137"
+      },
+      {
+        "title": "アルレッキーノ - genshinwiki",
+        "url": "https://wikiwiki.jp/genshinwiki/%E3%82%A2%E3%83%AB%E3%83%AC%E3%83%83%E3%82%AD%E3%83%BC%E3%83%8E"
+      },
+      {
+        "title": "〖原神〗イェラン(夜蘭)の評価とおすすめ聖遺物・武器 - ゲームウィズ",
+        "url": "https://gamewith.jp/genshin/article/show/326055"
+      },
+      {
+        "title": "〖原神〗イェラン(夜蘭)のパーティとおすすめビルド - ゲームウィズ",
+        "url": "https://gamewith.jp/genshin/article/show/345732"
+      },
+      {
+        "title": "〖原神〗夜蘭(イェラン)の評価とおすすめ聖遺物・武器｜ゲームエイト",
+        "url": "https://game8.jp/genshin/446094"
+      },
+      {
+        "title": "〖原神〗西風猟弓の評価とおすすめキャラ - ゲームウィズ",
+        "url": "https://gamewith.jp/genshin/article/show/231936"
+      },
+      {
+        "title": "〖原神〗ベネットの評価とおすすめ聖遺物・武器｜ゲームエイト",
+        "url": "https://game8.jp/genshin/352609"
+      },
+      {
+        "title": "〖原神〗ベネットのパーティとおすすめビルド - ゲームウィズ",
+        "url": "https://gamewith.jp/genshin/article/show/313282"
+      },
+      {
+        "title": "ベネット - genshinwiki",
+        "url": "https://wikiwiki.jp/genshinwiki/%E3%83%99%E3%83%8D%E3%83%83%E3%83%88"
+      },
+      {
+        "title": "〖原神〗原木刀の評価とおすすめキャラ - ゲームウィズ",
+        "url": "https://gamewith.jp/genshin/article/show/359610"
+      },
+      {
+        "title": "〖原神〗鍾離(しょうり)の評価とおすすめ聖遺物・武器｜ゲームエイト",
+        "url": "https://game8.jp/genshin/358212"
+      },
+      {
+        "title": "〖原神〗鍾離(しょうり)の評価とおすすめ聖遺物・武器 - ゲームウィズ",
+        "url": "https://gamewith.jp/genshin/article/show/235612"
+      },
+      {
+        "title": "〖原神〗黒纓槍の評価とおすすめキャラ - ゲームウィズ",
+        "url": "https://gamewith.jp/genshin/article/show/231960"
+      },
+      {
+        "title": "〖原神〗千岩牢固の効果とおすすめキャラ｜ゲームエイト",
+        "url": "https://game8.jp/genshin/383128"
+      },
+      {
+        "title": "〖原神〗元素共鳴のおすすめと効果一覧｜ゲームエイト",
+        "url": "https://game8.jp/genshin/355626"
+      }
+    ],
+    "title": "アルレッキーノ・夜蘭・ベネット・鍾離の編成内ビルド目標",
+    "warnings": [
+      "数値目標はキャラクター・武器Lv90、星5聖遺物+20を想定した画面確認用の目安です。聖遺物のサブ効果で範囲は変わります。",
+      "夜蘭の元素チャージ効率220〜240%は、単独水元素・無凸で追加スキル使用がない条件を踏まえた保守的な目安です。実際の必要量は敵・粒子回収・ローテーションで変わります。",
+      "アルレッキーノと鍾離の編成固有元素チャージ効率目標は確認できた本文に数値がなく、固定値を設定していません。ベネットの爆発バフ総量も天賦レベル未指定のため算出していません。"
+    ]
+  },
+  "profile": "gamewith",
+  "searchContextSize": "low",
+  "serviceTier": "default",
+  "sourceValidationError": null,
+  "structuralValidationError": null
+}

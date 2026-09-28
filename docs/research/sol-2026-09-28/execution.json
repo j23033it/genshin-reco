@@ -1,0 +1,117 @@
+[
+  {
+    "effort": "low",
+    "elapsedSeconds": 239.5699203,
+    "evidenceSeconds": 161.4386615,
+    "finalSeconds": 77.4335685,
+    "evidenceWebCalls": 14,
+    "finalWebCalls": 2,
+    "evidencePageFetches": 55,
+    "finalPageFetches": 2,
+    "facts": 18,
+    "missing": 2,
+    "evidencePages": 18,
+    "sourceCounts": [
+      {
+        "host": "gamewith.jp",
+        "count": 4
+      },
+      {
+        "host": "wikiwiki.jp",
+        "count": 11
+      }
+    ],
+    "sources": 15,
+    "openedUnique": 20,
+    "invalidUrls": [],
+    "model": "gpt-6-sol",
+    "configModel": "gpt-6-sol",
+    "threadModel": "gpt-6-sol",
+    "configServiceTier": "fast",
+    "configFastMode": true,
+    "threadServiceTier": "priority",
+    "error": null,
+    "start": "2026-09-27T16:59:44.3289621Z",
+    "end": "2026-09-27T17:03:46.9654524Z",
+    "exitCode": 0
+  },
+  {
+    "effort": "medium",
+    "elapsedSeconds": 228.4481798,
+    "evidenceSeconds": 143.6039224,
+    "finalSeconds": 78.9636562,
+    "evidenceWebCalls": 13,
+    "finalWebCalls": 4,
+    "evidencePageFetches": 39,
+    "finalPageFetches": 5,
+    "facts": 13,
+    "missing": 6,
+    "evidencePages": 16,
+    "sourceCounts": [
+      {
+        "host": "game8.jp",
+        "count": 5
+      },
+      {
+        "host": "gamewith.jp",
+        "count": 4
+      },
+      {
+        "host": "wikiwiki.jp",
+        "count": 8
+      }
+    ],
+    "sources": 17,
+    "openedUnique": 18,
+    "invalidUrls": [
+      "https://gamewith.jp/genshin/article/show/232147",
+      "https://wikiwiki.jp/genshinwiki/%E5%85%83%E7%B4%A0%E5%8F%8D%E5%BF%9C%E3%81%AB%E3%81%A4%E3%81%84%E3%81%A6"
+    ],
+    "model": "gpt-6-sol",
+    "configModel": "gpt-6-sol",
+    "threadModel": "gpt-6-sol",
+    "configServiceTier": "fast",
+    "configFastMode": true,
+    "threadServiceTier": "priority",
+    "error": "Codexの構造化出力が不正です: 出力された根拠に対応する本文URLを特定できません",
+    "start": "2026-09-27T16:59:44.8973338Z",
+    "end": "2026-09-27T17:03:35.8924996Z",
+    "exitCode": 101
+  },
+  {
+    "effort": "high",
+    "elapsedSeconds": 288.0650095,
+    "evidenceSeconds": 164.4547039,
+    "finalSeconds": 122.6598287,
+    "evidenceWebCalls": 16,
+    "finalWebCalls": 2,
+    "evidencePageFetches": 44,
+    "finalPageFetches": 2,
+    "facts": 19,
+    "missing": 1,
+    "evidencePages": 22,
+    "sourceCounts": [
+      {
+        "host": "game8.jp",
+        "count": 10
+      },
+      {
+        "host": "wikiwiki.jp",
+        "count": 10
+      }
+    ],
+    "sources": 20,
+    "openedUnique": 23,
+    "invalidUrls": [],
+    "model": "gpt-6-sol",
+    "configModel": "gpt-6-sol",
+    "threadModel": "gpt-6-sol",
+    "configServiceTier": "fast",
+    "configFastMode": true,
+    "threadServiceTier": "priority",
+    "error": null,
+    "start": "2026-09-27T16:59:45.0372539Z",
+    "end": "2026-09-27T17:04:35.4461786Z",
+    "exitCode": 0
+  }
+]

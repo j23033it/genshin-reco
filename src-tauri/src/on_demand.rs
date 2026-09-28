@@ -361,7 +361,7 @@ fn finalize_researched_team(
     for member in &mut draft.members {
         member.apply_catalog_images(&catalog);
     }
-    draft.validate()?;
+    draft.validate_for_members(&conversation.members)?;
     if reused {
         draft.warnings.push(
             "過去7日以内に同じ4人・武器・凸・精錬で調べた結果を再利用しました。最新の情報は「条件を変えて再調査」で確認できます。".into(),

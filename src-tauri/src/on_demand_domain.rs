@@ -291,6 +291,41 @@ impl ResearchIntake {
 }
 
 impl ResearchedTeamDraft {
+    pub fn validate_for_members(&self, requested: &[ResearchMemberInput]) -> Result<(), String> {
+        self.validate()?;
+        if requested.len() != self.members.len() {
+            return Err("指定した人数と調査結果が一致しません".into());
+        }
+        for (input, member) in requested.iter().zip(&self.members) {
+            if input.name.trim() != member.name.trim()
+                || input
+                    .weapon
+                    .as_deref()
+                    .is_some_and(|weapon| weapon.trim() != member.weapon.trim())
+            {
+                return Err(format!(
+                    "{}の指定キャラクターまたは武器が変更されています",
+                    input.name
+                ));
+            }
+            if let Some(level) = input.constellation {
+                let value = member.constellation.trim();
+                let matches = value == format!("{level}凸")
+                    || value == level.to_string()
+                    || value.eq_ignore_ascii_case(&format!("C{level}"))
+                    || (level == 0 && value == "無凸")
+                    || (level == 6 && value == "完凸");
+                if !matches {
+                    return Err(format!(
+                        "{}の指定した命ノ星座が変更されています",
+                        input.name
+                    ));
+                }
+            }
+        }
+        Ok(())
+    }
+
     pub fn validate(&self) -> Result<(), String> {
         if self.title.trim().is_empty() || self.title.chars().count() > 80 {
             return Err("編成名は1〜80文字で指定してください".into());
@@ -316,6 +351,16 @@ impl ResearchedTeamDraft {
             }
             if !(2..=8).contains(&member.target_stats.len()) {
                 return Err(format!("{}の目標ステータスは2〜8件必要です", member.name));
+            }
+            if member
+                .target_stats
+                .iter()
+                .any(|stat| stat.label.trim().is_empty() || stat.value.trim().is_empty())
+            {
+                return Err(format!(
+                    "{}の目標ステータスに名前または数値がありません",
+                    member.name
+                ));
             }
             if !member.target_stats.iter().any(|stat| stat.primary) {
                 return Err(format!(
@@ -390,8 +435,7 @@ mod tests {
         assert!(intake.validate().is_ok());
     }
 
-    #[test]
-    fn 主参照ステータスがない調査結果を拒否する() {
+    fn sample_draft() -> ResearchedTeamDraft {
         let member = ResearchedTeamMember {
             slot_index: 0,
             id: "sample".into(),
@@ -421,7 +465,7 @@ mod tests {
                 },
             ],
         };
-        let draft = ResearchedTeamDraft {
+        ResearchedTeamDraft {
             title: "サンプル編成".into(),
             game_version: "6.0".into(),
             members: (0..4)
@@ -437,8 +481,74 @@ mod tests {
                 url: "https://game8.jp/genshin/12345".into(),
             }],
             warnings: Vec::new(),
-        };
+        }
+    }
 
+    #[test]
+    fn 主参照ステータスがない調査結果を拒否する() {
+        let draft = sample_draft();
         assert!(draft.validate().unwrap_err().contains("主参照ステータス"));
+    }
+
+    #[test]
+    fn 空欄で件数を埋めた目標ステータスを拒否する() {
+        let mut draft = sample_draft();
+        for member in &mut draft.members {
+            member.target_stats[0].label = "攻撃力".into();
+            member.target_stats[0].value = "2,000".into();
+            member.target_stats[0].primary = true;
+        }
+        assert!(draft.validate().is_ok());
+        for (label, value) in [("", "100%"), ("unused", ""), ("元素チャージ効率", " \t")] {
+            draft.members[3].target_stats[1].label = label.into();
+            draft.members[3].target_stats[1].value = value.into();
+            assert!(draft.validate().unwrap_err().contains("名前または数値"));
+        }
+    }
+
+    #[test]
+    fn 指定条件を資料の内容で上書きした調査結果を拒否する() {
+        let mut draft = sample_draft();
+        for member in &mut draft.members {
+            member.target_stats[0].primary = true;
+        }
+        let requested = draft
+            .members
+            .iter()
+            .map(|member| ResearchMemberInput {
+                slot_index: member.slot_index,
+                name: member.name.clone(),
+                weapon: Some(member.weapon.clone()),
+                constellation: Some(0),
+                refinement: Some(1),
+            })
+            .collect::<Vec<_>>();
+        for value in ["無凸", "0凸", "C0", "0"] {
+            draft.members[0].constellation = value.into();
+            assert!(draft.validate_for_members(&requested).is_ok());
+        }
+        draft.members[0].constellation = "1凸".into();
+        assert!(
+            draft
+                .validate_for_members(&requested)
+                .unwrap_err()
+                .contains("命ノ星座")
+        );
+        draft.members[0].constellation = "無凸".into();
+        draft.members[0].weapon = "別の武器".into();
+        assert!(
+            draft
+                .validate_for_members(&requested)
+                .unwrap_err()
+                .contains("武器")
+        );
+        draft.members[0].weapon = requested[0].weapon.clone().unwrap();
+        draft.members[0].name = "別のキャラクター".into();
+        assert!(
+            draft
+                .validate_for_members(&requested)
+                .unwrap_err()
+                .contains("キャラクター")
+        );
     }
 }

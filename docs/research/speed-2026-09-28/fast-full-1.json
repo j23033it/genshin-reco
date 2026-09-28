@@ -1,0 +1,346 @@
+{
+  "allowedDomains": [
+    "wikiwiki.jp",
+    "game8.jp",
+    "wiki.hoyolab.com",
+    "gamewith.jp"
+  ],
+  "codexVersion": "0.158.0-alpha.2.1",
+  "diagnostics": {
+    "evidence": {
+      "collectedFacts": [],
+      "missingFacts": [
+        "アルレッキーノ：Lv90基礎HP・攻撃力・防御力、突破ステータス、元素爆発必要エネルギー、今回使う通常攻撃と元素スキル・元素爆発の効果数値、指定された白纓槍の精錬5効果が本文で個別に確認できる根拠。諧律奇想の断章の2セット効果・4セット効果の発動条件詳細。",
+        "夜蘭：Lv90基礎HP・攻撃力・防御力、突破ステータス、元素爆発必要エネルギー、今回使う元素爆発の効果数値。指定の精錬1西風猟弓を含めた今回の4人編成で、西風効果が実際に発動する会心率・攻撃機会の確認。",
+        "ベネット：Lv90基礎HP・攻撃力・防御力、突破ステータス、元素爆発必要エネルギー、今回使う元素爆発の効果数値、1凸の具体的な数値・条件。原木刀精錬1の効果数値。推奨聖遺物の2セット・4セット効果と発動条件。今回の編成に草反応の発動条件がないため、原木刀の葉効果は成立しない見込みだが、編成中の反応成立確認に必要な本文根拠。",
+        "鍾離：今回使う元素スキルの効果数値。推奨聖遺物の2セット・4セット効果と発動条件。",
+        "共通効果：今回推奨ビルドで使う聖遺物のセット効果本文（ベネット・鍾離分、およびアルレッキーノの諧律奇想の断章の正確な2セット効果と4セット条件）を未確認。",
+        "白纓槍: 要約の出典URLを本文閲覧記録で確認できません。数値と条件を確認してください。",
+        "西風猟弓: 要約の出典URLを本文閲覧記録で確認できません。数値と条件を確認してください。",
+        "原木刀: 要約の出典URLを本文閲覧記録で確認できません。数値と条件を確認してください。",
+        "黒纓槍: 要約の出典URLを本文閲覧記録で確認できません。数値と条件を確認してください。",
+        "夜蘭: 要約の出典URLを本文閲覧記録で確認できません。数値と条件を確認してください。",
+        "ベネット: 要約の出典URLを本文閲覧記録で確認できません。数値と条件を確認してください。",
+        "アルレッキーノ: 要約の出典URLを本文閲覧記録で確認できません。数値と条件を確認してください。",
+        "夜蘭: 要約の出典URLを本文閲覧記録で確認できません。数値と条件を確認してください。",
+        "鍾離: 要約の出典URLを本文閲覧記録で確認できません。数値と条件を確認してください。"
+      ],
+      "openedSourcePages": []
+    },
+    "evidencePageFetches": 0,
+    "evidenceSeconds": 45.9333439,
+    "evidenceWebCalls": 3,
+    "finalPageFetches": 70,
+    "finalSeconds": 675.7117439,
+    "finalWebCalls": 11
+  },
+  "effectiveFastMode": true,
+  "effectiveSearchConfig": {
+    "allowed_domains": [
+      "wikiwiki.jp",
+      "game8.jp",
+      "wiki.hoyolab.com",
+      "gamewith.jp"
+    ],
+    "context_size": "low",
+    "location": null
+  },
+  "effectiveServiceTier": "fast",
+  "elapsedSeconds": 722.9316112,
+  "evidenceEffort": "medium",
+  "evidenceOnly": false,
+  "fastMode": true,
+  "finalEffort": "max",
+  "intake": {
+    "members": [
+      {
+        "constellation": 0,
+        "name": "アルレッキーノ",
+        "refinement": 5,
+        "slotIndex": 0,
+        "weapon": "白纓槍"
+      },
+      {
+        "constellation": 0,
+        "name": "夜蘭",
+        "refinement": 1,
+        "slotIndex": 1,
+        "weapon": "西風猟弓"
+      },
+      {
+        "constellation": 1,
+        "name": "ベネット",
+        "refinement": 1,
+        "slotIndex": 2,
+        "weapon": "原木刀"
+      },
+      {
+        "constellation": 0,
+        "name": "鍾離",
+        "refinement": 5,
+        "slotIndex": 3,
+        "weapon": "黒纓槍"
+      }
+    ],
+    "missingFields": [],
+    "readyToResearch": true
+  },
+  "model": "gpt-6-luna",
+  "openedUrls": [
+    "https://wikiwiki.jp/genshinwiki/%E3%82%A2%E3%83%AB%E3%83%AC%E3%83%83%E3%82%AD%E3%83%BC%E3%83%8E",
+    "https://wikiwiki.jp/genshinwiki/%E3%83%99%E3%83%8D%E3%83%83%E3%83%88",
+    "https://wikiwiki.jp/genshinwiki/%E9%8D%BE%E9%9B%A2",
+    "https://wikiwiki.jp/genshinwiki/%E5%A4%9C%E8%98%AD",
+    "https://wikiwiki.jp/genshinwiki/%E5%BC%93/%E8%A5%BF%E9%A2%A8%E7%8C%9F%E5%BC%93",
+    "https://wikiwiki.jp/genshinwiki/%E7%89%87%E6%89%8B%E5%89%A3/%E5%8E%9F%E6%9C%A8%E5%88%80",
+    "https://wikiwiki.jp/genshinwiki/%E9%95%B7%E6%9F%84%E6%AD%A6%E5%99%A8/%E9%BB%92%E7%BA%93%E6%A7%8D",
+    "https://gamewith.jp/genshin/article/show/231920",
+    "https://gamewith.jp/genshin/article/show/445009",
+    "https://gamewith.jp/genshin/article/show/270116",
+    "https://gamewith.jp/genshin/article/show/420288",
+    "https://gamewith.jp/genshin/article/show/326055",
+    "https://gamewith.jp/genshin/article/show/230381",
+    "https://gamewith.jp/genshin/article/show/235612",
+    "https://gamewith.jp/genshin/article/show/232147",
+    "https://gamewith.jp/genshin/article/show/287044",
+    "https://gamewith.jp/genshin/article/show/445137",
+    "https://gamewith.jp/genshin/article/show/313282",
+    "https://game8.jp/genshin/355626",
+    "https://wikiwiki.jp/genshinwiki/%E8%81%96%E9%81%BA%E7%89%A9/%E3%83%87%E3%83%BC%E3%82%BF%E3%81%A8%E7%A0%94%E7%A9%B6"
+  ],
+  "output": {
+    "gameVersion": "7.1",
+    "members": [
+      {
+        "artifact": "諧律奇想の断章",
+        "artifactImageUrl": null,
+        "constellation": "0凸",
+        "element": "炎元素",
+        "id": "arlecchino",
+        "imageUrl": null,
+        "mainStats": "時の砂：攻撃力%／空の杯：炎元素ダメージ／理の冠：会心率",
+        "name": "アルレッキーノ",
+        "role": "通常攻撃メインアタッカー",
+        "slotIndex": 0,
+        "subStats": "会心率（目標まで）＞会心ダメージ＞攻撃力%／元素熟知（蒸発運用時）＞元素チャージ効率",
+        "targetStats": [
+          {
+            "label": "攻撃力",
+            "note": "白纓槍Lv90は基礎攻撃力401・会心率23.4%。表示値には炎共鳴+25%を含め、基礎攻撃力743×(1+攻撃力砂46.6%+断章2セット18%+炎共鳴25%)+羽311で装備のみの下限は約1,720。白纓槍R5は通常攻撃ダメージ+48%、断章4セットは命の契約が増減すると与ダメージ+18%が6秒続き、最大3層。",
+            "primary": true,
+            "value": "1,800〜2,200"
+          },
+          {
+            "label": "会心率",
+            "note": null,
+            "primary": false,
+            "value": "65〜80%"
+          },
+          {
+            "label": "会心ダメージ",
+            "note": null,
+            "primary": false,
+            "value": "130〜170%"
+          }
+        ],
+        "weapon": "白纓槍",
+        "weaponImageUrl": null
+      },
+      {
+        "artifact": "絶縁の旗印",
+        "artifactImageUrl": null,
+        "constellation": "0凸",
+        "element": "水元素",
+        "id": "yelan",
+        "imageUrl": null,
+        "mainStats": "時の砂：HP%／空の杯：水元素ダメージ／理の冠：会心率",
+        "name": "夜蘭",
+        "role": "元素爆発サブアタッカー／水元素付着",
+        "slotIndex": 1,
+        "subStats": "元素チャージ効率（目標まで）＞会心率＞会心ダメージ＞HP%",
+        "targetStats": [
+          {
+            "label": "HP上限",
+            "note": "この編成は炎・水・岩の3元素種なので固有天賦のHP+18%を含む。基礎HP14,450、HP砂46.6%、花HP+4,780で装備のみの下限は約28,565。",
+            "primary": true,
+            "value": "28,600〜32,000"
+          },
+          {
+            "label": "元素チャージ効率",
+            "note": "西風猟弓Lv90の元素チャージ効率61.3%と絶縁2セット+20%で固定値は181.3%。元素爆発の必要エネルギーは70で、絶縁4セットは元素チャージ効率の25%分を爆発ダメージに加算（上限75%）。",
+            "primary": false,
+            "value": "200〜220%"
+          },
+          {
+            "label": "会心率",
+            "note": "西風猟弓R1は会心攻撃時に60%で粒子を生成して元素エネルギー6回復、発動間隔は12秒。元素爆発中は味方の通常攻撃に連携し、出場キャラへの与ダメージバフが時間経過で最大50%になる。",
+            "primary": false,
+            "value": "65〜80%"
+          },
+          {
+            "label": "会心ダメージ",
+            "note": null,
+            "primary": false,
+            "value": "130〜170%"
+          }
+        ],
+        "weapon": "西風猟弓",
+        "weaponImageUrl": null
+      },
+      {
+        "artifact": "旧貴族のしつけ",
+        "artifactImageUrl": null,
+        "constellation": "1凸",
+        "element": "炎元素",
+        "id": "bennett",
+        "imageUrl": null,
+        "mainStats": "時の砂：元素チャージ効率／空の杯：HP%／理の冠：与える治療効果",
+        "name": "ベネット",
+        "role": "攻撃力バフ／回復サポート",
+        "slotIndex": 2,
+        "subStats": "元素チャージ効率＞HP%＞HP固定値",
+        "targetStats": [
+          {
+            "label": "基礎攻撃力",
+            "note": "Lv90ベネットの基礎攻撃力191と原木刀565の合計は756。指定1凸は元素爆発の攻撃力バフに基礎攻撃力の20%（151.2）を追加し、対象のHP70%条件を解除する。旧貴族2セットは元素爆発ダメージ+20%、4セットは元素爆発発動後12秒間チーム攻撃力+20%。",
+            "primary": true,
+            "value": "756"
+          },
+          {
+            "label": "元素チャージ効率",
+            "note": "Lv90突破分26.7%・原木刀30.6%・元素チャージ効率砂51.8%で装備固定値は209.1%。元素爆発の必要エネルギーは60。",
+            "primary": false,
+            "value": "210〜240%"
+          },
+          {
+            "label": "HP上限",
+            "note": "基礎HP12,397にHP杯46.6%と花HP+4,780を加えた装備下限は約22,954。",
+            "primary": false,
+            "value": "23,000〜27,000"
+          }
+        ],
+        "weapon": "原木刀",
+        "weaponImageUrl": null
+      },
+      {
+        "artifact": "千岩牢固",
+        "artifactImageUrl": null,
+        "constellation": "0凸",
+        "element": "岩元素",
+        "id": "zhongli",
+        "imageUrl": null,
+        "mainStats": "時の砂：HP%／空の杯：HP%／理の冠：HP%",
+        "name": "鍾離",
+        "role": "シールド／耐性低下サポート",
+        "slotIndex": 3,
+        "subStats": "HP%＞HP固定値＞元素チャージ効率",
+        "targetStats": [
+          {
+            "label": "HP上限",
+            "note": "基礎HP14,695、黒纓槍のHP+46.9%、千岩2セット+20%、HP%メイン3部位、花HP+4,780で装備下限は約49,850。玉璋シールド中は全元素・物理ダメージを150%吸収し、付近の敵の全耐性を20%低下。千岩4セットは元素スキルが敵に命中すると、0.5秒毎に更新できる3秒間のチーム攻撃力+20%・シールド強化+30%を付与し、黒纓槍R5の対スライムダメージ+80%はスライム系に限る。",
+            "primary": true,
+            "value": "50,000〜55,000"
+          },
+          {
+            "label": "unused",
+            "note": null,
+            "primary": false,
+            "value": ""
+          }
+        ],
+        "weapon": "黒纓槍",
+        "weaponImageUrl": null
+      }
+    ],
+    "sources": [
+      {
+        "title": "アルレッキーノ - 原神 Wiki*",
+        "url": "https://wikiwiki.jp/genshinwiki/%E3%82%A2%E3%83%AB%E3%83%AC%E3%83%83%E3%82%AD%E3%83%BC%E3%83%8E"
+      },
+      {
+        "title": "アルレッキーノの評価とおすすめ聖遺物・武器",
+        "url": "https://gamewith.jp/genshin/article/show/420288"
+      },
+      {
+        "title": "白纓槍の評価とおすすめキャラ",
+        "url": "https://gamewith.jp/genshin/article/show/231920"
+      },
+      {
+        "title": "諧律奇想の断章の効果と装備おすすめキャラ",
+        "url": "https://gamewith.jp/genshin/article/show/445009"
+      },
+      {
+        "title": "元素共鳴のおすすめと効果一覧",
+        "url": "https://game8.jp/genshin/355626"
+      },
+      {
+        "title": "聖遺物ステータス詳細と計算",
+        "url": "https://wikiwiki.jp/genshinwiki/%E8%81%96%E9%81%BA%E7%89%A9/%E3%83%87%E3%83%BC%E3%82%BF%E3%81%A8%E7%A0%94%E7%A9%B6"
+      },
+      {
+        "title": "夜蘭 - 原神 Wiki*",
+        "url": "https://wikiwiki.jp/genshinwiki/%E5%A4%9C%E8%98%AD"
+      },
+      {
+        "title": "夜蘭の評価とおすすめ聖遺物・武器",
+        "url": "https://gamewith.jp/genshin/article/show/326055"
+      },
+      {
+        "title": "絶縁の旗印の効果と装備おすすめキャラ",
+        "url": "https://gamewith.jp/genshin/article/show/287044"
+      },
+      {
+        "title": "弓/西風猟弓 - 原神 Wiki*",
+        "url": "https://wikiwiki.jp/genshinwiki/%E5%BC%93/%E8%A5%BF%E9%A2%A8%E7%8C%9F%E5%BC%93"
+      },
+      {
+        "title": "ベネット - 原神 Wiki*",
+        "url": "https://wikiwiki.jp/genshinwiki/%E3%83%99%E3%83%8D%E3%83%83%E3%83%88"
+      },
+      {
+        "title": "ベネットの評価とおすすめ聖遺物・武器",
+        "url": "https://gamewith.jp/genshin/article/show/230381"
+      },
+      {
+        "title": "ベネットのパーティとおすすめビルド",
+        "url": "https://gamewith.jp/genshin/article/show/313282"
+      },
+      {
+        "title": "片手剣/原木刀 - 原神 Wiki*",
+        "url": "https://wikiwiki.jp/genshinwiki/%E7%89%87%E6%89%8B%E5%89%A3/%E5%8E%9F%E6%9C%A8%E5%88%80"
+      },
+      {
+        "title": "旧貴族のしつけの効果と装備おすすめキャラ",
+        "url": "https://gamewith.jp/genshin/article/show/232147"
+      },
+      {
+        "title": "鍾離 - 原神 Wiki*",
+        "url": "https://wikiwiki.jp/genshinwiki/%E9%8D%BE%E9%9B%A2"
+      },
+      {
+        "title": "鍾離の評価とおすすめ聖遺物・武器",
+        "url": "https://gamewith.jp/genshin/article/show/235612"
+      },
+      {
+        "title": "長柄武器/黒纓槍 - 原神 Wiki*",
+        "url": "https://wikiwiki.jp/genshinwiki/%E9%95%B7%E6%9F%84%E6%AD%A6%E5%99%A8/%E9%BB%92%E7%BA%93%E6%A7%8D"
+      },
+      {
+        "title": "千岩牢固の効果と装備おすすめキャラ",
+        "url": "https://gamewith.jp/genshin/article/show/270116"
+      }
+    ],
+    "title": "アルレッキーノ・夜蘭・ベネット・鍾離の編成ビルド目標",
+    "warnings": [
+      "共通前提：キャラクターと武器はLv90、聖遺物は★5・Lv20として計算。",
+      "ベネットの元素爆発天賦レベルは未指定のため、基礎攻撃力に比例する攻撃力バフは天賦倍率込みの総量を固定していない。",
+      "原木刀R1の唯識の葉は草元素反応後に生成され、拾うと元素熟知+60が12秒継続する効果。今回の編成には草元素がいないため発動しない。"
+    ]
+  },
+  "profile": "gamewith",
+  "searchContextSize": "low",
+  "serviceTier": "fast",
+  "sourceValidationError": null,
+  "structuralValidationError": null,
+  "threadServiceTier": "priority"
+}

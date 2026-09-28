@@ -1,0 +1,461 @@
+{
+  "allowedDomains": [
+    "wikiwiki.jp",
+    "game8.jp",
+    "wiki.hoyolab.com",
+    "gamewith.jp"
+  ],
+  "codexVersion": "0.158.0-alpha.2.1",
+  "completedWebCalls": 5,
+  "effectiveFastMode": true,
+  "effectiveSearchConfig": {
+    "allowed_domains": [
+      "wikiwiki.jp",
+      "game8.jp",
+      "wiki.hoyolab.com",
+      "gamewith.jp"
+    ],
+    "context_size": "low",
+    "location": null
+  },
+  "effectiveServiceTier": "fast",
+  "elapsedSeconds": 76.6837236,
+  "evidence": {
+    "collectedFacts": [
+      {
+        "sourceUrl": "https://game8.jp/genshin/466954",
+        "subject": "アルレッキーノ",
+        "summary": "通常攻撃主体の火力役。指定は無凸・白纓槍精錬5。武器候補の説明では通常攻撃強化と会心率が相性の理由。"
+      },
+      {
+        "sourceUrl": "https://game8.jp/genshin/466954",
+        "subject": "アルレッキーノ",
+        "summary": "聖遺物は諧律奇想の断章4セットが理想、剣闘士のフィナーレ4セットが代用候補。命の契約の増減で断章の与ダメージ+54%を狙える。"
+      },
+      {
+        "sourceUrl": "https://game8.jp/genshin/466954",
+        "subject": "アルレッキーノ",
+        "summary": "聖遺物メインは時計:攻撃力%、杯:炎元素ダメージまたは攻撃力%、冠:会心系。サブは会心系＞攻撃力＞元素熟知＞元素チャージ効率。"
+      },
+      {
+        "sourceUrl": "https://game8.jp/genshin/466954",
+        "subject": "アルレッキーノ",
+        "summary": "攻撃力3000を固有天賦の耐久力バフ最大化の目安とする。攻撃力が3000未満なら杯を攻撃力%にする選択肢も記載。"
+      },
+      {
+        "sourceUrl": "https://game8.jp/genshin/466954",
+        "subject": "白纓槍",
+        "summary": "無凸の武器候補説明では会心率23.4%と通常攻撃ダメージ強化を評価。今回は精錬5指定だが、効果の精錬5数値は確認できていない。"
+      },
+      {
+        "sourceUrl": "https://game8.jp/genshin/466954",
+        "subject": "アルレッキーノ",
+        "summary": "戦闘中は固有天賦により元素爆発以外で回復できないため、耐久補助はシールドが候補。元素爆発で自己回復できる。今回の鍾離採用に適用。"
+      },
+      {
+        "sourceUrl": "https://game8.jp/genshin/466954",
+        "subject": "アルレッキーノ",
+        "summary": "記事の命ノ星座説明では無凸運用は元素スキル→重撃→通常攻撃連打、元素爆発は自己回復に用いる。今回の指定は無凸。"
+      },
+      {
+        "sourceUrl": "https://game8.jp/genshin/466954",
+        "subject": "アルレッキーノ",
+        "summary": "記事では溶解編成例にベネットを攻撃バフ役として掲載。指定編成に氷元素キャラがいないため、その例の溶解反応部分は適用できない。"
+      },
+      {
+        "sourceUrl": "https://game8.jp/genshin/446094",
+        "subject": "夜蘭",
+        "summary": "元素爆発主体の水元素サブ火力。指定は無凸・西風猟弓精錬1。元素爆発の連携攻撃はフィールド上の味方が通常攻撃すると発動する。"
+      },
+      {
+        "sourceUrl": "https://game8.jp/genshin/446094",
+        "subject": "夜蘭",
+        "summary": "聖遺物は絶縁の旗印4セットが基本候補。元素チャージ効率を補い、元素爆発ダメージも上げる。"
+      },
+      {
+        "sourceUrl": "https://game8.jp/genshin/446094",
+        "subject": "夜蘭",
+        "summary": "メインは時計:元素チャージ効率またはHP%、杯:水元素ダメージまたはHP%、冠:会心系。サブは元素チャージ効率＞会心系≧HP。"
+      },
+      {
+        "sourceUrl": "https://game8.jp/genshin/446094",
+        "subject": "夜蘭",
+        "summary": "元素チャージ効率200%以上は水元素共鳴があり、1凸または祭礼の弓などで元素スキルを複数回使える想定。今回の無凸・西風猟弓精錬1編成は水元素共鳴なしのため、この目安の前提を満たさない。"
+      },
+      {
+        "sourceUrl": "https://game8.jp/genshin/446094",
+        "subject": "夜蘭",
+        "summary": "西風猟弓は元素チャージ効率61.3%の候補で、武器効果の粒子生成も相性の理由。今回は指定精錬1。"
+      },
+      {
+        "sourceUrl": "https://game8.jp/genshin/446094",
+        "subject": "夜蘭",
+        "summary": "元素スキル後の打破状態は、命中した敵1体につき発動確率+34%、3体命中で確定。指定編成で敵数は指定されていないため、実際の確率は敵数次第。"
+      },
+      {
+        "sourceUrl": "https://game8.jp/genshin/446094",
+        "subject": "夜蘭",
+        "summary": "元素爆発の連携攻撃は通常攻撃をトリガーに1秒につき1回、元素スキルの命の糸が敵に命中した際にも1回発動。アルレッキーノの通常攻撃と組み合わせられる。"
+      },
+      {
+        "sourceUrl": "https://game8.jp/genshin/446094",
+        "subject": "夜蘭",
+        "summary": "1凸は元素スキルを2回発動可能にし、粒子回収機会が増える。今回の指定は無凸なので1凸効果は適用しない。"
+      },
+      {
+        "sourceUrl": "https://game8.jp/genshin/446094",
+        "subject": "夜蘭",
+        "summary": "固有天賦「気随気儘」は元素爆発継続中、出場キャラの与ダメージを初期+1%、毎秒+3.5%、最大+50%まで上げる。アルレッキーノの出場中に適用される。"
+      },
+      {
+        "sourceUrl": "https://game8.jp/genshin/352609",
+        "subject": "ベネット",
+        "summary": "サポート聖遺物は旧貴族のしつけ4セットが候補。元素爆発発動をトリガーに攻撃力バフを与える。"
+      },
+      {
+        "sourceUrl": "https://game8.jp/genshin/352609",
+        "subject": "ベネット",
+        "summary": "メインは時計:元素チャージ効率または攻撃力%、杯:HP%または炎元素ダメージ、冠:治癒効果・会心系・HP。サブは元素チャージ効率を最優先し、次にHP。"
+      },
+      {
+        "sourceUrl": "https://game8.jp/genshin/352609",
+        "subject": "ベネット",
+        "summary": "元素チャージ効率は約200%が目安。元素爆発必要エネルギーは80と記事に記載。"
+      },
+      {
+        "sourceUrl": "https://game8.jp/genshin/352609",
+        "subject": "ベネット",
+        "summary": "原木刀は妥協候補で、元素チャージ効率30.6%と高い基礎攻撃力が理由。指定は精錬1。"
+      },
+      {
+        "sourceUrl": "https://game8.jp/genshin/352609",
+        "subject": "ベネット",
+        "summary": "元素爆発の鼓舞エリア内では、味方HPが70%未満ならベネットのHP上限を基準に継続回復し、70%以上ならベネットの基礎攻撃力を基準に攻撃力を上げる。"
+      },
+      {
+        "sourceUrl": "https://game8.jp/genshin/352609",
+        "subject": "ベネット",
+        "summary": "元素爆発の鼓舞エリアは味方に炎元素付着効果も付与する。"
+      },
+      {
+        "sourceUrl": "https://game8.jp/genshin/352609",
+        "subject": "ベネット",
+        "summary": "固有天賦「情熱復活」は元素スキルのクールタイムを20%短縮。「恐れなき熱血」は元素爆発エリア内で元素スキルのクールタイムをさらに50%短縮し、2段チャージ時の自身のノックバックを無効化。"
+      },
+      {
+        "sourceUrl": "https://game8.jp/genshin/352609",
+        "subject": "原木刀",
+        "summary": "元素チャージ効率30.6%。草関連反応で唯識の葉を生成し、拾ったキャラクターに元素熟知+60を12秒付与。生成は20秒に1回。今回の精錬1ではこの効果を基準にする。"
+      },
+      {
+        "sourceUrl": "https://game8.jp/genshin/471120",
+        "subject": "原木刀",
+        "summary": "装備者が草関連反応に直接関与する必要がある。ベネットは炎元素で、指定編成では夜蘭の水元素と蒸発反応を起こせる場合に効果発動条件を満たす。"
+      },
+      {
+        "sourceUrl": "https://game8.jp/genshin/358212",
+        "subject": "鍾離",
+        "summary": "指定は無凸・黒纓槍精錬5。シールド重視のサポート運用として、元素スキルを最優先で強化し、次に元素爆発。"
+      },
+      {
+        "sourceUrl": "https://game8.jp/genshin/358212",
+        "subject": "鍾離",
+        "summary": "耐久サポート向け聖遺物は千岩牢固4セット、または千岩牢固2セット＋花海甘露の光2セット。後者は2セット効果を合わせてHP+40%。"
+      },
+      {
+        "sourceUrl": "https://game8.jp/genshin/358212",
+        "subject": "鍾離",
+        "summary": "耐久型メインは時計・杯・冠すべてHP%。サブはHP%＞会心系＞攻撃力≧元素チャージ効率。"
+      },
+      {
+        "sourceUrl": "https://game8.jp/genshin/358212",
+        "subject": "鍾離",
+        "summary": "黒纓槍はHP+46.9%の武器候補で、記事はHP依存キャラとの相性を説明。精錬5の効果はスライムタイプへのダメージ+80%で、シールド耐久には直接寄与しない。"
+      },
+      {
+        "sourceUrl": "https://game8.jp/genshin/358212",
+        "subject": "鍾離",
+        "summary": "元素爆発はボス以外に命中すると石化効果を付与し、一時的に行動を阻害する。"
+      },
+      {
+        "sourceUrl": "https://game8.jp/genshin/358212",
+        "subject": "鍾離",
+        "summary": "千岩牢固4セットは2セットでシールド強度を上げ、岩柱の共鳴ダメージで全体攻撃バフを付与。4セット運用は元素スキルの継続命中が条件面の課題として説明されている。"
+      },
+      {
+        "sourceUrl": "https://game8.jp/genshin/358212",
+        "subject": "共通効果（水元素共鳴）",
+        "summary": "チームに水元素キャラクターが2名いると、チーム全員のHP上限+25%。夜蘭1名のみの今回の編成では発動しない。"
+      },
+      {
+        "sourceUrl": "https://game8.jp/genshin/358212",
+        "subject": "鍾離",
+        "summary": "命ノ星座1凸で岩柱を最大2個同時に存在させられる。今回の指定は無凸のため適用しない。"
+      },
+      {
+        "sourceUrl": "https://game8.jp/genshin/446094",
+        "subject": "共通効果（今回の編成）",
+        "summary": "記事の編成例では鍾離がシールド・耐性減少役として掲載され、アルレッキーノ編成では回復制限に対するシールド採用が勧められている。今回の鍾離採用に適用できる役割の根拠。"
+      }
+    ],
+    "missingFacts": [
+      "アルレッキーノ：白纓槍精錬5の通常攻撃ダメージ上昇量と発動条件の詳細数値。",
+      "アルレッキーノ：元素チャージ効率の具体的な目標値。",
+      "アルレッキーノ：無凸で適用される固有天賦の数値・発動条件の全容。",
+      "アルレッキーノ：命ノ星座1凸の赤死の宴強化量・中断耐性の条件数値（今回の指定は無凸）。",
+      "夜蘭：無凸・水元素共鳴なし・西風猟弓精錬1での元素チャージ効率の具体的必要値。",
+      "夜蘭：西風猟弓精錬1の会心発動条件に必要な会心率や今回の実際の発動頻度。",
+      "ベネット：原木刀の唯識の葉を今回の炎・水・岩・炎編成で発生させる草元素の供給条件。編成内に草元素キャラクターがいないため、発動可否に必要な外部草元素付与は確認できない。",
+      "ベネット：指定の命ノ星座1凸で元素爆発の攻撃力バフに加算される数値と発動条件。",
+      "鍾離：指定の黒纓槍精錬5・シールド特化構成に対する元素チャージ効率の具体的目安。",
+      "鍾離：固有天賦によるHP参照の追加ダメージ量と発動条件の全数値。"
+    ],
+    "openedSourcePages": [
+      "https://game8.jp/genshin/352609",
+      "https://game8.jp/genshin/354867",
+      "https://game8.jp/genshin/354889",
+      "https://game8.jp/genshin/358212",
+      "https://game8.jp/genshin/446094",
+      "https://game8.jp/genshin/466954",
+      "https://game8.jp/genshin/471120",
+      "https://wiki.hoyolab.com/m/genshin/entry/34?bbs_presentation_style=fullscreen&lang=ja-jp"
+    ]
+  },
+  "evidenceEffort": "medium",
+  "evidenceOnly": true,
+  "evidenceSeconds": 74.5260288,
+  "fastMode": true,
+  "finalEffort": "max",
+  "intake": {
+    "members": [
+      {
+        "constellation": 0,
+        "name": "アルレッキーノ",
+        "refinement": 5,
+        "slotIndex": 0,
+        "weapon": "白纓槍"
+      },
+      {
+        "constellation": 0,
+        "name": "夜蘭",
+        "refinement": 1,
+        "slotIndex": 1,
+        "weapon": "西風猟弓"
+      },
+      {
+        "constellation": 1,
+        "name": "ベネット",
+        "refinement": 1,
+        "slotIndex": 2,
+        "weapon": "原木刀"
+      },
+      {
+        "constellation": 0,
+        "name": "鍾離",
+        "refinement": 5,
+        "slotIndex": 3,
+        "weapon": "黒纓槍"
+      }
+    ],
+    "missingFields": [],
+    "readyToResearch": true
+  },
+  "model": "gpt-6-luna",
+  "pageFetches": 28,
+  "profile": "gamewith",
+  "rawEvidence": {
+    "facts": [
+      {
+        "sourceUrl": "https://game8.jp/genshin/466954",
+        "subject": "アルレッキーノ",
+        "summary": "通常攻撃主体の火力役。指定は無凸・白纓槍精錬5。武器候補の説明では通常攻撃強化と会心率が相性の理由。"
+      },
+      {
+        "sourceUrl": "https://game8.jp/genshin/466954",
+        "subject": "アルレッキーノ",
+        "summary": "聖遺物は諧律奇想の断章4セットが理想、剣闘士のフィナーレ4セットが代用候補。命の契約の増減で断章の与ダメージ+54%を狙える。"
+      },
+      {
+        "sourceUrl": "https://game8.jp/genshin/466954",
+        "subject": "アルレッキーノ",
+        "summary": "聖遺物メインは時計:攻撃力%、杯:炎元素ダメージまたは攻撃力%、冠:会心系。サブは会心系＞攻撃力＞元素熟知＞元素チャージ効率。"
+      },
+      {
+        "sourceUrl": "https://game8.jp/genshin/466954",
+        "subject": "アルレッキーノ",
+        "summary": "攻撃力3000を固有天賦の耐久力バフ最大化の目安とする。攻撃力が3000未満なら杯を攻撃力%にする選択肢も記載。"
+      },
+      {
+        "sourceUrl": "https://game8.jp/genshin/466954",
+        "subject": "白纓槍",
+        "summary": "無凸の武器候補説明では会心率23.4%と通常攻撃ダメージ強化を評価。今回は精錬5指定だが、効果の精錬5数値は確認できていない。"
+      },
+      {
+        "sourceUrl": "https://game8.jp/genshin/466954",
+        "subject": "アルレッキーノ",
+        "summary": "戦闘中は固有天賦により元素爆発以外で回復できないため、耐久補助はシールドが候補。元素爆発で自己回復できる。今回の鍾離採用に適用。"
+      },
+      {
+        "sourceUrl": "https://game8.jp/genshin/466954",
+        "subject": "アルレッキーノ",
+        "summary": "記事の命ノ星座説明では無凸運用は元素スキル→重撃→通常攻撃連打、元素爆発は自己回復に用いる。今回の指定は無凸。"
+      },
+      {
+        "sourceUrl": "https://game8.jp/genshin/466954",
+        "subject": "アルレッキーノ",
+        "summary": "記事では溶解編成例にベネットを攻撃バフ役として掲載。指定編成に氷元素キャラがいないため、その例の溶解反応部分は適用できない。"
+      },
+      {
+        "sourceUrl": "https://game8.jp/genshin/446094",
+        "subject": "夜蘭",
+        "summary": "元素爆発主体の水元素サブ火力。指定は無凸・西風猟弓精錬1。元素爆発の連携攻撃はフィールド上の味方が通常攻撃すると発動する。"
+      },
+      {
+        "sourceUrl": "https://game8.jp/genshin/446094",
+        "subject": "夜蘭",
+        "summary": "聖遺物は絶縁の旗印4セットが基本候補。元素チャージ効率を補い、元素爆発ダメージも上げる。"
+      },
+      {
+        "sourceUrl": "https://game8.jp/genshin/446094",
+        "subject": "夜蘭",
+        "summary": "メインは時計:元素チャージ効率またはHP%、杯:水元素ダメージまたはHP%、冠:会心系。サブは元素チャージ効率＞会心系≧HP。"
+      },
+      {
+        "sourceUrl": "https://game8.jp/genshin/446094",
+        "subject": "夜蘭",
+        "summary": "元素チャージ効率200%以上は水元素共鳴があり、1凸または祭礼の弓などで元素スキルを複数回使える想定。今回の無凸・西風猟弓精錬1編成は水元素共鳴なしのため、この目安の前提を満たさない。"
+      },
+      {
+        "sourceUrl": "https://game8.jp/genshin/446094",
+        "subject": "夜蘭",
+        "summary": "西風猟弓は元素チャージ効率61.3%の候補で、武器効果の粒子生成も相性の理由。今回は指定精錬1。"
+      },
+      {
+        "sourceUrl": "https://game8.jp/genshin/446094",
+        "subject": "夜蘭",
+        "summary": "元素スキル後の打破状態は、命中した敵1体につき発動確率+34%、3体命中で確定。指定編成で敵数は指定されていないため、実際の確率は敵数次第。"
+      },
+      {
+        "sourceUrl": "https://game8.jp/genshin/446094",
+        "subject": "夜蘭",
+        "summary": "元素爆発の連携攻撃は通常攻撃をトリガーに1秒につき1回、元素スキルの命の糸が敵に命中した際にも1回発動。アルレッキーノの通常攻撃と組み合わせられる。"
+      },
+      {
+        "sourceUrl": "https://game8.jp/genshin/446094",
+        "subject": "夜蘭",
+        "summary": "1凸は元素スキルを2回発動可能にし、粒子回収機会が増える。今回の指定は無凸なので1凸効果は適用しない。"
+      },
+      {
+        "sourceUrl": "https://game8.jp/genshin/446094",
+        "subject": "夜蘭",
+        "summary": "固有天賦「気随気儘」は元素爆発継続中、出場キャラの与ダメージを初期+1%、毎秒+3.5%、最大+50%まで上げる。アルレッキーノの出場中に適用される。"
+      },
+      {
+        "sourceUrl": "https://game8.jp/genshin/352609",
+        "subject": "ベネット",
+        "summary": "サポート聖遺物は旧貴族のしつけ4セットが候補。元素爆発発動をトリガーに攻撃力バフを与える。"
+      },
+      {
+        "sourceUrl": "https://game8.jp/genshin/352609",
+        "subject": "ベネット",
+        "summary": "メインは時計:元素チャージ効率または攻撃力%、杯:HP%または炎元素ダメージ、冠:治癒効果・会心系・HP。サブは元素チャージ効率を最優先し、次にHP。"
+      },
+      {
+        "sourceUrl": "https://game8.jp/genshin/352609",
+        "subject": "ベネット",
+        "summary": "元素チャージ効率は約200%が目安。元素爆発必要エネルギーは80と記事に記載。"
+      },
+      {
+        "sourceUrl": "https://game8.jp/genshin/352609",
+        "subject": "ベネット",
+        "summary": "原木刀は妥協候補で、元素チャージ効率30.6%と高い基礎攻撃力が理由。指定は精錬1。"
+      },
+      {
+        "sourceUrl": "https://game8.jp/genshin/352609",
+        "subject": "ベネット",
+        "summary": "元素爆発の鼓舞エリア内では、味方HPが70%未満ならベネットのHP上限を基準に継続回復し、70%以上ならベネットの基礎攻撃力を基準に攻撃力を上げる。"
+      },
+      {
+        "sourceUrl": "https://game8.jp/genshin/352609",
+        "subject": "ベネット",
+        "summary": "元素爆発の鼓舞エリアは味方に炎元素付着効果も付与する。"
+      },
+      {
+        "sourceUrl": "https://game8.jp/genshin/352609",
+        "subject": "ベネット",
+        "summary": "固有天賦「情熱復活」は元素スキルのクールタイムを20%短縮。「恐れなき熱血」は元素爆発エリア内で元素スキルのクールタイムをさらに50%短縮し、2段チャージ時の自身のノックバックを無効化。"
+      },
+      {
+        "sourceUrl": "https://game8.jp/genshin/352609",
+        "subject": "原木刀",
+        "summary": "元素チャージ効率30.6%。草関連反応で唯識の葉を生成し、拾ったキャラクターに元素熟知+60を12秒付与。生成は20秒に1回。今回の精錬1ではこの効果を基準にする。"
+      },
+      {
+        "sourceUrl": "https://game8.jp/genshin/471120",
+        "subject": "原木刀",
+        "summary": "装備者が草関連反応に直接関与する必要がある。ベネットは炎元素で、指定編成では夜蘭の水元素と蒸発反応を起こせる場合に効果発動条件を満たす。"
+      },
+      {
+        "sourceUrl": "https://game8.jp/genshin/358212",
+        "subject": "鍾離",
+        "summary": "指定は無凸・黒纓槍精錬5。シールド重視のサポート運用として、元素スキルを最優先で強化し、次に元素爆発。"
+      },
+      {
+        "sourceUrl": "https://game8.jp/genshin/358212",
+        "subject": "鍾離",
+        "summary": "耐久サポート向け聖遺物は千岩牢固4セット、または千岩牢固2セット＋花海甘露の光2セット。後者は2セット効果を合わせてHP+40%。"
+      },
+      {
+        "sourceUrl": "https://game8.jp/genshin/358212",
+        "subject": "鍾離",
+        "summary": "耐久型メインは時計・杯・冠すべてHP%。サブはHP%＞会心系＞攻撃力≧元素チャージ効率。"
+      },
+      {
+        "sourceUrl": "https://game8.jp/genshin/358212",
+        "subject": "鍾離",
+        "summary": "黒纓槍はHP+46.9%の武器候補で、記事はHP依存キャラとの相性を説明。精錬5の効果はスライムタイプへのダメージ+80%で、シールド耐久には直接寄与しない。"
+      },
+      {
+        "sourceUrl": "https://game8.jp/genshin/358212",
+        "subject": "鍾離",
+        "summary": "元素爆発はボス以外に命中すると石化効果を付与し、一時的に行動を阻害する。"
+      },
+      {
+        "sourceUrl": "https://game8.jp/genshin/358212",
+        "subject": "鍾離",
+        "summary": "千岩牢固4セットは2セットでシールド強度を上げ、岩柱の共鳴ダメージで全体攻撃バフを付与。4セット運用は元素スキルの継続命中が条件面の課題として説明されている。"
+      },
+      {
+        "sourceUrl": "https://game8.jp/genshin/358212",
+        "subject": "共通効果（水元素共鳴）",
+        "summary": "チームに水元素キャラクターが2名いると、チーム全員のHP上限+25%。夜蘭1名のみの今回の編成では発動しない。"
+      },
+      {
+        "sourceUrl": "https://game8.jp/genshin/358212",
+        "subject": "鍾離",
+        "summary": "命ノ星座1凸で岩柱を最大2個同時に存在させられる。今回の指定は無凸のため適用しない。"
+      },
+      {
+        "sourceUrl": "https://game8.jp/genshin/446094",
+        "subject": "共通効果（今回の編成）",
+        "summary": "記事の編成例では鍾離がシールド・耐性減少役として掲載され、アルレッキーノ編成では回復制限に対するシールド採用が勧められている。今回の鍾離採用に適用できる役割の根拠。"
+      }
+    ],
+    "missingFacts": [
+      "アルレッキーノ：白纓槍精錬5の通常攻撃ダメージ上昇量と発動条件の詳細数値。",
+      "アルレッキーノ：元素チャージ効率の具体的な目標値。",
+      "アルレッキーノ：無凸で適用される固有天賦の数値・発動条件の全容。",
+      "アルレッキーノ：命ノ星座1凸の赤死の宴強化量・中断耐性の条件数値（今回の指定は無凸）。",
+      "夜蘭：無凸・水元素共鳴なし・西風猟弓精錬1での元素チャージ効率の具体的必要値。",
+      "夜蘭：西風猟弓精錬1の会心発動条件に必要な会心率や今回の実際の発動頻度。",
+      "ベネット：原木刀の唯識の葉を今回の炎・水・岩・炎編成で発生させる草元素の供給条件。編成内に草元素キャラクターがいないため、発動可否に必要な外部草元素付与は確認できない。",
+      "ベネット：指定の命ノ星座1凸で元素爆発の攻撃力バフに加算される数値と発動条件。",
+      "鍾離：指定の黒纓槍精錬5・シールド特化構成に対する元素チャージ効率の具体的目安。",
+      "鍾離：固有天賦によるHP参照の追加ダメージ量と発動条件の全数値。"
+    ]
+  },
+  "searchContextSize": "low",
+  "serviceTier": "fast",
+  "threadServiceTier": "priority",
+  "urlRepairPassed": true
+}

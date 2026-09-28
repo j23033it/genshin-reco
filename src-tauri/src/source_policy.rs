@@ -33,8 +33,11 @@ pub fn normalize_source_url(raw: &str) -> Result<String, SourcePolicyError> {
     match host {
         "wikiwiki.jp" if path_is_within(url.path(), "/genshinwiki") => {}
         "game8.jp" if path_is_within(url.path(), "/genshin") => {}
+        "gamewith.jp" if path_is_within(url.path(), "/genshin") => {}
         "wiki.hoyolab.com" => {}
-        "wikiwiki.jp" | "game8.jp" => return Err(SourcePolicyError::PathNotAllowed),
+        "wikiwiki.jp" | "game8.jp" | "gamewith.jp" => {
+            return Err(SourcePolicyError::PathNotAllowed);
+        }
         other => return Err(SourcePolicyError::HostNotAllowed(other.into())),
     }
 
@@ -72,6 +75,9 @@ pub fn is_direct_content_url(raw: &str) -> Result<bool, SourcePolicyError> {
     match url.host_str() {
         Some("wikiwiki.jp") => Ok(path != "/genshinwiki"),
         Some("game8.jp") => Ok(path != "/genshin"),
+        Some("gamewith.jp") => Ok(path
+            .strip_prefix("/genshin/article/show/")
+            .is_some_and(|id| !id.is_empty() && id.bytes().all(|byte| byte.is_ascii_digit()))),
         Some("wiki.hoyolab.com") => Ok(lower_path.contains("/entry/")),
         _ => Ok(false),
     }
@@ -86,12 +92,16 @@ mod tests {
     use super::*;
 
     #[test]
-    fn 許可された3サイトを正規化できる() {
+    fn 許可された攻略サイトを正規化できる() {
         assert_eq!(
             normalize_source_url("https://wikiwiki.jp/genshinwiki/雷電将軍#build").unwrap(),
             "https://wikiwiki.jp/genshinwiki/%E9%9B%B7%E9%9B%BB%E5%B0%86%E8%BB%8D"
         );
         assert!(normalize_source_url("https://game8.jp/genshin/12345").is_ok());
+        assert_eq!(
+            normalize_source_url("https://gamewith.jp/genshin/article/show/231920#weapon").unwrap(),
+            "https://gamewith.jp/genshin/article/show/231920"
+        );
         assert!(normalize_source_url("https://wiki.hoyolab.com/pc/genshin/entry/1").is_ok());
     }
 
@@ -103,6 +113,10 @@ mod tests {
             "file:///C:/secret",
             "https://user@game8.jp/genshin/1",
             "https://game8.jp/other/1",
+            "https://gamewith.jp/other/article/show/1",
+            "https://gamewith.jp/genshin.evil/article/show/1",
+            "https://gamewith.jp.evil.example/genshin/article/show/1",
+            "https://img.gamewith.jp/genshin/article/show/1",
             "https://wikiwiki.jp/genshinwiki.evil/1",
             "https://wiki.hoyolab.com:444/pc/genshin/entry/1",
         ] {
@@ -118,6 +132,11 @@ mod tests {
         for url in [
             "https://game8.jp/genshin/search?q=raiden",
             "https://game8.jp/genshin/",
+            "https://gamewith.jp/genshin/",
+            "https://gamewith.jp/genshin/article/show/",
+            "https://gamewith.jp/genshin/article/show/search",
+            "https://gamewith.jp/genshin/article/show/231920?q=test",
+            "https://gamewith.jp/genshin/article/show/231920/extra",
             "https://wikiwiki.jp/genshinwiki/",
             "https://wiki.hoyolab.com/pc/genshin/home",
         ] {
@@ -125,6 +144,7 @@ mod tests {
         }
         for url in [
             "https://game8.jp/genshin/12345",
+            "https://gamewith.jp/genshin/article/show/231920",
             "https://wikiwiki.jp/genshinwiki/雷電将軍",
             "https://wiki.hoyolab.com/pc/genshin/entry/1",
         ] {

@@ -1,0 +1,464 @@
+{
+  "allowedDomains": [
+    "wikiwiki.jp",
+    "game8.jp",
+    "wiki.hoyolab.com",
+    "gamewith.jp"
+  ],
+  "codexVersion": "0.158.0-alpha.2.1",
+  "completedWebCalls": 7,
+  "effectiveSearchConfig": {
+    "allowed_domains": [
+      "wikiwiki.jp",
+      "game8.jp",
+      "wiki.hoyolab.com",
+      "gamewith.jp"
+    ],
+    "context_size": "low",
+    "location": null
+  },
+  "elapsedSeconds": 121.6554021,
+  "evidence": {
+    "collectedFacts": [
+      {
+        "sourceUrl": "https://game8.jp/genshin/466954",
+        "subject": "アルレッキーノ",
+        "summary": "今回のC0・白纓槍では通常攻撃主体の炎アタッカーとして扱う。聖遺物メインは時計:攻撃力%、杯:炎元素ダメージ（攻撃力%も候補）、冠:会心系。"
+      },
+      {
+        "sourceUrl": "https://game8.jp/genshin/466954",
+        "subject": "アルレッキーノ",
+        "summary": "サブ効果は会心系＞攻撃力＞元素熟知＞元素チャージ効率。会心を優先し、攻撃力は耐久力バフの上限に関わる。"
+      },
+      {
+        "sourceUrl": "https://game8.jp/genshin/466954",
+        "subject": "アルレッキーノ",
+        "summary": "攻撃力1,000超過分について、超過した100ごとに全元素耐性・物理耐性+1%。記事は効果最大化の目標攻撃力を3,000としている。今回の指定にも適用される目安。"
+      },
+      {
+        "sourceUrl": "https://game8.jp/genshin/466954",
+        "subject": "アルレッキーノ",
+        "summary": "諧律奇想の断章4セットは命の契約が増減すると発動し、最大で与ダメージ+54%。重撃・スキル・爆発も強化するため推奨候補。"
+      },
+      {
+        "sourceUrl": "https://game8.jp/genshin/466954",
+        "subject": "アルレッキーノ",
+        "summary": "剣闘士のフィナーレ4セットは通常攻撃ダメージ+35%。断章の代用候補として紹介されている。"
+      },
+      {
+        "sourceUrl": "https://game8.jp/genshin/466954",
+        "subject": "アルレッキーノ",
+        "summary": "通常攻撃を最優先、元素爆発を次点、元素スキルを後回しに強化する推奨。通常攻撃が命の契約を使う強化状態の主な火力源。"
+      },
+      {
+        "sourceUrl": "https://game8.jp/genshin/466954",
+        "subject": "アルレッキーノ",
+        "summary": "固有天賦により自身の元素爆発以外では回復できず、自己回復手段は元素爆発。今回のC0では回復役の回復を受ける前提にできない。"
+      },
+      {
+        "sourceUrl": "https://game8.jp/genshin/466954",
+        "subject": "アルレッキーノ",
+        "summary": "C1効果は赤死の宴の強化量+100%と、強化状態で通常攻撃・重撃中の中断耐性上昇。今回C0なので適用なし。"
+      },
+      {
+        "sourceUrl": "https://game8.jp/genshin/359620",
+        "subject": "白纓槍",
+        "summary": "Lv.90時の会心率は23.4%。宝箱から入手でき、今回の指定武器としてアルレッキーノに装備する。"
+      },
+      {
+        "sourceUrl": "https://game8.jp/genshin/359620",
+        "subject": "白纓槍",
+        "summary": "精錬5の武器効果は通常攻撃ダメージ+48%。通常攻撃主体のアルレッキーノに適用される。"
+      },
+      {
+        "sourceUrl": "https://gamewith.jp/genshin/article/show/326055",
+        "subject": "夜蘭",
+        "summary": "元素爆発の連携攻撃は15秒間、出場キャラの攻撃に連動し、夜蘭のHP上限を基準に水元素ダメージを与える。今回のアルレッキーノの通常攻撃と連携できる。"
+      },
+      {
+        "sourceUrl": "https://gamewith.jp/genshin/article/show/345732",
+        "subject": "夜蘭",
+        "summary": "元素チャージ効率は200%以上が目安。今回の無凸では絶縁4セットと西風猟弓を使い、爆発回転を優先する基準として適用。"
+      },
+      {
+        "sourceUrl": "https://gamewith.jp/genshin/article/show/345732",
+        "subject": "夜蘭",
+        "summary": "絶縁の旗印2セットは元素チャージ効率+20%、4セットは元素チャージ効率の25%を基準に爆発ダメージを上げ、上限は+75%。今回の爆発重視に合う。"
+      },
+      {
+        "sourceUrl": "https://gamewith.jp/genshin/article/show/345732",
+        "subject": "夜蘭",
+        "summary": "元素チャージ効率200%以上なら時計HP%、未満なら時計元素チャージ効率が基本。杯は水元素ダメージ、冠は会心系。"
+      },
+      {
+        "sourceUrl": "https://gamewith.jp/genshin/article/show/345732",
+        "subject": "夜蘭",
+        "summary": "元素爆発・元素スキル・打破の矢のダメージはHP上限を参照するため、攻撃力よりHP%を重視する。今回のサブアタッカー運用に適用。"
+      },
+      {
+        "sourceUrl": "https://gamewith.jp/genshin/article/show/231936",
+        "subject": "西風猟弓",
+        "summary": "Lv.最大時の攻撃力454、元素チャージ効率+61.3%。今回の精錬1でもチャージ補助用の指定武器として夜蘭に装備する。"
+      },
+      {
+        "sourceUrl": "https://gamewith.jp/genshin/article/show/231936",
+        "subject": "西風猟弓",
+        "summary": "精錬1は会心攻撃時に60%で少量の元素粒子を生成し、元素エネルギーを6回復。12秒に1回発動。今回の指定は精錬1。"
+      },
+      {
+        "sourceUrl": "https://gamewith.jp/genshin/article/show/326055",
+        "subject": "夜蘭",
+        "summary": "西風猟弓は推奨候補で、武器効果による味方のチャージ補助には会心率が必要。今回の指定武器効果を活かす条件。"
+      },
+      {
+        "sourceUrl": "https://gamewith.jp/genshin/article/show/345732",
+        "subject": "夜蘭",
+        "summary": "固有天賦は編成内の元素種類数に応じて夜蘭のHP上限を上昇させる。今回の4人編成は炎・水・岩の3元素で、元素種数に応じた効果対象。"
+      },
+      {
+        "sourceUrl": "https://gamewith.jp/genshin/article/show/326055",
+        "subject": "夜蘭",
+        "summary": "C1は元素スキルの使用可能回数+1。今回C0なので追加使用回数はない。"
+      },
+      {
+        "sourceUrl": "https://gamewith.jp/genshin/article/show/230381",
+        "subject": "ベネット",
+        "summary": "元素チャージ効率200%以上を目指す推奨。爆発回転を優先し、時計は元素チャージ効率、杯はHP%または炎元素ダメージ、冠は治療効果または会心系。"
+      },
+      {
+        "sourceUrl": "https://gamewith.jp/genshin/article/show/230381",
+        "subject": "ベネット",
+        "summary": "サブ効果は元素チャージ効率・会心系・攻撃力%。今回のサポート運用では爆発を回すチャージ確保を優先する。"
+      },
+      {
+        "sourceUrl": "https://gamewith.jp/genshin/article/show/230381",
+        "subject": "ベネット",
+        "summary": "旧貴族のしつけ4セットは元素爆発後に味方の攻撃力を上げる候補。編成内に同セット装備者がいない場合に今回の支援効果として選べる。"
+      },
+      {
+        "sourceUrl": "https://gamewith.jp/genshin/article/show/230381",
+        "subject": "ベネット",
+        "summary": "元素爆発フィールド内ではHP状況に応じて攻撃力上昇または回復が発動。今回C1では攻撃力上昇のHP制限がなくなり、基礎攻撃力の20%分を追加し、回復と攻撃力上昇を両立する。"
+      },
+      {
+        "sourceUrl": "https://gamewith.jp/genshin/article/show/230381",
+        "subject": "ベネット",
+        "summary": "元素爆発の天賦強化を最優先する推奨。今回の攻撃力支援・回復の主な効果源。"
+      },
+      {
+        "sourceUrl": "https://gamewith.jp/genshin/article/show/230381",
+        "subject": "ベネット",
+        "summary": "C2はHPが70%以下のとき元素チャージ効率+30%。今回C1では未解放のため適用なし。"
+      },
+      {
+        "sourceUrl": "https://gamewith.jp/genshin/article/show/359610",
+        "subject": "原木刀",
+        "summary": "Lv.最大時の攻撃力565、元素チャージ効率+30.6%。鍛造入手でき、今回の指定片手剣としてベネットに装備する。"
+      },
+      {
+        "sourceUrl": "https://gamewith.jp/genshin/article/show/359610",
+        "subject": "原木刀",
+        "summary": "燃焼・原激化・超激化・草激化・開花・月開花・超開花・烈開花を起こすと唯識の葉を生成。拾ったキャラは精錬1で元素熟知+60を12秒獲得、生成は20秒に1つで重ね掛け不可。"
+      },
+      {
+        "sourceUrl": "https://gamewith.jp/genshin/article/show/359610",
+        "subject": "原木刀",
+        "summary": "今回の編成は炎・水・岩元素のみで草元素がいないため、原木刀の草元素反応を条件とする唯識の葉効果は発動条件を満たさない。"
+      },
+      {
+        "sourceUrl": "https://game8.jp/genshin/358212",
+        "subject": "鍾離",
+        "summary": "シールド特化では時計・杯・冠をHP%にし、サブ効果もHP%優先。今回の黒纓槍と組み合わせるHP参照の耐久支援に適用。"
+      },
+      {
+        "sourceUrl": "https://game8.jp/genshin/358212",
+        "subject": "鍾離",
+        "summary": "攻撃性能と両立する場合のHP目安は35,000〜40,000程度。純耐久運用は可能な範囲でHPを伸ばす方針。"
+      },
+      {
+        "sourceUrl": "https://game8.jp/genshin/358212",
+        "subject": "鍾離",
+        "summary": "玉璋シールドは多くの攻撃に対して通常のシールドの1.5倍の耐久力を持ち、付近の敵に攻撃耐性デバフを付与する。今回のC0でも有効。"
+      },
+      {
+        "sourceUrl": "https://game8.jp/genshin/358212",
+        "subject": "鍾離",
+        "summary": "玉璋シールドに守られたキャラクターの付近の敵は、全元素耐性・物理耐性が-20%。今回の炎・水・岩ダメージ支援に適用。"
+      },
+      {
+        "sourceUrl": "https://game8.jp/genshin/358212",
+        "subject": "鍾離",
+        "summary": "千岩牢固2セットと花海甘露の光2セットは、それぞれHP+20%で合計HP+40%。耐久重視の代替セット候補。"
+      },
+      {
+        "sourceUrl": "https://game8.jp/genshin/358212",
+        "subject": "鍾離",
+        "summary": "元素スキルを最優先で強化し、元素爆発を次点、通常攻撃を後回しにする推奨。今回のシールド支援に合わせる。"
+      },
+      {
+        "sourceUrl": "https://game8.jp/genshin/354889",
+        "subject": "黒纓槍",
+        "summary": "Lv.90時のHP上昇は46.9%。HP依存のシールドを使う今回の鍾離向け候補として指定されている。"
+      },
+      {
+        "sourceUrl": "https://game8.jp/genshin/354889",
+        "subject": "黒纓槍",
+        "summary": "精錬5の武器効果はスライムタイプの敵へのダメージ+80%。発動対象がスライムタイプの場合に限られ、通常の耐久支援には直接影響しない。"
+      }
+    ],
+    "missingFacts": [
+      "アルレッキーノ：今回の白纓槍・C0編成に固有の元素チャージ効率数値目安は、確認した本文に記載なし。",
+      "鍾離：今回の黒纓槍・C0耐久運用に固有の元素チャージ効率数値目安は、確認した本文に記載なし。",
+      "ベネット：原木刀の唯識の葉について、今回の編成に草元素キャラクターがいないため発動条件を満たせず、チームへの元素熟知付与量は適用できない。"
+    ],
+    "openedSourcePages": [
+      "https://game8.jp/genshin/354889",
+      "https://game8.jp/genshin/358212",
+      "https://game8.jp/genshin/359620",
+      "https://game8.jp/genshin/466954",
+      "https://gamewith.jp/genshin/article/show/230381",
+      "https://gamewith.jp/genshin/article/show/231936",
+      "https://gamewith.jp/genshin/article/show/313282",
+      "https://gamewith.jp/genshin/article/show/326055",
+      "https://gamewith.jp/genshin/article/show/345732",
+      "https://gamewith.jp/genshin/article/show/359610"
+    ]
+  },
+  "evidenceOnly": true,
+  "evidenceSeconds": 118.7014791,
+  "fastMode": false,
+  "intake": {
+    "members": [
+      {
+        "constellation": 0,
+        "name": "アルレッキーノ",
+        "refinement": 5,
+        "slotIndex": 0,
+        "weapon": "白纓槍"
+      },
+      {
+        "constellation": 0,
+        "name": "夜蘭",
+        "refinement": 1,
+        "slotIndex": 1,
+        "weapon": "西風猟弓"
+      },
+      {
+        "constellation": 1,
+        "name": "ベネット",
+        "refinement": 1,
+        "slotIndex": 2,
+        "weapon": "原木刀"
+      },
+      {
+        "constellation": 0,
+        "name": "鍾離",
+        "refinement": 5,
+        "slotIndex": 3,
+        "weapon": "黒纓槍"
+      }
+    ],
+    "missingFields": [],
+    "readyToResearch": true
+  },
+  "model": "gpt-6-luna",
+  "pageFetches": 18,
+  "profile": "gamewith",
+  "rawEvidence": {
+    "facts": [
+      {
+        "sourceUrl": "https://game8.jp/genshin/466954",
+        "subject": "アルレッキーノ",
+        "summary": "今回のC0・白纓槍では通常攻撃主体の炎アタッカーとして扱う。聖遺物メインは時計:攻撃力%、杯:炎元素ダメージ（攻撃力%も候補）、冠:会心系。"
+      },
+      {
+        "sourceUrl": "https://game8.jp/genshin/466954",
+        "subject": "アルレッキーノ",
+        "summary": "サブ効果は会心系＞攻撃力＞元素熟知＞元素チャージ効率。会心を優先し、攻撃力は耐久力バフの上限に関わる。"
+      },
+      {
+        "sourceUrl": "https://game8.jp/genshin/466954",
+        "subject": "アルレッキーノ",
+        "summary": "攻撃力1,000超過分について、超過した100ごとに全元素耐性・物理耐性+1%。記事は効果最大化の目標攻撃力を3,000としている。今回の指定にも適用される目安。"
+      },
+      {
+        "sourceUrl": "https://game8.jp/genshin/466954",
+        "subject": "アルレッキーノ",
+        "summary": "諧律奇想の断章4セットは命の契約が増減すると発動し、最大で与ダメージ+54%。重撃・スキル・爆発も強化するため推奨候補。"
+      },
+      {
+        "sourceUrl": "https://game8.jp/genshin/466954",
+        "subject": "アルレッキーノ",
+        "summary": "剣闘士のフィナーレ4セットは通常攻撃ダメージ+35%。断章の代用候補として紹介されている。"
+      },
+      {
+        "sourceUrl": "https://game8.jp/genshin/466954",
+        "subject": "アルレッキーノ",
+        "summary": "通常攻撃を最優先、元素爆発を次点、元素スキルを後回しに強化する推奨。通常攻撃が命の契約を使う強化状態の主な火力源。"
+      },
+      {
+        "sourceUrl": "https://game8.jp/genshin/466954",
+        "subject": "アルレッキーノ",
+        "summary": "固有天賦により自身の元素爆発以外では回復できず、自己回復手段は元素爆発。今回のC0では回復役の回復を受ける前提にできない。"
+      },
+      {
+        "sourceUrl": "https://game8.jp/genshin/466954",
+        "subject": "アルレッキーノ",
+        "summary": "C1効果は赤死の宴の強化量+100%と、強化状態で通常攻撃・重撃中の中断耐性上昇。今回C0なので適用なし。"
+      },
+      {
+        "sourceUrl": "https://game8.jp/genshin/359620",
+        "subject": "白纓槍",
+        "summary": "Lv.90時の会心率は23.4%。宝箱から入手でき、今回の指定武器としてアルレッキーノに装備する。"
+      },
+      {
+        "sourceUrl": "https://game8.jp/genshin/359620",
+        "subject": "白纓槍",
+        "summary": "精錬5の武器効果は通常攻撃ダメージ+48%。通常攻撃主体のアルレッキーノに適用される。"
+      },
+      {
+        "sourceUrl": "https://gamewith.jp/genshin/article/show/326055",
+        "subject": "夜蘭",
+        "summary": "元素爆発の連携攻撃は15秒間、出場キャラの攻撃に連動し、夜蘭のHP上限を基準に水元素ダメージを与える。今回のアルレッキーノの通常攻撃と連携できる。"
+      },
+      {
+        "sourceUrl": "https://gamewith.jp/genshin/article/show/345732",
+        "subject": "夜蘭",
+        "summary": "元素チャージ効率は200%以上が目安。今回の無凸では絶縁4セットと西風猟弓を使い、爆発回転を優先する基準として適用。"
+      },
+      {
+        "sourceUrl": "https://gamewith.jp/genshin/article/show/345732",
+        "subject": "夜蘭",
+        "summary": "絶縁の旗印2セットは元素チャージ効率+20%、4セットは元素チャージ効率の25%を基準に爆発ダメージを上げ、上限は+75%。今回の爆発重視に合う。"
+      },
+      {
+        "sourceUrl": "https://gamewith.jp/genshin/article/show/345732",
+        "subject": "夜蘭",
+        "summary": "元素チャージ効率200%以上なら時計HP%、未満なら時計元素チャージ効率が基本。杯は水元素ダメージ、冠は会心系。"
+      },
+      {
+        "sourceUrl": "https://gamewith.jp/genshin/article/show/345732",
+        "subject": "夜蘭",
+        "summary": "元素爆発・元素スキル・打破の矢のダメージはHP上限を参照するため、攻撃力よりHP%を重視する。今回のサブアタッカー運用に適用。"
+      },
+      {
+        "sourceUrl": "https://gamewith.jp/genshin/article/show/231936",
+        "subject": "西風猟弓",
+        "summary": "Lv.最大時の攻撃力454、元素チャージ効率+61.3%。今回の精錬1でもチャージ補助用の指定武器として夜蘭に装備する。"
+      },
+      {
+        "sourceUrl": "https://gamewith.jp/genshin/article/show/231936",
+        "subject": "西風猟弓",
+        "summary": "精錬1は会心攻撃時に60%で少量の元素粒子を生成し、元素エネルギーを6回復。12秒に1回発動。今回の指定は精錬1。"
+      },
+      {
+        "sourceUrl": "https://gamewith.jp/genshin/article/show/326055",
+        "subject": "夜蘭",
+        "summary": "西風猟弓は推奨候補で、武器効果による味方のチャージ補助には会心率が必要。今回の指定武器効果を活かす条件。"
+      },
+      {
+        "sourceUrl": "https://gamewith.jp/genshin/article/show/345732",
+        "subject": "夜蘭",
+        "summary": "固有天賦は編成内の元素種類数に応じて夜蘭のHP上限を上昇させる。今回の4人編成は炎・水・岩の3元素で、元素種数に応じた効果対象。"
+      },
+      {
+        "sourceUrl": "https://gamewith.jp/genshin/article/show/326055",
+        "subject": "夜蘭",
+        "summary": "C1は元素スキルの使用可能回数+1。今回C0なので追加使用回数はない。"
+      },
+      {
+        "sourceUrl": "https://gamewith.jp/genshin/article/show/230381",
+        "subject": "ベネット",
+        "summary": "元素チャージ効率200%以上を目指す推奨。爆発回転を優先し、時計は元素チャージ効率、杯はHP%または炎元素ダメージ、冠は治療効果または会心系。"
+      },
+      {
+        "sourceUrl": "https://gamewith.jp/genshin/article/show/230381",
+        "subject": "ベネット",
+        "summary": "サブ効果は元素チャージ効率・会心系・攻撃力%。今回のサポート運用では爆発を回すチャージ確保を優先する。"
+      },
+      {
+        "sourceUrl": "https://gamewith.jp/genshin/article/show/230381",
+        "subject": "ベネット",
+        "summary": "旧貴族のしつけ4セットは元素爆発後に味方の攻撃力を上げる候補。編成内に同セット装備者がいない場合に今回の支援効果として選べる。"
+      },
+      {
+        "sourceUrl": "https://gamewith.jp/genshin/article/show/230381",
+        "subject": "ベネット",
+        "summary": "元素爆発フィールド内ではHP状況に応じて攻撃力上昇または回復が発動。今回C1では攻撃力上昇のHP制限がなくなり、基礎攻撃力の20%分を追加し、回復と攻撃力上昇を両立する。"
+      },
+      {
+        "sourceUrl": "https://gamewith.jp/genshin/article/show/230381",
+        "subject": "ベネット",
+        "summary": "元素爆発の天賦強化を最優先する推奨。今回の攻撃力支援・回復の主な効果源。"
+      },
+      {
+        "sourceUrl": "https://gamewith.jp/genshin/article/show/230381",
+        "subject": "ベネット",
+        "summary": "C2はHPが70%以下のとき元素チャージ効率+30%。今回C1では未解放のため適用なし。"
+      },
+      {
+        "sourceUrl": "https://gamewith.jp/genshin/article/show/359610",
+        "subject": "原木刀",
+        "summary": "Lv.最大時の攻撃力565、元素チャージ効率+30.6%。鍛造入手でき、今回の指定片手剣としてベネットに装備する。"
+      },
+      {
+        "sourceUrl": "https://gamewith.jp/genshin/article/show/359610",
+        "subject": "原木刀",
+        "summary": "燃焼・原激化・超激化・草激化・開花・月開花・超開花・烈開花を起こすと唯識の葉を生成。拾ったキャラは精錬1で元素熟知+60を12秒獲得、生成は20秒に1つで重ね掛け不可。"
+      },
+      {
+        "sourceUrl": "https://gamewith.jp/genshin/article/show/359610",
+        "subject": "原木刀",
+        "summary": "今回の編成は炎・水・岩元素のみで草元素がいないため、原木刀の草元素反応を条件とする唯識の葉効果は発動条件を満たさない。"
+      },
+      {
+        "sourceUrl": "https://game8.jp/genshin/358212",
+        "subject": "鍾離",
+        "summary": "シールド特化では時計・杯・冠をHP%にし、サブ効果もHP%優先。今回の黒纓槍と組み合わせるHP参照の耐久支援に適用。"
+      },
+      {
+        "sourceUrl": "https://game8.jp/genshin/358212",
+        "subject": "鍾離",
+        "summary": "攻撃性能と両立する場合のHP目安は35,000〜40,000程度。純耐久運用は可能な範囲でHPを伸ばす方針。"
+      },
+      {
+        "sourceUrl": "https://game8.jp/genshin/358212",
+        "subject": "鍾離",
+        "summary": "玉璋シールドは多くの攻撃に対して通常のシールドの1.5倍の耐久力を持ち、付近の敵に攻撃耐性デバフを付与する。今回のC0でも有効。"
+      },
+      {
+        "sourceUrl": "https://game8.jp/genshin/358212",
+        "subject": "鍾離",
+        "summary": "玉璋シールドに守られたキャラクターの付近の敵は、全元素耐性・物理耐性が-20%。今回の炎・水・岩ダメージ支援に適用。"
+      },
+      {
+        "sourceUrl": "https://game8.jp/genshin/358212",
+        "subject": "鍾離",
+        "summary": "千岩牢固2セットと花海甘露の光2セットは、それぞれHP+20%で合計HP+40%。耐久重視の代替セット候補。"
+      },
+      {
+        "sourceUrl": "https://game8.jp/genshin/358212",
+        "subject": "鍾離",
+        "summary": "元素スキルを最優先で強化し、元素爆発を次点、通常攻撃を後回しにする推奨。今回のシールド支援に合わせる。"
+      },
+      {
+        "sourceUrl": "https://game8.jp/genshin/354889",
+        "subject": "黒纓槍",
+        "summary": "Lv.90時のHP上昇は46.9%。HP依存のシールドを使う今回の鍾離向け候補として指定されている。"
+      },
+      {
+        "sourceUrl": "https://game8.jp/genshin/354889",
+        "subject": "黒纓槍",
+        "summary": "精錬5の武器効果はスライムタイプの敵へのダメージ+80%。発動対象がスライムタイプの場合に限られ、通常の耐久支援には直接影響しない。"
+      }
+    ],
+    "missingFacts": [
+      "アルレッキーノ：今回の白纓槍・C0編成に固有の元素チャージ効率数値目安は、確認した本文に記載なし。",
+      "鍾離：今回の黒纓槍・C0耐久運用に固有の元素チャージ効率数値目安は、確認した本文に記載なし。",
+      "ベネット：原木刀の唯識の葉について、今回の編成に草元素キャラクターがいないため発動条件を満たせず、チームへの元素熟知付与量は適用できない。"
+    ]
+  },
+  "searchContextSize": "low",
+  "serviceTier": "default",
+  "urlRepairPassed": true
+}
