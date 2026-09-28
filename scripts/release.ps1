@@ -68,7 +68,7 @@ try {
   $env:TAURI_SIGNING_PRIVATE_KEY = $key
   & (Join-Path $PSScriptRoot 'use-cargo-target.ps1')
 
-  npm install
+  npm ci
   if ($LASTEXITCODE -ne 0) { throw '依存関係の準備に失敗しました。' }
   npm run check
   if ($LASTEXITCODE -ne 0) { throw '検査に失敗したため公開物を作りません。' }
