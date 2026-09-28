@@ -1,5 +1,6 @@
 import {
   FormEvent,
+  RefObject,
   useCallback,
   useEffect,
   useRef,
@@ -332,6 +333,7 @@ function ResultView({
   conversation,
   onRename,
   disabled,
+  reviseButtonRef,
 }: {
   conversation: ResearchConversation | null;
   record: ResearchedTeamRecord;
@@ -341,6 +343,7 @@ function ResultView({
   demo: boolean;
   onRename: (teamId: string, title: string) => Promise<void>;
   disabled: boolean;
+  reviseButtonRef: RefObject<HTMLButtonElement | null>;
 }) {
   const [editingTitle, setEditingTitle] = useState(false);
   const [titleInput, setTitleInput] = useState(record.title);
@@ -437,7 +440,7 @@ function ResultView({
             </p>
           ))}
         </div>
-        <button className={actionClass} type="button" onClick={onRevise}>
+        <button ref={reviseButtonRef} className={actionClass} type="button" disabled={disabled} onClick={onRevise}>
           <RefreshCw size={16} aria-hidden="true" />
           条件を変えて再調査
         </button>
@@ -479,7 +482,7 @@ function ResultView({
             <Conversation conversation={conversation} />
           ) : (
             <p className="text-sm leading-7 text-slate-400">
-              この画面では過去の会話を読み込めません。条件の変更は下のチャットへ入力してください。
+              この画面では過去の会話を読み込めません。条件の変更は「条件を変えて再調査」から選べます。
             </p>
           )}
         </div>
@@ -589,6 +592,9 @@ export function ResearchChatPrototype({
       : true,
   );
   const [resultTab, setResultTab] = useState<ResultTab>("build");
+  const [revising, setRevising] = useState(false);
+  const reviseButtonRef = useRef<HTMLButtonElement>(null);
+  const restoreRevisionFocus = useRef(false);
   const composerRef = useRef<HTMLDivElement>(null);
   const pendingComposerFocus = useRef<{ source: Element | null } | null>({ source: null });
   const [composerFocusRequest, setComposerFocusRequest] = useState(0);
@@ -639,6 +645,12 @@ export function ResearchChatPrototype({
       composerRef.current?.contains(active)
     ) composerRef.current?.querySelector("textarea")?.focus();
   }, [composerFocusRequest, chat.busy, sidebarOpen, wide]);
+  useEffect(() => {
+    if (!revising && restoreRevisionFocus.current) {
+      restoreRevisionFocus.current = false;
+      reviseButtonRef.current?.focus();
+    }
+  }, [revising]);
   const handleSubmit = async () => {
     const message = composer.trim();
     if (!message || chat.busy) return;
@@ -702,6 +714,7 @@ export function ResearchChatPrototype({
               className={cn(actionClass, "mt-6")}
               onClick={() => {
                 chat.reset();
+                setRevising(false);
                 setComposer("");
                 setResultTab("build");
                 closeMobileSidebar();
@@ -756,6 +769,7 @@ export function ResearchChatPrototype({
                   className="w-full rounded-xl border border-slate-800 px-3 py-3 text-left hover:bg-slate-800 disabled:opacity-50 aria-[current=page]:bg-slate-800"
                   onClick={() => {
                     void chat.openTeam(team.teamId);
+                    setRevising(false);
                     setResultTab("build");
                     closeMobileSidebar();
                   }}
@@ -814,7 +828,9 @@ export function ResearchChatPrototype({
             >
               {chat.error}
               <p className="mt-2">
-                入力内容を確認して再送信するか、調査をやり直してください。
+                {revising
+                  ? "条件を確認して、もう一度再調査してください。"
+                  : "入力内容を確認して再送信するか、調査をやり直してください。"}
               </p>
             </div>
           ) : null}
@@ -849,7 +865,8 @@ export function ResearchChatPrototype({
           ) : null}
           {chat.conversation &&
           chat.stage !== "researching" &&
-          chat.stage !== "result" ? (
+          chat.stage !== "result" &&
+          !(revising && chat.record) ? (
             <section className="mx-auto w-full max-w-4xl flex-1 px-5 py-8 sm:px-8">
               <Conversation conversation={chat.conversation} />
               {chat.stage === "cancelled" ? (
@@ -891,7 +908,38 @@ export function ResearchChatPrototype({
               )}
             </section>
           ) : null}
-          {chat.stage === "result" && chat.record ? (
+          {revising && chat.record && chat.conversation &&
+          (chat.stage === "result" || chat.stage === "error") ? (
+            <section className="mx-auto w-full max-w-5xl flex-1 px-5 py-7 sm:px-8">
+              <button
+                type="button"
+                autoFocus
+                disabled={chat.busy}
+                className="min-h-11 rounded-lg border border-slate-600 px-4 text-sm text-slate-200 hover:bg-slate-800 disabled:opacity-50"
+                onClick={() => {
+                  chat.returnToResult();
+                  restoreRevisionFocus.current = true;
+                  setRevising(false);
+                }}
+              >
+                結果に戻る
+              </button>
+              <h1 className="mt-5 text-2xl font-bold text-slate-50">条件を変えて再調査</h1>
+              <ResearchConditionsEditor
+                key={`${chat.conversation.sessionId}:${chat.record.teamId}`}
+                conversation={chat.conversation}
+                disabled={chat.busy}
+                revision
+                onResearch={async (members, title) => {
+                  if (await chat.start(members, title)) {
+                    setRevising(false);
+                    setResultTab("build");
+                  }
+                }}
+              />
+            </section>
+          ) : null}
+          {chat.stage === "result" && chat.record && !revising ? (
             <ResultView
               key={chat.record.teamId}
               conversation={chat.conversation}
@@ -901,21 +949,21 @@ export function ResearchChatPrototype({
               demo={demo}
               onRename={chat.renameTeam}
               disabled={chat.busy}
+              reviseButtonRef={reviseButtonRef}
               onRevise={() => {
-                setResultTab("conversation");
-                focusComposer();
+                setRevising(true);
               }}
             />
           ) : null}
         </div>
-        <div ref={composerRef}>
+        {chat.stage !== "result" && !revising ? <div ref={composerRef}>
           <Composer
             value={composer}
             onChange={setComposer}
             onSubmit={() => void handleSubmit()}
             disabled={chat.busy}
           />
-        </div>
+        </div> : null}
       </main>
     </div>
   );

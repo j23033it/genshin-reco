@@ -11,10 +11,12 @@ export function ResearchConditionsEditor({
   conversation,
   disabled,
   onResearch,
+  revision = false,
 }: {
   conversation: ResearchConversation;
   disabled: boolean;
   onResearch: (members: ResearchMemberInput[], title: string | null) => void;
+  revision?: boolean;
 }) {
   const [title, setTitle] = useState(conversation.title ?? "");
   const [members, setMembers] = useState<ResearchMemberInput[]>(() =>
@@ -49,12 +51,14 @@ export function ResearchConditionsEditor({
   return (
     <section className="mt-6 rounded-2xl border border-slate-700 bg-slate-900/70 p-4 sm:p-6" aria-labelledby="research-conditions-title">
       <h2 id="research-conditions-title" className="text-lg font-semibold text-slate-50">
-        4人の条件を選ぶ
+        {revision ? "武器と凸を選び直す" : "4人の条件を選ぶ"}
       </h2>
       <p className="mt-2 text-pretty text-sm leading-6 text-slate-400">
-        凸や武器が未確定なら「指定なし」のままで大丈夫。調査時に一般的な前提を選びます。
+        {revision
+          ? "キャラクターはこの4人で固定します。武器・命ノ星座・精錬を選んで再調査できます。"
+          : "凸や武器が未確定なら「指定なし」のままで大丈夫。調査時に一般的な前提を選びます。"}
       </p>
-      <div className="mt-5 max-w-xl">
+      {!revision ? <div className="mt-5 max-w-xl">
         <label htmlFor="research-team-title" className="mb-2 block text-sm font-medium text-slate-300">
           編成名
         </label>
@@ -69,10 +73,12 @@ export function ResearchConditionsEditor({
           className="min-h-11 w-full rounded-lg border border-slate-600 bg-slate-900 px-3 text-sm text-slate-100 focus-visible:outline-2 focus-visible:outline-amber-300 disabled:opacity-50"
         />
         <p className="mt-2 text-sm text-slate-400">任意・80文字以内。保存後も変更できます。</p>
-      </div>
+      </div> : null}
       {catalogFailed ? (
         <p role="status" className="mt-3 text-sm text-amber-200">
-          武器一覧を読み込めないため、武器名は手入力できます。
+          {revision
+            ? "武器一覧を読み込めません。現在の武器か「指定なし」を選べます。"
+            : "武器一覧を読み込めないため、武器名は手入力できます。"}
         </p>
       ) : null}
       {!catalog && !catalogFailed ? (
@@ -132,7 +138,7 @@ export function ResearchConditionsEditor({
                   <label htmlFor={weaponId} className="mb-2 block text-sm font-medium text-slate-300">
                     武器
                   </label>
-                  {catalogFailed ? (
+                  {catalogFailed && !revision ? (
                     <input
                       id={weaponId}
                       type="text"
@@ -149,7 +155,7 @@ export function ResearchConditionsEditor({
                     <select
                       id={weaponId}
                       value={member.weapon ?? ""}
-                      disabled={disabled || !catalog}
+                      disabled={disabled || (!catalog && !catalogFailed)}
                       onChange={(event) => changeMember(member.slotIndex, {
                         weapon: event.target.value || null,
                         refinement: null,
@@ -157,7 +163,10 @@ export function ResearchConditionsEditor({
                       className="min-h-11 w-full rounded-lg border border-slate-600 bg-slate-900 px-3 text-sm text-slate-100 focus-visible:outline-2 focus-visible:outline-amber-300 disabled:opacity-50"
                     >
                       <option value="">指定なし（未確定）</option>
-                      {selectedOutsideCatalog ? (
+                      {catalogFailed && member.weapon ? (
+                        <option value={member.weapon}>{member.weapon}</option>
+                      ) : null}
+                      {!catalogFailed && selectedOutsideCatalog ? (
                         <option value={member.weapon ?? ""}>{member.weapon}</option>
                       ) : null}
                       {weapons?.map((weapon) => (
@@ -196,7 +205,7 @@ export function ResearchConditionsEditor({
         className="mt-6 inline-flex min-h-11 items-center justify-center rounded-xl bg-amber-300 px-5 py-2 font-semibold text-slate-950 hover:bg-amber-200 disabled:cursor-not-allowed disabled:opacity-50"
         onClick={() => onResearch(members, title.trim() || null)}
       >
-        この条件で調査する
+        {revision ? "この条件で再調査する" : "この条件で調査する"}
       </button>
     </section>
   );

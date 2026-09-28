@@ -1,6 +1,6 @@
 [package]
 name = "genshin-reco"
-version = "0.1.3"
+version = "0.1.4"
 description = "原神の根拠付き・編成連動ビルド推薦デスクトップアプリ"
 authors = ["taiki"]
 edition = "2024"

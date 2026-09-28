@@ -9,6 +9,21 @@ import type {
   ResearchedTeamSummary,
 } from "./types";
 
+function membersFromRecord(record: ResearchedTeamRecord): ResearchMemberInput[] {
+  return record.members.map((member, slotIndex) => {
+    const constellation = member.constellation.trim();
+    const level = constellation === "無凸" ? 0
+      : constellation === "完凸" ? 6
+      : /^([0-6])凸$/.exec(constellation)?.[1];
+    return {
+      slotIndex,
+      name: member.name,
+      weapon: member.weapon,
+      constellation: level === undefined ? null : Number(level),
+    };
+  });
+}
+
 function errorText(error: unknown) {
   return error instanceof Error
     ? error.message
@@ -132,18 +147,18 @@ export function useResearchChat(repository: ResearchRepository) {
   async function start(members?: ResearchMemberInput[], title?: string | null) {
     if (
       !conversation ||
-      !["ready", "failed", "cancelled"].includes(conversation.status)
+      !["ready", "succeeded", "failed", "cancelled"].includes(conversation.status)
     )
-      return;
+      return false;
     const request = begin("調査の条件を準備中…");
-    if (request === null) return;
+    if (request === null) return false;
     setProgress(null);
     let stop: (() => void) | undefined;
     try {
       const selectedConversation = members
         ? await repository.updateConditions(conversation.sessionId, members, title ?? null)
         : conversation;
-      if (!current(request)) return;
+      if (!current(request)) return false;
       setConversation(selectedConversation);
       setStage("researching");
       const unlisten = await repository.subscribeProgress((event) => {
@@ -157,23 +172,22 @@ export function useResearchChat(repository: ResearchRepository) {
           unlisten();
         }
       };
-      if (!current(request)) return;
+      if (!current(request)) return false;
       unsubscribe.current = stop;
       const result = await repository.startResearch(selectedConversation.sessionId);
-      if (!current(request)) return;
+      if (!current(request)) return false;
       succeededOperation.current = request;
       setRecord(result);
       setConversation((previous) =>
         previous?.sessionId === result.sessionId
-          ? previous
+          ? { ...previous, status: "succeeded", title: result.title, teamId: result.teamId }
           : {
               sessionId: result.sessionId,
               status: "succeeded",
               messages: [],
-              members: result.members.map((member, slotIndex) => ({
-                slotIndex,
-                name: member.name,
-              })),
+              members: membersFromRecord(result),
+              title: result.title,
+              teamId: result.teamId,
               createdAt: result.createdAt,
               updatedAt: result.updatedAt,
             },
@@ -181,11 +195,13 @@ export function useResearchChat(repository: ResearchRepository) {
       setError("");
       setStage("result");
       void refreshTeams();
+      return true;
     } catch (failure) {
       if (current(request)) {
         setError(errorText(failure));
         setStage("error");
       }
+      return false;
     } finally {
       stop?.();
       if (unsubscribe.current === stop) unsubscribe.current = null;
@@ -241,10 +257,7 @@ export function useResearchChat(repository: ResearchRepository) {
                 sessionId: result.sessionId,
                 status: "succeeded",
                 messages: [],
-                members: result.members.map((member, slotIndex) => ({
-                  slotIndex,
-                  name: member.name,
-                })),
+                members: membersFromRecord(result),
                 title: result.title,
                 createdAt: result.createdAt,
                 updatedAt: result.updatedAt,
@@ -291,6 +304,12 @@ export function useResearchChat(repository: ResearchRepository) {
     setStage("empty");
   }
 
+  function returnToResult() {
+    if (!record || locked.current) return;
+    setError("");
+    setStage("result");
+  }
+
   return {
     stage,
     conversation,
@@ -309,6 +328,7 @@ export function useResearchChat(repository: ResearchRepository) {
     openTeam,
     renameTeam,
     reset,
+    returnToResult,
     refreshTeams: () => {
       setListLoading(true);
       setListError("");

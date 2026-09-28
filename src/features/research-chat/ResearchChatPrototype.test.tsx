@@ -28,6 +28,7 @@ vi.mock("../catalog/loadCatalog", () => ({
     ],
     weapons: [
       { id: "spear", name: "赤月のシルエット", weaponType: "長柄武器", rarity: 5, imageUrl: "" },
+      { id: "spear-2", name: "和璞鳶", weaponType: "長柄武器", rarity: 5, imageUrl: "" },
       { id: "bow", name: "若水", weaponType: "弓", rarity: 5, imageUrl: "" },
     ],
     artifactSets: [],
@@ -396,15 +397,44 @@ describe("実データの編成調査UI", () => {
     expect(stop).toHaveBeenCalled();
     expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();
     expect(repository.listTeams).toHaveBeenCalledTimes(2);
-    await user.click(
-      screen.getByRole("button", { name: "条件を変えて再調査" }),
-    );
-    expect(screen.getByRole("textbox")).toHaveFocus();
-    await send(user, "星4武器だけに変更");
-    expect(repository.sendMessage).toHaveBeenLastCalledWith(
-      "星4武器だけに変更",
-      "session-1",
-    );
+  });
+
+  it("再調査では4人を固定し、武器と凸を選び直して文字入力なしで開始する", async () => {
+    const user = userEvent.setup();
+    const { repository } = setupRepository();
+    const names = ["アルレッキーノ", "夜蘭", "ベネット", "鍾離"];
+    const members = names.map((name, slotIndex) => ({
+      slotIndex,
+      name,
+      weapon: slotIndex === 0 ? "赤月のシルエット" : null,
+      constellation: slotIndex === 0 ? 1 : null,
+      refinement: null,
+    }));
+    vi.mocked(repository.sendMessage).mockResolvedValueOnce({ ...conversation, members });
+    vi.mocked(repository.startResearch).mockResolvedValue({
+      ...record,
+      members: names.map((name, index) => ({ ...record.members[0], id: `${index}`, name })),
+    });
+    render(<ResearchChatPrototype repository={repository} />);
+    await send(user);
+    await user.click(await screen.findByRole("button", { name: "この条件で調査する" }));
+    await screen.findByRole("heading", { name: "テスト編成" });
+
+    await user.click(screen.getByRole("button", { name: "条件を変えて再調査" }));
+    expect(screen.getByRole("button", { name: "結果に戻る" })).toHaveFocus();
+    expect(screen.queryByRole("textbox")).not.toBeInTheDocument();
+    const attacker = screen.getByRole("group", { name: "アルレッキーノの条件" });
+    expect(within(attacker).getByRole("button", { name: "アルレッキーノ：1凸" })).toHaveAttribute("aria-pressed", "true");
+    expect(within(attacker).getByRole("combobox", { name: "武器" })).toHaveValue("赤月のシルエット");
+    await user.click(within(attacker).getByRole("button", { name: "アルレッキーノ：2凸" }));
+    await user.selectOptions(within(attacker).getByRole("combobox", { name: "武器" }), "和璞鳶");
+    await user.click(screen.getByRole("button", { name: "この条件で再調査する" }));
+    await waitFor(() => expect(repository.updateConditions).toHaveBeenCalledTimes(2));
+    expect(vi.mocked(repository.updateConditions).mock.calls[1][1][0]).toMatchObject({
+      name: "アルレッキーノ", constellation: 2, weapon: "和璞鳶",
+    });
+    expect(repository.sendMessage).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(repository.startResearch).toHaveBeenCalledTimes(2));
   });
 
   it("キャンセル後の遅い完了を無視し、再調査できる", async () => {
@@ -475,6 +505,9 @@ describe("実データの編成調査UI", () => {
           targetStats: null,
           imageUrl: "https://example.com/missing.png",
         },
+        ...["夜蘭", "ベネット", "鍾離"].map((name, index) => ({
+          ...record.members[0], id: `${index + 1}`, name,
+        })),
       ],
     });
     render(<ResearchChatPrototype repository={repository} />);
@@ -491,12 +524,14 @@ describe("実データの編成調査UI", () => {
     await user.click(
       screen.getByRole("button", { name: "条件を変えて再調査" }),
     );
-    expect(screen.getByText(/過去の会話を読み込めません/)).toBeInTheDocument();
-    await send(user, "条件を変更");
-    expect(repository.sendMessage).toHaveBeenLastCalledWith(
-      "条件を変更",
-      "session-1",
-    );
+    expect(screen.queryByRole("textbox")).not.toBeInTheDocument();
+    expect(screen.getByRole("group", { name: "テストキャラの条件" })).toBeInTheDocument();
+    expect(screen.getByRole("group", { name: "夜蘭の条件" })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "この条件で再調査する" }));
+    await waitFor(() => expect(repository.updateConditions).toHaveBeenCalledWith(
+      "session-1", expect.arrayContaining([expect.objectContaining({ name: "テストキャラ" })]), "テスト編成",
+    ));
+    expect(repository.sendMessage).not.toHaveBeenCalled();
   });
 
   it("保存編成と一緒に過去の会話を復元する", async () => {
