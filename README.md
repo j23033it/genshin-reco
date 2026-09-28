@@ -24,7 +24,7 @@ npm run tauri dev
 npm run check
 ```
 
-Rust/Tauriを使うPowerShellでは、`tauri dev`や`check`の前にビルド先設定を一度実行する。作業フォルダごとに別のビルド先を選ぶため、移動前の絶対パスを持つ古い生成物を再利用しない。正式版の公開スクリプトはこの設定を内部で実行する。
+Rust/Tauriを使うPowerShellでは、`tauri dev`や`check`の前にビルド先設定を一度実行する。作業フォルダごとに別のビルド先を選ぶため、移動前の絶対パスを持つ古い生成物を再利用しない。
 
 ## 基本の流れ
 
@@ -61,9 +61,4 @@ Rust/Tauriを使うPowerShellでは、`tauri dev`や`check`の前にビルド先
 
 ## 正式版の更新手順（管理者向け）
 
-1. 変更した動作を、必要に応じてデモや `tauri dev` で確認する。`package.json`、`package-lock.json`、`src-tauri/Cargo.toml`、`src-tauri/Cargo.lock`、`src-tauri/tauri.conf.json` の版番号を同じ新しい値にする。
-2. 変更箇所に必要な検査を手元で行い、`main` へ統合して非公開の `origin/main` に送る。GitHubの「変更の確認」で全体検査を一度通す。
-3. `main` の作業フォルダをきれいにして `./scripts/release.ps1 -Stage prepare` を実行する。スクリプトは現在のコミットのGitHub検査成功を確かめ、`npm ci`と署名付きビルドを行って下書きを作る。全体検査と事前の手動ビルドを繰り返さない。
-4. 下書きの版番号、インストーラー、署名、`latest.json` を照合し、インストーラーを実機で確認する。問題がなければ `./scripts/release.ps1 -Stage publish -ConfirmedTested` で正式公開する。公開後、認証なしで更新情報とインストーラーを取得でき、旧版の「更新を確認」に新しい版が表示されることを確認する。
-
-署名用の秘密鍵は `C:\Users\taiki\.config\genshin-reco\updater.key` にあり、GitHubやこのリポジトリへ入れない。安全な場所へ別途バックアップすること。紛失すると既存アプリへ新しい版を配れなくなる。Windowsの配布用コード署名証明書は別物で、現時点では付けていないため、初回導入時にSmartScreenの警告が出る可能性がある。
+Codex でこのプロジェクトの `genshin-reco-release` スキルを使う。公開手順と確認項目は [SKILL.md](.agents/skills/genshin-reco-release/SKILL.md) にまとめている。
