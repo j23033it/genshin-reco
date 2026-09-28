@@ -7,6 +7,7 @@ param(
 
 $ErrorActionPreference = 'Stop'
 $repo = 'j23033it/genshin-reco-releases'
+$sourceRepo = 'j23033it/genshin-reco'
 $projectRoot = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot '..')).Path
 $tauriConfig = Get-Content -LiteralPath (Join-Path $projectRoot 'src-tauri/tauri.conf.json') -Raw | ConvertFrom-Json
 $package = Get-Content -LiteralPath (Join-Path $projectRoot 'package.json') -Raw | ConvertFrom-Json
@@ -33,6 +34,8 @@ try {
     throw '未コミット変更があります。正式版の操作前に確認してください。'
   }
   $head = (git rev-parse HEAD).Trim()
+  git fetch --quiet origin main
+  if ($LASTEXITCODE -ne 0) { throw 'GitHubのmainを確認できませんでした。' }
   $remoteHead = (git rev-parse origin/main).Trim()
   if ($head -ne $remoteHead) {
     throw 'ローカル main と GitHub の main が一致しません。'
@@ -42,9 +45,12 @@ try {
     if (-not $ConfirmedTested) {
       throw '実機確認後に -ConfirmedTested を付けて公開してください。'
     }
-    $release = gh release view $tag --repo $repo --json isDraft,assets | ConvertFrom-Json
+    $release = gh release view $tag --repo $repo --json isDraft,assets,body | ConvertFrom-Json
     if (-not $release.isDraft) {
       throw "${tag} は下書きではありません。公開済み版は上書きしません。"
+    }
+    if ($release.body -notlike "*ソースのコミット: $head*") {
+      throw '下書きのソースコミットが現在のmainと一致しません。'
     }
     $names = @($release.assets | ForEach-Object { $_.name })
     if ('latest.json' -notin $names -or "genshin-reco_${version}_x64-setup.exe" -notin $names) {
@@ -61,6 +67,15 @@ try {
     throw "${tag} は既に存在します。古い公開物は上書きしません。"
   }
 
+  $runJson = gh run list --repo $sourceRepo --workflow check.yml --branch main --commit $head --event push --json headSha,status,conclusion,url --limit 1
+  if ($LASTEXITCODE -ne 0) { throw 'GitHubの全体検査を確認できませんでした。' }
+  $runs = @(ConvertFrom-Json -InputObject ($runJson -join "`n"))
+  if ($runs.Count -ne 1 -or $runs[0].headSha -ne $head -or
+      $runs[0].status -ne 'completed' -or $runs[0].conclusion -ne 'success') {
+    throw '現在のmainに成功したGitHubの全体検査がありません。'
+  }
+  Write-Output "GitHubの全体検査に成功: $($runs[0].url)"
+
   $key = Join-Path $env:USERPROFILE '.config/genshin-reco/updater.key'
   if (-not (Test-Path -LiteralPath $key)) {
     throw "署名用の秘密鍵が見つかりません: $key"
@@ -70,13 +85,14 @@ try {
 
   npm ci
   if ($LASTEXITCODE -ne 0) { throw '依存関係の準備に失敗しました。' }
-  npm run check
-  if ($LASTEXITCODE -ne 0) { throw '検査に失敗したため公開物を作りません。' }
   if (git status --porcelain) {
-    throw '検査後に作業フォルダが変化しました。変更を確認してからやり直してください。'
+    throw '依存関係の準備後に作業フォルダが変化しました。変更を確認してからやり直してください。'
   }
   npm run tauri -- build --bundles nsis --ci
   if ($LASTEXITCODE -ne 0) { throw 'デスクトップ版のビルドに失敗しました。' }
+  if (git status --porcelain) {
+    throw 'ビルド後に作業フォルダが変化しました。変更を確認してからやり直してください。'
+  }
 
   $bundle = Join-Path $env:CARGO_TARGET_DIR 'release/bundle/nsis'
   $installers = @(Get-ChildItem -LiteralPath $bundle -File | Where-Object { $_.Name -like "*_${version}_x64-setup.exe" })
