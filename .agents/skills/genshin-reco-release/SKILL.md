@@ -1,6 +1,6 @@
 ---
 name: genshin-reco-release
-description: このリポジトリのWindows版アプリをGitHub経由で更新・公開するときに、版番号、検査、署名付きビルド、下書きでの実機確認、正式公開を扱う。公開手順の見直しにも使う。
+description: このリポジトリのWindows版アプリをGitHub経由で更新・公開するときに、版番号、UIの開発版確認、署名付きビルド、正式公開、公開後の保存データ確認を扱う。公開手順の見直しにも使う。
 ---
 
 # 原神 聖遺物レコメンダーの正式版公開
@@ -9,13 +9,20 @@ description: このリポジトリのWindows版アプリをGitHub経由で更新
 
 ## 公開の条件
 
-- ユーザーが今回のアプリ更新を GitHub 経由で公開するよう明示的に依頼していない限り、下書き作成を含む GitHub Releases や更新配信の操作をしない。準備や実機確認の成功を公開依頼と解釈しない。
-- 正式公開は、今回作った下書きのインストーラーを実機で確認して成功した場合だけ行う。失敗や未確認なら下書きのまま止め、状況を報告する。
+- ユーザーが今回のアプリ更新を GitHub 経由で公開するよう明示的に依頼していない限り、下書き作成を含む GitHub Releases や更新配信の操作をしない。準備や画面確認の成功を公開依頼と解釈しない。
+- 開発中はアプリをインストールしない。UI を変更した場合は、正式版と異なる識別子で `tauri dev` を起動し、確認できる画面と操作を公開前に確かめる。正式版の保存データは開発版へコピーしない。保存データが必要な動作とアプリ内更新は、公開後にユーザーが正式版を更新して確認する。公開前に検証済みと表現しない。
+- 正式公開前には対象コミットの全体検査、署名付きビルド、下書きの配布物と SHA256 の照合を通す。開発版で確認できる UI が失敗または未確認なら下書きのまま止め、状況を報告する。インストーラー単体での導入はこの方針では検証せず、保存データとアプリ内更新は公開後に確認する。
 - 署名用の秘密鍵は `$env:USERPROFILE\.config\genshin-reco\updater.key`。内容を表示・記録・コミット・アップロードしない。安全な別の場所へバックアップを保つ。紛失すると既存アプリに新版を配れない。Windows のコード署名証明書とは別物で、現時点では付けていないため初回導入時に SmartScreen の警告が出る可能性がある。
+
+## UI 変更の確認
+
+- UI 変更があるときだけ `tauri dev` で確認する。Tauri の `--config` に渡す開発用 JSON はリポジトリ外に置き、以後再利用する。例えば `{"productName":"原神 聖遺物レコメンダー 開発版","identifier":"jp.taiki.genshinreco.dev"}` とし、正式版の設定ファイルは変更しない。開発版の保存先が正式版と分かれることを確認する。既存の正式版データを開発版にコピーしない。必要なら開発版の保存先だけに仮データを作る。
+- リポジトリ直下で `git rev-parse --show-toplevel` を確認し、同じ PowerShell で `./scripts/use-cargo-target.ps1` を実行してから `npm run tauri -- dev --config <開発用 JSON のパス>` で起動する。開発版で確認できる画面と変更した操作を確認して終了する。開発版で確認できる UI に失敗した場合は公開しない。実際の保存データがないと確認できない範囲は公開後へ回し、未確認と報告する。
+- 正式版の保存データが必要な一覧・結果・条件変更や更新動作は、公開後にユーザーが正式版を更新してから確認する。開発版の仮データで見た画面と、正式版の保存データでの動作確認を区別して報告する。
 
 ## 準備
 
-1. 変更した動作だけを手元で確認する。公開する版番号はユーザー指定を優先し、指定がなければ現版のパッチ番号を1つ上げる。以下をリポジトリ直下で実行して5ファイルを更新する。変更が既にある場合も勝手に破棄しない。失敗したら差分を確認して止める。
+1. UI 変更があれば上記の方法で確認する。公開する版番号はユーザー指定を優先し、指定がなければ現版のパッチ番号を1つ上げる。以下をリポジトリ直下で実行して5ファイルを更新する。変更が既にある場合も勝手に破棄しない。失敗したら差分を確認して止める。
 
 ```powershell
 $ErrorActionPreference = 'Stop'
@@ -164,7 +171,7 @@ try {
     throw '下書きの内容またはハッシュが一致しません。公開せず確認してください。'
   }
   Write-Output "下書き: https://github.com/$releaseRepo/releases/tag/$tag"
-  Write-Output "実機確認用: $($installers[0].FullName)"
+  Write-Output "下書きとの照合用: $($installers[0].FullName)"
   Write-Output "SHA256: $localHash"
   Write-Output "ソース: $head / 全体検査: $($runs[0].url)"
 }
@@ -175,20 +182,21 @@ finally {
 }
 ```
 
-`gh release view` の SHA256 はアップロード後の配布物を確認するために使う。表示されない場合は、下書きのファイルを認証付きでダウンロードしてハッシュを照合し、成功するまで実機確認へ進まない。秘密鍵の内容やソースを配布先へ送らない。一時ファイルの削除は配布確認後に、表示された絶対パスと内容を確認して別の操作で行う。
+`gh release view` の SHA256 はアップロード後の配布物を確認するために使う。表示されない場合は、下書きのファイルを認証付きでダウンロードしてハッシュを照合し、成功するまで正式公開へ進まない。秘密鍵の内容やソースを配布先へ送らない。一時ファイルの削除は配布確認後に、表示された絶対パスと内容を確認して別の操作で行う。
 
-## 実機確認と正式公開
+## 正式公開
 
-下書きのインストーラーは、アップロード済みファイルと SHA256 が一致した手元のものを使える。実機へ導入し、起動・保存済みデータの読み込みを確認する。必要なバックアップを残す。この実機確認だけは自動判定に置き換えない。
+UI 変更があれば開発版での画面確認結果を確認する。保存データを使う動作とアプリ内更新は公開後の正式版で確認するため、公開時点では未確認として報告する。インストーラー単体での導入は未検証として扱う。
 
-実機確認に成功した後、次の2つの変数を**今回の依頼と確認結果に基づいて** `$true` に設定し、公開直前の照合と公開を一つの PowerShell で行う。既定の `$false` のままなら公開しない。
+次の変数を**今回の依頼と変更内容・画面確認結果に基づいて**設定し、公開直前の照合と公開を一つの PowerShell で行う。UI 変更がないと確認できた場合だけ `$uiChanged` を `$false` にする。UI 変更がある場合は `tauri dev` で確認できる範囲に成功し、実データ待ちの範囲を記録したときだけ `$confirmedUiCheck` を `$true` にする。
 
 ```powershell
 $ErrorActionPreference = 'Stop'
 $confirmedReleaseRequest = $false # 今回の公開依頼が明示されている場合だけ変更
-$confirmedMachineTest = $false    # 今回の下書きを実機で確認した場合だけ変更
-if (-not $confirmedReleaseRequest -or -not $confirmedMachineTest) {
-  throw '公開依頼と実機確認の両方が必要です。'
+$uiChanged = $true                # UI 変更がないと確認できた場合だけ false に変更
+$confirmedUiCheck = $false        # UI 変更時に開発版で可能な画面を確認し、実データ待ちを記録した場合だけ変更
+if (-not $confirmedReleaseRequest -or ($uiChanged -and -not $confirmedUiCheck)) {
+  throw '公開依頼と、UI 変更時の画面確認が必要です。'
 }
 $repo = 'j23033it/genshin-reco-releases'
 $root = (git rev-parse --show-toplevel).Trim()
@@ -223,12 +231,12 @@ try {
   $bundle = Join-Path $env:CARGO_TARGET_DIR 'release/bundle/nsis'
   $installers = @(Get-ChildItem -LiteralPath $bundle -File |
     Where-Object Name -like "*_$($version)_x64-setup.exe")
-  if ($installers.Count -ne 1) { throw '実機確認したインストーラーを確認できません。' }
+  if ($installers.Count -ne 1) { throw '下書きに対応するインストーラーを確認できません。' }
   $signaturePath = "$($installers[0].FullName).sig"
   if (-not (Test-Path -LiteralPath $signaturePath)) { throw '署名がありません。' }
   $signature = (Get-Content -LiteralPath $signaturePath -Raw).Trim()
   $hash = (Get-FileHash -LiteralPath $installers[0].FullName -Algorithm SHA256).Hash.ToLowerInvariant()
-  if ($exe[0].digest -ne "sha256:$hash") { throw '下書きのインストーラーが実機確認したものと違います。' }
+  if ($exe[0].digest -ne "sha256:$hash") { throw '下書きのインストーラーが手元のビルドと違います。' }
   gh release download $tag --repo $repo --pattern latest.json --output $tempJson
   if ($LASTEXITCODE -ne 0) { throw '下書きの更新情報を取得できません。' }
   $metadataHash = (Get-FileHash -LiteralPath $tempJson -Algorithm SHA256).Hash.ToLowerInvariant()
@@ -292,6 +300,6 @@ finally {
 }
 ```
 
-表示された一時ファイルとフォルダは、絶対パスと内容を確認して別の操作で片付ける。最後に、旧版アプリの「更新を確認」に新版が表示されることを実機で確かめる。公開済み版へ問題が見つかったら状態を報告し、別の版番号で修正する。公開済み配布物を上書きしない。
+表示された一時ファイルとフォルダは、絶対パスと内容を確認して別の操作で片付ける。アプリ内の更新はユーザーが行う。公開後、ユーザーが旧版から正式版に更新し、保存済みデータを使う一覧・結果・条件変更と更新動作を確認する。確認結果が届くまではこれらを未確認と報告する。公開済み版へ問題が見つかったら状態を報告し、別の版番号で修正する。公開済み配布物を上書きしない。
 
-失敗した段階以降は進めない。公開したか、下書きで止まったか、版番号・ソース SHA・検査結果・実機確認結果・配布 URL を短く報告する。古いビルド先やバックアップは自動削除しない。
+公開前の確認に失敗した段階以降は進めない。公開したか、下書きで止まったか、版番号・ソース SHA・検査結果・UI 確認結果・公開後に残る確認・配布 URL を短く報告する。古いビルド先やバックアップは自動削除しない。
