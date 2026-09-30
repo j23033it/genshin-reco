@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import type { Catalog } from "../../domain/catalogTypes";
+import type { Catalog, StarRailCatalog } from "../../domain/catalogTypes";
 
 declare global {
   interface Window {
@@ -21,4 +21,15 @@ export async function loadCatalog(): Promise<Catalog> {
     throw new Error(`カタログを読み込めませんでした（${response.status}）`);
   }
   return response.json() as Promise<Catalog>;
+}
+
+export async function loadStarRailCatalog(): Promise<StarRailCatalog> {
+  const catalog = window.__TAURI_INTERNALS__
+    ? await invoke<StarRailCatalog>("load_star_rail_catalog")
+    : await fetch("/data/star-rail/catalog.json").then(response => {
+      if (!response.ok) throw new Error("スターレイルのカタログを読み込めません。");
+      return response.json() as Promise<StarRailCatalog>;
+    });
+  if (catalog.game !== "star_rail" || catalog.schemaVersion !== "star-rail-catalog-v1") throw new Error("カタログのゲームが一致しません。");
+  return catalog;
 }

@@ -1,9 +1,13 @@
 import { useEffect, useState } from "react";
-import type { Catalog } from "../../domain/catalogTypes";
-import { loadCatalog } from "../catalog/loadCatalog";
+import type { Catalog, StarRailCatalog } from "../../domain/catalogTypes";
+import { loadCatalog, loadStarRailCatalog } from "../catalog/loadCatalog";
 import { cn } from "../../lib/cn";
 import { OperationProgress } from "../../components/OperationProgress";
 import type { ResearchConversation, ResearchMemberInput } from "./types";
+
+import { StarRailRelicsEditor } from "./StarRailRelicsEditor";
+
+import { validateRelicInput } from "./validateRelics";
 
 const CONSTELLATIONS = [null, 0, 1, 2, 3, 4, 5, 6] as const;
 
@@ -12,22 +16,34 @@ export function ResearchConditionsEditor({
   disabled,
   onResearch,
   revision = false,
+  initialDraft,
+  onDraftChange,
 }: {
   conversation: ResearchConversation;
   disabled: boolean;
   onResearch: (members: ResearchMemberInput[], title: string | null) => void;
   revision?: boolean;
+  initialDraft?: { members: ResearchMemberInput[]; title: string };
+  onDraftChange?: (draft: { members: ResearchMemberInput[]; title: string }) => void;
 }) {
-  const [title, setTitle] = useState(conversation.title ?? "");
-  const [members, setMembers] = useState<ResearchMemberInput[]>(() =>
-    conversation.members.map((member) => ({ ...member })),
+  const starRail = conversation.game === "star_rail";
+  const [title, setTitle] = useState(
+    revision ? conversation.title ?? "" : initialDraft?.title ?? conversation.title ?? "",
   );
-  const [catalog, setCatalog] = useState<Catalog | null>(null);
+  const [members, setMembers] = useState<ResearchMemberInput[]>(() =>
+    (initialDraft?.members ?? conversation.members).map((member) => ({ ...member })),
+  );
+  const [catalog, setCatalog] = useState<Pick<Catalog, "characters" | "weapons"> | null>(null);
+  const [starRailCatalog, setStarRailCatalog] = useState<StarRailCatalog | null>(null);
   const [catalogFailed, setCatalogFailed] = useState(false);
 
   useEffect(() => {
     let active = true;
-    void loadCatalog().then(
+    const load = starRail ? loadStarRailCatalog().then(loaded => {
+      if (active) setStarRailCatalog(loaded);
+      return { characters: loaded.characters.map(character => ({ ...character, weaponType: character.path, imageUrl: character.imageUrl ?? "", rarity: 5 })), weapons: loaded.lightCones.map(cone => ({ ...cone, weaponType: cone.path, imageUrl: cone.imageUrl ?? "", rarity: 5 })) };
+    }) : loadCatalog();
+    void load.then(
       (loaded) => {
         if (active) setCatalog(loaded);
       },
@@ -35,26 +51,26 @@ export function ResearchConditionsEditor({
         if (active) setCatalogFailed(true);
       },
     );
-    return () => {
+  return () => {
       active = false;
     };
-  }, []);
+  }, [starRail]);
 
   const changeMember = (slotIndex: number, change: Partial<ResearchMemberInput>) => {
-    setMembers((current) =>
-      current.map((member) =>
-        member.slotIndex === slotIndex ? { ...member, ...change } : member,
-      ),
-    );
+    const next = members.map(member => member.slotIndex === slotIndex ? { ...member, ...change } : member);
+    setMembers(next);
+    onDraftChange?.({ members: next, title });
   };
+
+  const inputErrors = starRail ? members.map(member => validateRelicInput(member, starRailCatalog)).filter(Boolean) : [];
 
   return (
     <section className="mt-6 rounded-2xl border border-slate-700 bg-slate-900/70 p-4 sm:p-6" aria-labelledby="research-conditions-title">
       <h2 id="research-conditions-title" className="text-lg font-semibold text-slate-50">
-        {revision ? "武器と凸を選び直す" : "4人の条件を選ぶ"}
+        {revision ? starRail ? "光円錐・星魂・遺物を選び直す" : "武器と凸を選び直す" : "4人の条件を選ぶ"}
       </h2>
       <p className="mt-2 text-pretty text-sm leading-6 text-slate-400">
-        {revision
+        {starRail ? "指定したセットは変更せず、指定していない部分を編成全体に合わせて提案します。" : revision
           ? "キャラクターはこの4人で固定します。武器・命ノ星座・精錬を選んで再調査できます。"
           : "凸や武器が未確定なら「指定なし」のままで大丈夫。調査時に一般的な前提を選びます。"}
       </p>
@@ -69,20 +85,20 @@ export function ResearchConditionsEditor({
           maxLength={80}
           disabled={disabled}
           placeholder="空欄なら調査結果から自動で名前を付けます"
-          onChange={(event) => setTitle(event.target.value)}
+          onChange={(event) => { setTitle(event.target.value); onDraftChange?.({ members, title: event.target.value }); }}
           className="min-h-11 w-full rounded-lg border border-slate-600 bg-slate-900 px-3 text-sm text-slate-100 focus-visible:outline-2 focus-visible:outline-amber-300 disabled:opacity-50"
         />
         <p className="mt-2 text-sm text-slate-400">任意・80文字以内。保存後も変更できます。</p>
       </div> : null}
       {catalogFailed ? (
         <p role="status" className="mt-3 text-sm text-amber-200">
-          {revision
+          {starRail ? "カタログを読み込めません。指定は保持しています。読み込みが復旧してから再確認してください。" : revision
             ? "武器一覧を読み込めません。現在の武器か「指定なし」を選べます。"
             : "武器一覧を読み込めないため、武器名は手入力できます。"}
         </p>
       ) : null}
       {!catalog && !catalogFailed ? (
-        <OperationProgress className="mt-3" label="武器一覧を読み込み中…" />
+        <OperationProgress className="mt-3" label="装備一覧を読み込み中…" />
       ) : null}
       <div className="mt-5 grid gap-4 xl:grid-cols-2">
         {members.map((member) => {
@@ -108,7 +124,7 @@ export function ResearchConditionsEditor({
                 ) : null}
               </div>
               <fieldset className="mt-4" disabled={disabled}>
-                <legend className="mb-2 text-sm font-medium text-slate-300">命ノ星座</legend>
+                <legend className="mb-2 text-sm font-medium text-slate-300">{starRail ? "星魂" : "命ノ星座"}</legend>
                 <div className="flex flex-wrap gap-2">
                   {CONSTELLATIONS.map((value) => {
                     const label = value === null ? "指定なし" : `${value}凸`;
@@ -136,7 +152,7 @@ export function ResearchConditionsEditor({
               <div className="mt-4 grid gap-3 sm:grid-cols-[minmax(0,1fr)_8rem]">
                 <div className="min-w-0">
                   <label htmlFor={weaponId} className="mb-2 block text-sm font-medium text-slate-300">
-                    武器
+                    {starRail ? "光円錐" : "武器"}
                   </label>
                   {catalogFailed && !revision ? (
                     <input
@@ -177,7 +193,7 @@ export function ResearchConditionsEditor({
                 </div>
                 <div>
                   <label htmlFor={refinementId} className="mb-2 block text-sm font-medium text-slate-300">
-                    精錬
+                    {starRail ? "重畳" : "精錬"}
                   </label>
                   <select
                     id={refinementId}
@@ -190,18 +206,20 @@ export function ResearchConditionsEditor({
                   >
                     <option value="">指定なし</option>
                     {[1, 2, 3, 4, 5].map((value) => (
-                      <option key={value} value={value}>R{value}</option>
+                      <option key={value} value={value}>{starRail ? "S" : "R"}{value}</option>
                     ))}
                   </select>
                 </div>
               </div>
+              {starRail ? <StarRailRelicsEditor member={member} catalog={starRailCatalog} disabled={disabled} onChange={relics => changeMember(member.slotIndex, { relics })} /> : null}
             </div>
           );
         })}
       </div>
+      {inputErrors.length ? <p role="alert" className="mt-4 break-words text-sm text-amber-200">{[...new Set(inputErrors)].join("\n")}</p> : null}
       <button
         type="button"
-        disabled={disabled}
+        disabled={disabled || inputErrors.length > 0}
         className="mt-6 inline-flex min-h-11 items-center justify-center rounded-xl bg-amber-300 px-5 py-2 font-semibold text-slate-950 hover:bg-amber-200 disabled:cursor-not-allowed disabled:opacity-50"
         onClick={() => onResearch(members, title.trim() || null)}
       >

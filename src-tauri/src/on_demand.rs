@@ -5,6 +5,7 @@ use crate::{
     },
     catalog::load_embedded_catalog,
     database::{Database, new_id, timestamp},
+    game::GameId,
     on_demand_cache::{CachedTeamResearch, research_cache_key, resolve_team_research},
     on_demand_domain::{
         OnDemandResearchProgress, ResearchConversation, ResearchConversationStatus, ResearchIntake,
@@ -30,6 +31,7 @@ pub async fn send_on_demand_message(
     database: State<'_, Database>,
     session_id: Option<String>,
     message: String,
+    game: Option<GameId>,
 ) -> Result<ResearchConversation, String> {
     let message = message.trim();
     if message.is_empty() || message.chars().count() > 2_000 {
@@ -41,9 +43,12 @@ pub async fn send_on_demand_message(
             .map_err(|error| error.to_string())?
             .ok_or_else(|| "指定された編成チャットが見つかりません".to_string())?,
         None => database
-            .create_on_demand_conversation()
+            .create_on_demand_conversation_for(game.unwrap_or_default())
             .map_err(|error| error.to_string())?,
     };
+    if game.is_some_and(|game| game != conversation.game) {
+        return Err("会話と要求のゲームが異なります".into());
+    }
     if conversation.status == ResearchConversationStatus::Researching {
         return Err("調査中のため、完了またはキャンセル後に条件を変更してください".into());
     }
@@ -62,6 +67,9 @@ pub async fn send_on_demand_message(
 
     match collect_on_demand_intake(&app, &supervisor, &conversation).await {
         Ok(output) => {
+            if output.intake.game != conversation.game {
+                return Err("受付結果のゲームが一致しません".into());
+            }
             output.intake.validate()?;
             conversation.messages.push(ResearchMessage {
                 role: ResearchMessageRole::Assistant,
@@ -141,6 +149,7 @@ fn apply_conditions(
         }
     }
     ResearchIntake {
+        game: conversation.game,
         members: members.clone(),
         missing_fields: Vec::new(),
         ready_to_research: true,
@@ -218,12 +227,18 @@ pub async fn start_on_demand_research(
         .map_err(|error| error.to_string())?
         .ok_or_else(|| "指定された編成チャットが見つかりません".to_string())?;
     let intake = ResearchIntake {
+        game: conversation.game,
         members: conversation.members.clone(),
         missing_fields: conversation.missing_fields.clone(),
         ready_to_research: conversation.members.len() == 4,
     };
     intake.validate()?;
     let catalog = load_embedded_catalog().map_err(|error| error.to_string())?;
+    let game_version = if intake.game == GameId::StarRail {
+        crate::star_rail::load_star_rail_catalog()?.game_version
+    } else {
+        catalog.game_version.clone()
+    };
     let cache_key = research_cache_key(&intake, &catalog, &on_demand_research_revision()?)?;
     // 保存済み編成からの再調査は、同じ条件でもWebで新しい情報を取り直す。
     let refresh = conversation.team_id.is_some();
@@ -246,6 +261,7 @@ pub async fn start_on_demand_research(
     emit_progress(
         &app,
         &session_id,
+        conversation.game,
         "started",
         "4人の指定と、この端末で過去に調べた結果を確認しています",
         None,
@@ -255,7 +271,7 @@ pub async fn start_on_demand_research(
         &database,
         &intake,
         &cache_key,
-        &catalog.game_version,
+        &game_version,
         refresh,
         |known_sources| {
             let app = &app;
@@ -268,6 +284,7 @@ pub async fn start_on_demand_research(
                 emit_progress(
                     app,
                     session_id,
+                    intake.game,
                     "researching",
                     if known_sources.is_empty() {
                         "根拠ページを調査しています"
@@ -292,6 +309,7 @@ pub async fn start_on_demand_research(
             emit_progress(
                 &app,
                 &session_id,
+                conversation.game,
                 "validating",
                 if outcome.reused {
                     "同じ4人・武器・凸・精錬の調査結果を再利用し、保存しています"
@@ -311,6 +329,7 @@ pub async fn start_on_demand_research(
                     emit_progress(
                         &app,
                         &session_id,
+                        conversation.game,
                         "completed",
                         "調査結果をこの端末へ保存しました",
                         None,
@@ -338,6 +357,7 @@ pub async fn start_on_demand_research(
         emit_progress(
             &app,
             &session_id,
+            conversation.game,
             if cancelled { "cancelled" } else { "failed" },
             if cancelled {
                 "調査をキャンセルしました"
@@ -359,7 +379,13 @@ fn finalize_researched_team(
 ) -> Result<ResearchedTeamRecord, String> {
     let catalog = load_embedded_catalog().map_err(|error| error.to_string())?;
     for member in &mut draft.members {
+        if let Some(build) = &member.star_rail {
+            member.artifact = build.tunnel.label();
+        }
         member.apply_catalog_images(&catalog);
+    }
+    if draft.game != conversation.game {
+        return Err("調査結果のゲームが一致しません".into());
     }
     draft.validate_for_members(&conversation.members)?;
     if reused {
@@ -376,6 +402,9 @@ fn finalize_researched_team(
         None
     };
     let record = ResearchedTeamRecord {
+        game: conversation.game,
+        team_reasoning: draft.team_reasoning,
+        input_members: Some(conversation.members.clone()),
         team_id: existing
             .as_ref()
             .map(|record| record.team_id.clone())
@@ -432,9 +461,16 @@ pub async fn cancel_on_demand_research(
 #[tauri::command]
 pub fn list_researched_teams(
     database: State<'_, Database>,
+    game: Option<GameId>,
 ) -> Result<Vec<ResearchedTeamSummary>, String> {
     database
         .list_researched_team_summaries()
+        .map(|teams| {
+            teams
+                .into_iter()
+                .filter(|team| team.game == game.unwrap_or_default())
+                .collect()
+        })
         .map_err(|error| error.to_string())
 }
 
@@ -481,6 +517,7 @@ pub fn load_on_demand_conversation(
 fn emit_progress(
     app: &AppHandle,
     session_id: &str,
+    game: GameId,
     stage: &str,
     detail: &str,
     member_name: Option<String>,
@@ -488,6 +525,7 @@ fn emit_progress(
     let _ = app.emit(
         PROGRESS_EVENT,
         OnDemandResearchProgress {
+            game,
             session_id: session_id.to_owned(),
             stage: stage.to_owned(),
             detail: detail.to_owned(),
@@ -502,6 +540,7 @@ mod tests {
 
     fn conversation() -> ResearchConversation {
         ResearchConversation {
+            game: Default::default(),
             session_id: "session-1".into(),
             status: ResearchConversationStatus::Ready,
             messages: Vec::new(),
@@ -509,6 +548,7 @@ mod tests {
                 .into_iter()
                 .enumerate()
                 .map(|(slot_index, name)| ResearchMemberInput {
+                    relics: None,
                     slot_index: slot_index as u8,
                     name: name.into(),
                     weapon: None,
@@ -523,6 +563,71 @@ mod tests {
             created_at: "created".into(),
             updated_at: "updated".into(),
         }
+    }
+
+    #[test]
+    fn スターレイル保存と復元は提案を固定せず失敗とキャンセルで成功結果を保つ() {
+        let path = std::env::temp_dir().join(format!("hsr-store-{}.sqlite", new_id("test")));
+        let database = Database::open(&path).unwrap();
+        let (intake, draft) = crate::star_rail::tests::sample();
+        let mut conversation = database
+            .create_on_demand_conversation_for(GameId::StarRail)
+            .unwrap();
+        conversation.members = intake.members;
+        conversation.status = ResearchConversationStatus::Ready;
+        database.save_on_demand_conversation(&conversation).unwrap();
+        let record =
+            finalize_researched_team(&database, &mut conversation, draft.clone(), None, false)
+                .unwrap();
+        assert!(
+            record
+                .input_members
+                .as_ref()
+                .unwrap()
+                .iter()
+                .all(|member| member.relics.is_none())
+        );
+        let mut other_game = conversation.clone();
+        other_game.game = GameId::Genshin;
+        assert!(database.save_on_demand_conversation(&other_game).is_err());
+        for status in [
+            ResearchConversationStatus::Failed,
+            ResearchConversationStatus::Cancelled,
+        ] {
+            conversation.status = status;
+            database.save_on_demand_conversation(&conversation).unwrap();
+            assert_eq!(
+                database.load_researched_team(&record.team_id).unwrap(),
+                Some(record.clone())
+            );
+        }
+        let mut invalid = draft;
+        invalid.members[0]
+            .star_rail
+            .as_mut()
+            .unwrap()
+            .superimposition = 5;
+        assert!(
+            finalize_researched_team(&database, &mut conversation, invalid, None, false).is_err()
+        );
+        assert_eq!(
+            database.load_researched_team(&record.team_id).unwrap(),
+            Some(record.clone())
+        );
+        drop(database);
+        let reopened = Database::open(&path).unwrap();
+        let restored = reopened
+            .load_on_demand_conversation(&conversation.session_id)
+            .unwrap()
+            .unwrap();
+        assert_eq!(restored.game, GameId::StarRail);
+        assert_eq!(restored.members, record.input_members.clone().unwrap());
+        assert_eq!(
+            reopened.load_researched_team(&record.team_id).unwrap(),
+            Some(record)
+        );
+        drop(reopened);
+        let _ = std::fs::remove_file(path);
     }
 
     #[test]

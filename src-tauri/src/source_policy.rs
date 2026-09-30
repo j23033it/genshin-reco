@@ -1,3 +1,4 @@
+use crate::game::GameId;
 use thiserror::Error;
 use url::Url;
 
@@ -18,6 +19,10 @@ pub enum SourcePolicyError {
 }
 
 pub fn normalize_source_url(raw: &str) -> Result<String, SourcePolicyError> {
+    normalize_source_url_for(GameId::Genshin, raw)
+}
+
+pub fn normalize_source_url_for(game: GameId, raw: &str) -> Result<String, SourcePolicyError> {
     let mut url = Url::parse(raw).map_err(|_| SourcePolicyError::InvalidUrl)?;
     if url.scheme() != "https" {
         return Err(SourcePolicyError::HttpsRequired);
@@ -30,12 +35,18 @@ pub fn normalize_source_url(raw: &str) -> Result<String, SourcePolicyError> {
     }
 
     let host = url.host_str().ok_or(SourcePolicyError::InvalidUrl)?;
+    let (wiki_root, guide_root, hoyo_game) = match game {
+        GameId::Genshin => ("/genshinwiki", "/genshin", "genshin"),
+        GameId::StarRail => ("/star-rail", "/houkaistarrail", "hsr"),
+    };
     match host {
-        "wikiwiki.jp" if path_is_within(url.path(), "/genshinwiki") => {}
-        "game8.jp" if path_is_within(url.path(), "/genshin") => {}
-        "gamewith.jp" if path_is_within(url.path(), "/genshin") => {}
-        "wiki.hoyolab.com" => {}
-        "wikiwiki.jp" | "game8.jp" | "gamewith.jp" => {
+        "wikiwiki.jp" if path_is_within(url.path(), wiki_root) => {}
+        "game8.jp" | "gamewith.jp" if path_is_within(url.path(), guide_root) => {}
+        "wiki.hoyolab.com"
+            if ["pc", "m"].iter().any(|platform| {
+                path_is_within(url.path(), &format!("/{platform}/{hoyo_game}"))
+            }) => {}
+        "wikiwiki.jp" | "game8.jp" | "gamewith.jp" | "wiki.hoyolab.com" => {
             return Err(SourcePolicyError::PathNotAllowed);
         }
         other => return Err(SourcePolicyError::HostNotAllowed(other.into())),
@@ -51,7 +62,11 @@ pub fn normalize_source_url(raw: &str) -> Result<String, SourcePolicyError> {
 /// URLだけで本文の存在を証明するものではないため、呼び出し側はWeb取得イベントの
 /// `openPage`または`findInPage`と組み合わせて使用する。
 pub fn is_direct_content_url(raw: &str) -> Result<bool, SourcePolicyError> {
-    let normalized = normalize_source_url(raw)?;
+    is_direct_content_url_for(GameId::Genshin, raw)
+}
+
+pub fn is_direct_content_url_for(game: GameId, raw: &str) -> Result<bool, SourcePolicyError> {
+    let normalized = normalize_source_url_for(game, raw)?;
     let url = Url::parse(&normalized).map_err(|_| SourcePolicyError::InvalidUrl)?;
     let path = url.path().trim_end_matches('/');
     let has_search_query = url.query_pairs().any(|(key, _)| {
@@ -60,7 +75,11 @@ pub fn is_direct_content_url(raw: &str) -> Result<bool, SourcePolicyError> {
             "q" | "query" | "keyword" | "search" | "searchword"
         )
     });
-    if has_search_query {
+    let has_navigation_action = url.query_pairs().any(|(key, value)| {
+        key.eq_ignore_ascii_case("cmd")
+            && matches!(value.as_ref(), "search" | "list" | "read" | "edit")
+    });
+    if has_search_query || has_navigation_action {
         return Ok(false);
     }
 
@@ -72,13 +91,45 @@ pub fn is_direct_content_url(raw: &str) -> Result<bool, SourcePolicyError> {
         return Ok(false);
     }
 
+    let (wiki_root, guide_root) = match game {
+        GameId::Genshin => ("/genshinwiki", "/genshin"),
+        GameId::StarRail => ("/star-rail", "/houkaistarrail"),
+    };
     match url.host_str() {
-        Some("wikiwiki.jp") => Ok(path != "/genshinwiki"),
-        Some("game8.jp") => Ok(path != "/genshin"),
-        Some("gamewith.jp") => Ok(path
-            .strip_prefix("/genshin/article/show/")
+        Some("wikiwiki.jp") => {
+            let decoded = percent_encoding::percent_decode_str(path)
+                .decode_utf8()
+                .map_err(|_| SourcePolicyError::InvalidUrl)?;
+            let page = decoded.rsplit('/').next().unwrap_or("");
+            let navigation = matches!(
+                page.to_ascii_lowercase().as_str(),
+                "frontpage" | "menubar" | "sidebar" | "sandbox" | "recentdeleted"
+            ) || matches!(
+                page,
+                "キャラクター"
+                    | "光円錐"
+                    | "遺物"
+                    | "オーナメント"
+                    | "次元界オーナメント"
+                    | "トンネル遺物"
+                    | "武器"
+                    | "聖遺物"
+                    | "目次"
+                    | "メニュー"
+                    | "更新履歴"
+            ) || page.ends_with("一覧")
+                || page.ends_with("ランキング");
+            Ok(path != wiki_root && !navigation)
+        }
+        Some("game8.jp") => Ok(path
+            .strip_prefix(&format!("{guide_root}/"))
             .is_some_and(|id| !id.is_empty() && id.bytes().all(|byte| byte.is_ascii_digit()))),
-        Some("wiki.hoyolab.com") => Ok(lower_path.contains("/entry/")),
+        Some("gamewith.jp") => Ok(path
+            .strip_prefix(&format!("{guide_root}/article/show/"))
+            .is_some_and(|id| !id.is_empty() && id.bytes().all(|byte| byte.is_ascii_digit()))),
+        Some("wiki.hoyolab.com") => Ok(path
+            .split_once("/entry/")
+            .is_some_and(|(_, id)| !id.is_empty() && id.bytes().all(|byte| byte.is_ascii_digit()))),
         _ => Ok(false),
     }
 }
@@ -149,6 +200,67 @@ mod tests {
             "https://wiki.hoyolab.com/pc/genshin/entry/1",
         ] {
             assert!(is_direct_content_url(url).unwrap(), "{url}");
+        }
+    }
+}
+
+#[cfg(test)]
+mod star_rail_tests {
+    use super::*;
+    #[test]
+    fn スターレイル本文と原神を相互に分離する() {
+        for url in [
+            "https://wikiwiki.jp/star-rail/ホタル",
+            "https://game8.jp/houkaistarrail/12345",
+            "https://gamewith.jp/houkaistarrail/article/show/12345",
+            "https://wiki.hoyolab.com/pc/hsr/entry/12345",
+            "https://wiki.hoyolab.com/m/hsr/entry/12345",
+        ] {
+            assert!(
+                is_direct_content_url_for(GameId::StarRail, url).unwrap(),
+                "{url}"
+            );
+            assert!(
+                normalize_source_url_for(GameId::Genshin, url).is_err(),
+                "{url}"
+            );
+        }
+        for url in [
+            "https://wikiwiki.jp/genshinwiki/雷電将軍",
+            "https://game8.jp/genshin/12345",
+            "https://gamewith.jp/genshin/article/show/12345",
+            "https://wiki.hoyolab.com/pc/genshin/entry/12345",
+            "https://wiki.hoyolab.com/pc/zzz/entry/12345",
+            "https://user@game8.jp/houkaistarrail/1",
+            "https://game8.jp/houkaistarrail.evil/1",
+            "https://game8.jp.evil.example/houkaistarrail/1",
+            "https://wiki.hoyolab.com:444/pc/hsr/entry/1",
+            "https://game8.jp/houkaistarrail/../genshin/1",
+        ] {
+            assert!(
+                normalize_source_url_for(GameId::StarRail, url).is_err(),
+                "{url}"
+            );
+        }
+        for url in [
+            "https://wikiwiki.jp/star-rail/",
+            "https://wikiwiki.jp/star-rail/キャラクター",
+            "https://wikiwiki.jp/star-rail/光円錐",
+            "https://wikiwiki.jp/star-rail/%E9%81%BA%E7%89%A9",
+            "https://wikiwiki.jp/star-rail/キャラクター一覧",
+            "https://wikiwiki.jp/star-rail/MenuBar",
+            "https://wikiwiki.jp/star-rail/ホタル?cmd=search",
+            "https://game8.jp/houkaistarrail/",
+            "https://game8.jp/houkaistarrail/list",
+            "https://gamewith.jp/houkaistarrail/article/show/",
+            "https://wiki.hoyolab.com/pc/hsr/home",
+            "https://wiki.hoyolab.com/pc/hsr/entry/1?q=test",
+            "https://wiki.hoyolab.com/pc/hsr/entry/search",
+        ] {
+            assert!(
+                !is_direct_content_url_for(GameId::StarRail, url).unwrap(),
+                "{url}"
+            );
         }
     }
 }

@@ -18,7 +18,7 @@ use std::{
 };
 use thiserror::Error;
 
-pub const CURRENT_SCHEMA_VERSION: i64 = 5;
+pub const CURRENT_SCHEMA_VERSION: i64 = 6;
 pub const BUSY_TIMEOUT_MS: u64 = 5_000;
 
 const SCHEMA_SQL: &str = r#"
@@ -1189,6 +1189,9 @@ fn migrate(
         }
         let transaction = connection.transaction()?;
         transaction.execute_batch(SCHEMA_SQL)?;
+        // Add only the missing discriminator; IDs, titles, sources and timestamps are preserved.
+        transaction.execute_batch("UPDATE on_demand_research_sessions SET conversation_json = json_set(conversation_json, '$.game', 'genshin') WHERE json_type(conversation_json, '$.game') IS NULL;
+            UPDATE researched_teams SET result_json = json_set(result_json, '$.game', 'genshin') WHERE json_type(result_json, '$.game') IS NULL;")?;
         transaction.execute_batch(&format!("PRAGMA user_version = {CURRENT_SCHEMA_VERSION};"))?;
         transaction.commit()?;
     }
@@ -1396,6 +1399,51 @@ mod tests {
                 member(3, None, None),
             ],
         )
+    }
+
+    #[test]
+    fn 原神のゲーム識別がない旧会話と結果を繰り返し安全に移行する() {
+        let database = Database::open_in_memory().unwrap();
+        let conversation = database.create_on_demand_conversation().unwrap();
+        let mut connection = database.connection().unwrap();
+        connection.execute("UPDATE on_demand_research_sessions SET conversation_json = json_remove(conversation_json, '$.game')", []).unwrap();
+        let legacy: String = connection
+            .query_row(
+                "SELECT conversation_json FROM on_demand_research_sessions",
+                [],
+                |row| row.get(0),
+            )
+            .unwrap();
+        connection.execute("INSERT INTO researched_teams (team_id, session_id, title, result_json, created_at, updated_at) VALUES ('legacy-team', ?1, '旧タイトル', ?2, 'created', 'original-researched-at')", params![conversation.session_id, serde_json::json!({"teamId":"legacy-team","sessionId":conversation.session_id,"title":"旧タイトル","gameVersion":"old-version","members":[],"sources":[],"warnings":[],"createdAt":"created","updatedAt":"original-researched-at"}).to_string()]).unwrap();
+        connection.execute_batch("PRAGMA user_version = 5").unwrap();
+        migrate(&mut connection, None, false).unwrap();
+        migrate(&mut connection, None, false).unwrap();
+        let migrated: String = connection
+            .query_row(
+                "SELECT conversation_json FROM on_demand_research_sessions",
+                [],
+                |row| row.get(0),
+            )
+            .unwrap();
+        let mut expected: Value = serde_json::from_str(&legacy).unwrap();
+        expected["game"] = serde_json::json!("genshin");
+        assert_eq!(serde_json::from_str::<Value>(&migrated).unwrap(), expected);
+        let result: String = connection
+            .query_row("SELECT result_json FROM researched_teams", [], |row| {
+                row.get(0)
+            })
+            .unwrap();
+        let result: Value = serde_json::from_str(&result).unwrap();
+        assert_eq!(result["game"], "genshin");
+        assert_eq!(result["teamId"], "legacy-team");
+        assert_eq!(result["updatedAt"], "original-researched-at");
+        assert_eq!(
+            connection
+                .query_row("SELECT count(*) FROM researched_teams", [], |row| row
+                    .get::<_, i64>(0))
+                .unwrap(),
+            1
+        );
     }
 
     #[test]

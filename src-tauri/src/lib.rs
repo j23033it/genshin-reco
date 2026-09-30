@@ -5,6 +5,7 @@ pub mod catalog;
 pub mod database;
 mod database_commands;
 pub mod domain;
+pub mod game;
 pub mod hashing;
 mod on_demand;
 mod on_demand_cache;
@@ -14,6 +15,7 @@ pub mod reconciler;
 pub mod research_provider;
 pub mod solver;
 pub mod source_policy;
+pub mod star_rail;
 mod tavily;
 mod windows_ime;
 
@@ -46,6 +48,7 @@ pub fn run() {
             tavily::test_tavily_connection,
             tavily::delete_tavily_api_key,
             catalog::load_catalog,
+            star_rail::load_star_rail_catalog,
             database_commands::save_party_draft,
             database_commands::load_party_draft,
             database_commands::list_party_drafts,

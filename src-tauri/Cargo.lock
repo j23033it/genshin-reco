@@ -1472,6 +1472,7 @@ name = "genshin-reco"
 version = "0.1.4"
 dependencies = [
  "keyring",
+ "percent-encoding",
  "reqwest",
  "rusqlite",
  "schemars 1.2.2",

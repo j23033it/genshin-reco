@@ -1,4 +1,9 @@
-use crate::{catalog::Catalog, domain::make_strict_output_schema};
+use crate::{
+    catalog::Catalog,
+    domain::make_strict_output_schema,
+    game::GameId,
+    star_rail::{RelicInput, StarRailBuild},
+};
 use schemars::{JsonSchema, schema_for};
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
@@ -33,6 +38,8 @@ pub struct ResearchMessage {
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct ResearchMemberInput {
+    #[serde(default)]
+    pub relics: Option<RelicInput>,
     #[schemars(range(min = 0, max = 3))]
     pub slot_index: u8,
     pub name: String,
@@ -46,6 +53,8 @@ pub struct ResearchMemberInput {
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct ResearchIntake {
+    #[serde(default)]
+    pub game: GameId,
     #[schemars(length(max = 4))]
     pub members: Vec<ResearchMemberInput>,
     #[schemars(length(max = 16))]
@@ -56,6 +65,8 @@ pub struct ResearchIntake {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct ResearchConversation {
+    #[serde(default)]
+    pub game: GameId,
     pub session_id: String,
     pub status: ResearchConversationStatus,
     pub messages: Vec<ResearchMessage>,
@@ -95,6 +106,8 @@ pub struct ResearchSource {
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct ResearchedTeamMember {
+    #[serde(default)]
+    pub star_rail: Option<StarRailBuild>,
     pub slot_index: u8,
     pub id: String,
     pub name: String,
@@ -114,6 +127,12 @@ pub struct ResearchedTeamMember {
 
 impl ResearchedTeamMember {
     pub(crate) fn apply_catalog_images(&mut self, catalog: &Catalog) {
+        if self.star_rail.is_some() {
+            if let Ok(catalog) = crate::star_rail::load_star_rail_catalog() {
+                crate::star_rail::apply_images(self, &catalog);
+            }
+            return;
+        }
         let name = normalize_asset_name(&self.name);
         self.image_url = catalog
             .characters
@@ -192,6 +211,10 @@ fn matches_asset_name(label: &str, name: &str, suffixes: &[&str]) -> bool {
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct ResearchedTeamDraft {
+    #[serde(default)]
+    pub team_reasoning: Option<String>,
+    #[serde(default)]
+    pub game: GameId,
     pub title: String,
     pub game_version: String,
     #[schemars(length(min = 4, max = 4))]
@@ -205,6 +228,12 @@ pub struct ResearchedTeamDraft {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct ResearchedTeamRecord {
+    #[serde(default)]
+    pub input_members: Option<Vec<ResearchMemberInput>>,
+    #[serde(default)]
+    pub team_reasoning: Option<String>,
+    #[serde(default)]
+    pub game: GameId,
     pub team_id: String,
     pub session_id: String,
     pub title: String,
@@ -219,6 +248,8 @@ pub struct ResearchedTeamRecord {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct ResearchedTeamSummary {
+    #[serde(default)]
+    pub game: GameId,
     pub team_id: String,
     pub title: String,
     pub member_names: Vec<String>,
@@ -229,6 +260,8 @@ pub struct ResearchedTeamSummary {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct OnDemandResearchProgress {
+    #[serde(default)]
+    pub game: GameId,
     pub session_id: String,
     pub stage: String,
     pub detail: String,
@@ -257,13 +290,51 @@ pub fn team_research_output_schema() -> serde_json::Value {
     schema
 }
 
+pub fn intake_output_schema_for(game: GameId) -> serde_json::Value {
+    let mut schema = intake_output_schema();
+    schema["$defs"]["ResearchIntake"]["properties"]["game"] =
+        serde_json::json!({"type": "string", "enum": [game.key()]});
+    if game == GameId::Genshin {
+        schema["$defs"]["ResearchMemberInput"]["properties"]["relics"] =
+            serde_json::json!({"type": "null"});
+    }
+    schema
+}
+
+pub fn team_research_output_schema_for(game: GameId) -> serde_json::Value {
+    let mut schema = team_research_output_schema();
+    schema["properties"]["game"] = serde_json::json!({"type": "string", "enum": [game.key()]});
+    schema["$defs"]["ResearchedTeamMember"]["properties"]["starRail"] = if game == GameId::Genshin {
+        serde_json::json!({"type": "null"})
+    } else {
+        serde_json::json!({"$ref": "#/$defs/StarRailBuild"})
+    };
+    schema
+}
+
 impl ResearchIntake {
     pub fn validate(&self) -> Result<(), String> {
         if self.members.len() > 4 {
             return Err("調査対象は4人までです".into());
         }
+        let catalog = if self.game == GameId::StarRail {
+            Some(crate::star_rail::load_star_rail_catalog()?)
+        } else {
+            None
+        };
+        if let Some(catalog) = &catalog {
+            crate::star_rail::validate_character_combination(
+                self.members.iter().map(|member| member.name.as_str()),
+                catalog,
+            )?;
+        }
         let mut names = HashSet::new();
         for (index, member) in self.members.iter().enumerate() {
+            if let Some(catalog) = &catalog {
+                crate::star_rail::validate_input(member, catalog)?;
+            } else if member.relics.is_some() {
+                return Err("原神にはスターレイルの遺物条件を指定できません".into());
+            }
             if member.slot_index != index as u8 {
                 return Err("slotIndexは0からの並び順と一致させてください".into());
             }
@@ -297,6 +368,11 @@ impl ResearchedTeamDraft {
             return Err("指定した人数と調査結果が一致しません".into());
         }
         for (input, member) in requested.iter().zip(&self.members) {
+            if self.game == GameId::StarRail {
+                crate::star_rail::validate_build(member, input, &self.sources)?;
+            } else if member.star_rail.is_some() || input.relics.is_some() {
+                return Err("異なるゲームの装備結果です".into());
+            }
             if input.name.trim() != member.name.trim()
                 || input
                     .weapon
@@ -327,6 +403,20 @@ impl ResearchedTeamDraft {
     }
 
     pub fn validate(&self) -> Result<(), String> {
+        if self.game == GameId::StarRail {
+            crate::star_rail::validate_character_combination(
+                self.members.iter().map(|member| member.name.as_str()),
+                &crate::star_rail::load_star_rail_catalog()?,
+            )?;
+        }
+        if self.game == GameId::StarRail
+            && self
+                .team_reasoning
+                .as_deref()
+                .is_none_or(|value| value.trim().is_empty())
+        {
+            return Err("編成全体の採用理由・支援の分担がありません".into());
+        }
         if self.title.trim().is_empty() || self.title.chars().count() > 80 {
             return Err("編成名は1〜80文字で指定してください".into());
         }
@@ -387,9 +477,9 @@ impl ResearchedTeamDraft {
             if source.title.trim().is_empty() {
                 return Err("根拠ページのタイトルは必須です".into());
             }
-            let normalized = crate::source_policy::normalize_source_url(&source.url)
+            let normalized = crate::source_policy::normalize_source_url_for(self.game, &source.url)
                 .map_err(|error| error.to_string())?;
-            if !crate::source_policy::is_direct_content_url(&source.url)
+            if !crate::source_policy::is_direct_content_url_for(self.game, &source.url)
                 .map_err(|error| error.to_string())?
             {
                 return Err(format!("個別本文ページではありません: {}", source.url));
@@ -419,8 +509,10 @@ mod tests {
     #[test]
     fn 四人揃った受付だけ調査開始可能になる() {
         let intake = ResearchIntake {
+            game: Default::default(),
             members: (0..4)
                 .map(|slot_index| ResearchMemberInput {
+                    relics: None,
                     slot_index,
                     name: format!("キャラ{slot_index}"),
                     weapon: None,
@@ -437,6 +529,7 @@ mod tests {
 
     fn sample_draft() -> ResearchedTeamDraft {
         let member = ResearchedTeamMember {
+            star_rail: None,
             slot_index: 0,
             id: "sample".into(),
             name: "サンプル".into(),
@@ -466,10 +559,13 @@ mod tests {
             ],
         };
         ResearchedTeamDraft {
+            game: Default::default(),
+            team_reasoning: None,
             title: "サンプル編成".into(),
             game_version: "6.0".into(),
             members: (0..4)
                 .map(|slot_index| ResearchedTeamMember {
+                    star_rail: None,
                     slot_index,
                     id: format!("sample-{slot_index}"),
                     name: format!("サンプル{slot_index}"),
@@ -516,6 +612,7 @@ mod tests {
             .members
             .iter()
             .map(|member| ResearchMemberInput {
+                relics: None,
                 slot_index: member.slot_index,
                 name: member.name.clone(),
                 weapon: Some(member.weapon.clone()),

@@ -1,3 +1,4 @@
+use crate::game::GameId;
 use crate::{
     catalog::load_embedded_catalog,
     database::{Database, DatabaseError, new_id, timestamp},
@@ -9,6 +10,13 @@ use crate::{
 };
 use rusqlite::{OptionalExtension, params};
 
+pub(crate) fn knowledge_type(game: GameId, entity_type: &str) -> String {
+    match game {
+        GameId::Genshin => entity_type.to_owned(),
+        GameId::StarRail => format!("star_rail:{entity_type}"),
+    }
+}
+
 fn status_text(status: ResearchConversationStatus) -> Result<String, DatabaseError> {
     serde_json::to_value(status)?
         .as_str()
@@ -18,8 +26,16 @@ fn status_text(status: ResearchConversationStatus) -> Result<String, DatabaseErr
 
 impl Database {
     pub fn create_on_demand_conversation(&self) -> Result<ResearchConversation, DatabaseError> {
+        self.create_on_demand_conversation_for(GameId::Genshin)
+    }
+
+    pub fn create_on_demand_conversation_for(
+        &self,
+        game: GameId,
+    ) -> Result<ResearchConversation, DatabaseError> {
         let now = timestamp();
         let conversation = ResearchConversation {
+            game,
             session_id: new_id("research-session"),
             status: ResearchConversationStatus::Collecting,
             messages: Vec::new(),
@@ -41,6 +57,21 @@ impl Database {
     ) -> Result<(), DatabaseError> {
         validate_conversation(conversation)?;
         let connection = self.connection()?;
+        let existing: Option<String> = connection
+            .query_row(
+                "SELECT conversation_json FROM on_demand_research_sessions WHERE session_id = ?1",
+                [&conversation.session_id],
+                |row| row.get(0),
+            )
+            .optional()?;
+        if let Some(json) = existing {
+            let previous: ResearchConversation = serde_json::from_str(&json)?;
+            if previous.game != conversation.game {
+                return Err(DatabaseError::Invalid(
+                    "会話のゲームは変更できません".into(),
+                ));
+            }
+        }
         connection.execute(
             "INSERT INTO on_demand_research_sessions (
                 session_id, status, conversation_json, team_id, error_message, created_at, updated_at
@@ -98,13 +129,34 @@ impl Database {
         cache: Option<&CachedTeamResearch>,
     ) -> Result<(), DatabaseError> {
         validate_conversation(conversation)?;
-        if conversation.session_id != record.session_id
+        if conversation.game != record.game
+            || conversation.session_id != record.session_id
             || conversation.team_id.as_deref() != Some(record.team_id.as_str())
             || conversation.status != ResearchConversationStatus::Succeeded
         {
             return Err(DatabaseError::Invalid(
                 "保存する会話と編成結果の識別子または状態が一致しません".into(),
             ));
+        }
+        let draft = crate::on_demand_domain::ResearchedTeamDraft {
+            game: record.game,
+            team_reasoning: record.team_reasoning.clone(),
+            title: record.title.clone(),
+            game_version: record.game_version.clone(),
+            members: record.members.clone(),
+            sources: record.sources.clone(),
+            warnings: record.warnings.clone(),
+        };
+        // Revalidate Star Rail constraints at the persistence boundary too.
+        if record.game == GameId::StarRail {
+            if record.input_members.as_ref() != Some(&conversation.members) {
+                return Err(DatabaseError::Invalid(
+                    "保存条件が会話と一致しません".into(),
+                ));
+            }
+            draft
+                .validate_for_members(&conversation.members)
+                .map_err(DatabaseError::Invalid)?;
         }
         let mut connection = self.connection()?;
         let transaction = connection.transaction()?;
@@ -147,7 +199,7 @@ impl Database {
         for member in &record.members {
             upsert_knowledge(
                 &transaction,
-                "character",
+                &knowledge_type(record.game, "character"),
                 &member.name,
                 &record.game_version,
                 &serde_json::to_string(member)?,
@@ -156,7 +208,7 @@ impl Database {
             )?;
             upsert_knowledge(
                 &transaction,
-                "weapon",
+                &knowledge_type(record.game, "weapon"),
                 &member.weapon,
                 &record.game_version,
                 &serde_json::to_string(&serde_json::json!({
@@ -168,7 +220,7 @@ impl Database {
             )?;
             upsert_knowledge(
                 &transaction,
-                "artifact",
+                &knowledge_type(record.game, "artifact"),
                 &member.artifact,
                 &record.game_version,
                 &serde_json::to_string(&serde_json::json!({
@@ -203,6 +255,7 @@ impl Database {
                 member.apply_catalog_images(&catalog);
             }
             summaries.push(ResearchedTeamSummary {
+                game: record.game,
                 team_id: record.team_id,
                 title: record.title,
                 member_names: record
@@ -367,6 +420,7 @@ mod tests {
 
     fn member(slot_index: u8) -> ResearchedTeamMember {
         ResearchedTeamMember {
+            star_rail: None,
             slot_index,
             id: format!("character-{slot_index}"),
             name: format!("キャラ{slot_index}"),
@@ -462,6 +516,9 @@ mod tests {
         legacy_member.weapon = "旋流の讃美歌".into();
         legacy_member.artifact = "絶縁の旗印（4セット）".into();
         let record = ResearchedTeamRecord {
+            game: Default::default(),
+            team_reasoning: None,
+            input_members: None,
             team_id: "legacy-team".into(),
             session_id: conversation.session_id.clone(),
             title: "保存済み編成".into(),
@@ -542,6 +599,9 @@ mod tests {
         conversation.team_id = Some(team_id.clone());
         conversation.updated_at = now.clone();
         let record = ResearchedTeamRecord {
+            game: Default::default(),
+            team_reasoning: None,
+            input_members: None,
             team_id: team_id.clone(),
             session_id: conversation.session_id.clone(),
             title: "保存テスト".into(),

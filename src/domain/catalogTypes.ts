@@ -47,3 +47,14 @@ export interface Catalog {
   weapons: ReadonlyArray<Weapon>;
   artifactSets: ReadonlyArray<ArtifactSet>;
 }
+
+export interface StarRailCatalog {
+  schemaVersion: "star-rail-catalog-v1";
+  game: "star_rail";
+  gameVersion: string;
+  catalogUpdatedAt: string;
+  characters: { id: string; name: string; element: string; path: string; aliases: string[]; exclusiveGroup?: string | null; imageUrl: string | null }[];
+  lightCones: { id: string; name: string; path: string; imageUrl: string | null }[];
+  tunnelRelics: { id: string; name: string; imageUrl: string | null }[];
+  ornaments: { id: string; name: string; imageUrl: string | null }[];
+}

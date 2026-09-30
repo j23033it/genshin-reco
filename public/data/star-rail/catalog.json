@@ -1,0 +1,974 @@
+{
+  "schemaVersion": "star-rail-catalog-v1",
+  "game": "star_rail",
+  "gameVersion": "3.0",
+  "catalogUpdatedAt": "2026-09-30",
+  "characters": [
+    {
+      "id": "hsr-character-0",
+      "name": "丹恒",
+      "element": "風",
+      "path": "巡狩",
+      "aliases": [],
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-character-1",
+      "name": "丹恒・飲月",
+      "element": "虚数",
+      "path": "壊滅",
+      "aliases": [],
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-character-2",
+      "name": "三月なのか",
+      "element": "氷",
+      "path": "存護",
+      "aliases": [],
+      "imageUrl": null,
+      "exclusiveGroup": "march-7th"
+    },
+    {
+      "id": "hsr-character-3",
+      "name": "三月なのか・巡狩",
+      "element": "虚数",
+      "path": "巡狩",
+      "aliases": [],
+      "imageUrl": null,
+      "exclusiveGroup": "march-7th"
+    },
+    {
+      "id": "hsr-character-4",
+      "name": "開拓者・壊滅",
+      "element": "物理",
+      "path": "壊滅",
+      "aliases": [],
+      "imageUrl": null,
+      "exclusiveGroup": "trailblazer"
+    },
+    {
+      "id": "hsr-character-5",
+      "name": "開拓者・存護",
+      "element": "炎",
+      "path": "存護",
+      "aliases": [],
+      "imageUrl": null,
+      "exclusiveGroup": "trailblazer"
+    },
+    {
+      "id": "hsr-character-6",
+      "name": "開拓者・調和",
+      "element": "虚数",
+      "path": "調和",
+      "aliases": [],
+      "imageUrl": null,
+      "exclusiveGroup": "trailblazer"
+    },
+    {
+      "id": "hsr-character-7",
+      "name": "開拓者・記憶",
+      "element": "氷",
+      "path": "記憶",
+      "aliases": [],
+      "imageUrl": null,
+      "exclusiveGroup": "trailblazer"
+    },
+    {
+      "id": "hsr-character-8",
+      "name": "姫子",
+      "element": "炎",
+      "path": "知恵",
+      "aliases": [],
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-character-9",
+      "name": "ヴェルト",
+      "element": "虚数",
+      "path": "虚無",
+      "aliases": [],
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-character-10",
+      "name": "ブローニャ",
+      "element": "風",
+      "path": "調和",
+      "aliases": [],
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-character-11",
+      "name": "ジェパード",
+      "element": "氷",
+      "path": "存護",
+      "aliases": [],
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-character-12",
+      "name": "クラーラ",
+      "element": "物理",
+      "path": "壊滅",
+      "aliases": [],
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-character-13",
+      "name": "白露",
+      "element": "雷",
+      "path": "豊穣",
+      "aliases": [],
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-character-14",
+      "name": "ゼーレ",
+      "element": "量子",
+      "path": "巡狩",
+      "aliases": [],
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-character-15",
+      "name": "景元",
+      "element": "雷",
+      "path": "知恵",
+      "aliases": [],
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-character-16",
+      "name": "銀狼",
+      "element": "量子",
+      "path": "虚無",
+      "aliases": [],
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-character-17",
+      "name": "羅刹",
+      "element": "虚数",
+      "path": "豊穣",
+      "aliases": [],
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-character-18",
+      "name": "刃",
+      "element": "風",
+      "path": "壊滅",
+      "aliases": [],
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-character-19",
+      "name": "カフカ",
+      "element": "雷",
+      "path": "虚無",
+      "aliases": [],
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-character-20",
+      "name": "符玄",
+      "element": "量子",
+      "path": "存護",
+      "aliases": [],
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-character-21",
+      "name": "鏡流",
+      "element": "氷",
+      "path": "壊滅",
+      "aliases": [],
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-character-22",
+      "name": "トパーズ＆カブ",
+      "element": "炎",
+      "path": "巡狩",
+      "aliases": [],
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-character-23",
+      "name": "フォフォ",
+      "element": "風",
+      "path": "豊穣",
+      "aliases": [],
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-character-24",
+      "name": "アルジェンティ",
+      "element": "物理",
+      "path": "知恵",
+      "aliases": [],
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-character-25",
+      "name": "ルアン・メェイ",
+      "element": "氷",
+      "path": "調和",
+      "aliases": [],
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-character-26",
+      "name": "Dr.レイシオ",
+      "element": "虚数",
+      "path": "巡狩",
+      "aliases": [],
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-character-27",
+      "name": "花火",
+      "element": "量子",
+      "path": "調和",
+      "aliases": [],
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-character-28",
+      "name": "黄泉",
+      "element": "雷",
+      "path": "虚無",
+      "aliases": [],
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-character-29",
+      "name": "アベンチュリン",
+      "element": "虚数",
+      "path": "存護",
+      "aliases": [],
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-character-30",
+      "name": "ロビン",
+      "element": "物理",
+      "path": "調和",
+      "aliases": [],
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-character-31",
+      "name": "ブートヒル",
+      "element": "物理",
+      "path": "巡狩",
+      "aliases": [],
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-character-32",
+      "name": "ホタル",
+      "element": "炎",
+      "path": "壊滅",
+      "aliases": [],
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-character-33",
+      "name": "ジェイド",
+      "element": "量子",
+      "path": "知恵",
+      "aliases": [],
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-character-34",
+      "name": "飛霄",
+      "element": "風",
+      "path": "巡狩",
+      "aliases": [],
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-character-35",
+      "name": "椒丘",
+      "element": "炎",
+      "path": "虚無",
+      "aliases": [],
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-character-36",
+      "name": "霊砂",
+      "element": "炎",
+      "path": "豊穣",
+      "aliases": [],
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-character-37",
+      "name": "乱破",
+      "element": "虚数",
+      "path": "知恵",
+      "aliases": [],
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-character-38",
+      "name": "サンデー",
+      "element": "虚数",
+      "path": "調和",
+      "aliases": [],
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-character-39",
+      "name": "帰忘の流離人",
+      "element": "炎",
+      "path": "虚無",
+      "aliases": [],
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-character-40",
+      "name": "マダム・ヘルタ",
+      "element": "氷",
+      "path": "知恵",
+      "aliases": [],
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-character-41",
+      "name": "アグライア",
+      "element": "雷",
+      "path": "記憶",
+      "aliases": [],
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-character-42",
+      "name": "セーバル",
+      "element": "雷",
+      "path": "知恵",
+      "aliases": [],
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-character-43",
+      "name": "ヘルタ",
+      "element": "氷",
+      "path": "知恵",
+      "aliases": [],
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-character-44",
+      "name": "アスター",
+      "element": "炎",
+      "path": "調和",
+      "aliases": [],
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-character-45",
+      "name": "ペラ",
+      "element": "氷",
+      "path": "虚無",
+      "aliases": [],
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-character-46",
+      "name": "サンポ",
+      "element": "風",
+      "path": "虚無",
+      "aliases": [],
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-character-47",
+      "name": "ナターシャ",
+      "element": "物理",
+      "path": "豊穣",
+      "aliases": [],
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-character-48",
+      "name": "停雲",
+      "element": "雷",
+      "path": "調和",
+      "aliases": [],
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-character-49",
+      "name": "青雀",
+      "element": "量子",
+      "path": "知恵",
+      "aliases": [],
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-character-50",
+      "name": "素裳",
+      "element": "物理",
+      "path": "巡狩",
+      "aliases": [],
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-character-51",
+      "name": "フック",
+      "element": "炎",
+      "path": "壊滅",
+      "aliases": [],
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-character-52",
+      "name": "アーラン",
+      "element": "雷",
+      "path": "壊滅",
+      "aliases": [],
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-character-53",
+      "name": "御空",
+      "element": "虚数",
+      "path": "調和",
+      "aliases": [],
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-character-54",
+      "name": "リンクス",
+      "element": "量子",
+      "path": "豊穣",
+      "aliases": [],
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-character-55",
+      "name": "桂乃芬",
+      "element": "炎",
+      "path": "虚無",
+      "aliases": [],
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-character-56",
+      "name": "寒鴉",
+      "element": "物理",
+      "path": "調和",
+      "aliases": [],
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-character-57",
+      "name": "雪衣",
+      "element": "量子",
+      "path": "壊滅",
+      "aliases": [],
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-character-58",
+      "name": "ミーシャ",
+      "element": "氷",
+      "path": "壊滅",
+      "aliases": [],
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-character-59",
+      "name": "ギャラガー",
+      "element": "炎",
+      "path": "豊穣",
+      "aliases": [],
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-character-60",
+      "name": "モゼ",
+      "element": "雷",
+      "path": "巡狩",
+      "aliases": [],
+      "imageUrl": null
+    }
+  ],
+  "lightCones": [
+    {
+      "id": "hsr-cone-0",
+      "name": "とある星神の殞落を記す",
+      "path": "壊滅",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-1",
+      "name": "かけがえのないもの",
+      "path": "壊滅",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-2",
+      "name": "青空の下で",
+      "path": "壊滅",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-3",
+      "name": "秘密の誓い",
+      "path": "壊滅",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-4",
+      "name": "逃げ場のない夢",
+      "path": "壊滅",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-5",
+      "name": "天が落ちる",
+      "path": "壊滅",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-6",
+      "name": "星海巡航",
+      "path": "巡狩",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-7",
+      "name": "夜の帳の中で",
+      "path": "巡狩",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-8",
+      "name": "論剣",
+      "path": "巡狩",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-9",
+      "name": "最後の勝者",
+      "path": "巡狩",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-10",
+      "name": "矢じり",
+      "path": "巡狩",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-11",
+      "name": "銀河鉄道の夜",
+      "path": "知恵",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-12",
+      "name": "夜明け前",
+      "path": "知恵",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-13",
+      "name": "朝食の儀式感",
+      "path": "知恵",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-14",
+      "name": "天才たちの休息",
+      "path": "知恵",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-15",
+      "name": "アーカイブ",
+      "path": "知恵",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-16",
+      "name": "だが戦争は終わらない",
+      "path": "調和",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-17",
+      "name": "記憶の中の姿",
+      "path": "調和",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-18",
+      "name": "ダンス！ダンス！ダンス！",
+      "path": "調和",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-19",
+      "name": "輪契",
+      "path": "調和",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-20",
+      "name": "過去と未来",
+      "path": "調和",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-21",
+      "name": "孤独の癒し",
+      "path": "虚無",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-22",
+      "name": "待つのみ",
+      "path": "虚無",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-23",
+      "name": "おやすみなさいと寝顔",
+      "path": "虚無",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-24",
+      "name": "決意は汗のように輝く",
+      "path": "虚無",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-25",
+      "name": "フェルマータ",
+      "path": "虚無",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-26",
+      "name": "淵環",
+      "path": "虚無",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-27",
+      "name": "記憶の素材",
+      "path": "存護",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-28",
+      "name": "勝利の刹那",
+      "path": "存護",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-29",
+      "name": "余生の初日",
+      "path": "存護",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-30",
+      "name": "ランドゥーの選択",
+      "path": "存護",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-31",
+      "name": "琥珀",
+      "path": "存護",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-32",
+      "name": "時節は居らず",
+      "path": "豊穣",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-33",
+      "name": "手術後の会話",
+      "path": "豊穣",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-34",
+      "name": "何が真か",
+      "path": "豊穣",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-35",
+      "name": "同じ気持ち",
+      "path": "豊穣",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-36",
+      "name": "蕃殖",
+      "path": "豊穣",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-37",
+      "name": "流すなら涙より汗",
+      "path": "記憶",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-38",
+      "name": "瞬間を記憶に留めて",
+      "path": "記憶",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-39",
+      "name": "夢が帰り着く場所",
+      "path": "壊滅",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-40",
+      "name": "鏡の中の私",
+      "path": "調和",
+      "imageUrl": null
+    }
+  ],
+  "tunnelRelics": [
+    {
+      "id": "hsr-tunnel-0",
+      "name": "草の穂ガンマン",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-tunnel-1",
+      "name": "流雲無痕の過客",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-tunnel-2",
+      "name": "純庭教会の聖騎士",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-tunnel-3",
+      "name": "雪の密林の狩人",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-tunnel-4",
+      "name": "成り上がりチャンピオン",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-tunnel-5",
+      "name": "吹雪と対峙する兵士",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-tunnel-6",
+      "name": "溶岩で鍛造する火匠",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-tunnel-7",
+      "name": "星の如く輝く天才",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-tunnel-8",
+      "name": "雷鳴轟くバンド",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-tunnel-9",
+      "name": "昼夜の狭間を翔ける鷹",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-tunnel-10",
+      "name": "流星の跡を追う怪盗",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-tunnel-11",
+      "name": "荒地で盗みを働く廃土客",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-tunnel-12",
+      "name": "宝命長存の蒔者",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-tunnel-13",
+      "name": "仮想空間を漫遊するメッセンジャー",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-tunnel-14",
+      "name": "灰燼を燃やし尽くす大公",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-tunnel-15",
+      "name": "深い牢獄の囚人",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-tunnel-16",
+      "name": "死水に潜る先駆者",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-tunnel-17",
+      "name": "夢を弄ぶ時計屋",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-tunnel-18",
+      "name": "蝗害を一掃せし鉄騎",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-tunnel-19",
+      "name": "風雲を薙ぎ払う勇烈",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-tunnel-20",
+      "name": "再び苦難の道を歩む司祭",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-tunnel-21",
+      "name": "知識の海に溺れる学者",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-tunnel-22",
+      "name": "凱歌を揚げる英雄",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-tunnel-23",
+      "name": "亡国の悲哀を詠う詩人",
+      "imageUrl": null
+    }
+  ],
+  "ornaments": [
+    {
+      "id": "hsr-ornament-0",
+      "name": "宇宙封印ステーション",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-ornament-1",
+      "name": "老いぬ者の仙舟",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-ornament-2",
+      "name": "汎銀河商事会社",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-ornament-3",
+      "name": "建創者のベロブルグ",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-ornament-4",
+      "name": "天体階差機関",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-ornament-5",
+      "name": "自転が止まったサルソット",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-ornament-6",
+      "name": "盗賊公国タリア",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-ornament-7",
+      "name": "生命のウェンワーク",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-ornament-8",
+      "name": "星々の競技場",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-ornament-9",
+      "name": "折れた竜骨",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-ornament-10",
+      "name": "蒼穹戦線グラモス",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-ornament-11",
+      "name": "夢の地ピノコニー",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-ornament-12",
+      "name": "顕世の出雲と高天の神国",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-ornament-13",
+      "name": "荒涼の惑星ツガンニヤ",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-ornament-14",
+      "name": "劫火と蓮灯の鋳煉宮",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-ornament-15",
+      "name": "奔狼の都藍王朝",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-ornament-16",
+      "name": "海に沈んだルサカ",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-ornament-17",
+      "name": "奇想天外のバナダイス",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-ornament-18",
+      "name": "静謐な拾骨地",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-ornament-19",
+      "name": "悠久の地アムフォレウス",
+      "imageUrl": null
+    }
+  ]
+}

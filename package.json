@@ -10,7 +10,7 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "catalog:check": "cargo run --quiet --manifest-path src-tauri/Cargo.toml --bin import_catalog -- public/data/sources/キャラクターカタログ.md public/data/sources/武器カタログ.md public/data/sources/聖遺物セットカタログ.md public/data --check",
+    "catalog:check": "cargo run --quiet --manifest-path src-tauri/Cargo.toml --bin import_catalog -- public/data/sources/キャラクターカタログ.md public/data/sources/武器カタログ.md public/data/sources/聖遺物セットカタログ.md public/data --check && cargo run --quiet --manifest-path src-tauri/Cargo.toml --bin validate_star_rail_catalog",
     "schema:check": "cargo run --quiet --manifest-path src-tauri/Cargo.toml --bin export_analysis_schema -- --check",
     "check": "npm run catalog:check && npm run schema:check && npm run lint && npm run test && npm run build && cargo fmt --manifest-path src-tauri/Cargo.toml --check && cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings && cargo test --manifest-path src-tauri/Cargo.toml",
     "tauri": "tauri"

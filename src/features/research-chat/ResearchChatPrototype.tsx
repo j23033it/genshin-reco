@@ -28,6 +28,7 @@ import { ResearchConditionsEditor } from "./ResearchConditionsEditor";
 import { researchRepository } from "./researchRepository";
 import { useResearchChat } from "./useResearchChat";
 import type {
+  GameId,
   ResearchConversation,
   ResearchMember,
   ResearchRepository,
@@ -97,7 +98,7 @@ function Portrait({
   );
 }
 
-function EmptyConversation({ onUseExample }: { onUseExample: () => void }) {
+function EmptyConversation({ onUseExample, game }: { onUseExample: () => void; game: GameId }) {
   return (
     <section className="mx-auto flex w-full max-w-3xl flex-1 flex-col items-center justify-center px-5 py-12 text-center">
       <div className="grid size-14 place-items-center rounded-2xl border border-amber-300/25 bg-amber-300/10 text-amber-300">
@@ -110,7 +111,7 @@ function EmptyConversation({ onUseExample }: { onUseExample: () => void }) {
         調べたい4人を教えてください
       </h1>
       <p className="mt-4 max-w-xl text-pretty leading-7 text-slate-400">
-        4人の名前を送った後、凸と武器を画面で選べます。武器が決まっていなくても調査できます。
+        {game === "genshin" ? "4人の名前を送った後、凸と武器を画面で選べます。武器が決まっていなくても調査できます。" : "4人の名前を送った後、星魂・光円錐・重畳と任意の固定遺物を選べます。指定なしでも調査できます。"}
       </p>
       <button
         type="button"
@@ -120,7 +121,7 @@ function EmptyConversation({ onUseExample }: { onUseExample: () => void }) {
         <span className="block text-xs font-semibold text-slate-500">
           入力例
         </span>
-        <span className="mt-1 block">{EXAMPLE_PROMPT}</span>
+        <span className="mt-1 block">{game === "genshin" ? EXAMPLE_PROMPT : "ホタル、ルアン・メェイ、開拓者・調和、ギャラガーの4人を調べたい。"}</span>
       </button>
     </section>
   );
@@ -202,7 +203,24 @@ const elementStyles: Record<string, { border: string; badge: string }> = {
   草: { border: "border-lime-400/35", badge: "bg-lime-400/10 text-lime-200" },
 };
 
-function BuildCard({ member, index }: { member: TeamMember; index: number }) {
+function RelicResult({ member, fixed }: { member: TeamMember; fixed?: import("./types").ResearchMemberInput }) {
+  const build = member.starRail!;
+  return <div className="space-y-4">
+    <p className="text-xs leading-5 text-slate-400">実測ステータスは未入力です。発動条件は目標であり、達成を保証しません。</p>
+    {[{ label: build.tunnel.kind === "four_piece" ? "トンネル遺物・4セット" : "トンネル遺物・2＋2", pieces: build.tunnel.kind === "four_piece" ? 4 : 2, fixed: Boolean(fixed?.relics?.tunnel), evidence: build.tunnelEvidence },
+      { label: "オーナメント・2セット", pieces: 2, fixed: Boolean(fixed?.relics?.ornament), evidence: [build.ornamentEvidence] }].map(group => <div key={group.label} className="min-w-0 space-y-2">
+        <p className="text-sm text-slate-300">{group.label} <span className="rounded bg-amber-300/10 px-2 py-1 text-xs text-amber-200">{group.fixed ? "指定を維持" : "自動提案"}</span></p>
+        {group.evidence.map(evidence => <div key={evidence.set} className="min-w-0 space-y-2">
+          <div className="flex items-center gap-3"><AssetImage src={evidence.imageUrl} label={evidence.set} /><p className="min-w-0 break-words text-sm font-semibold">{evidence.set}（{group.pieces}セット）</p></div>
+          <p className="break-words text-xs leading-5 text-slate-300">採用理由：{evidence.reason}</p>
+          <p className="break-words text-xs leading-5 text-slate-400">発動条件・注意点：{evidence.conditions}</p>
+          {evidence.sourceUrls.map((url, index) => <a className="mr-3 inline-block break-all text-xs text-amber-200 underline" key={url} href={url} target="_blank" rel="noreferrer">装備の出典 {index + 1}</a>)}
+        </div>)}
+      </div>)}
+  </div>;
+}
+
+function BuildCard({ member, index, fixed }: { member: TeamMember; index: number; fixed?: import("./types").ResearchMemberInput }) {
   return (
     <article
       className={cn(
@@ -239,13 +257,13 @@ function BuildCard({ member, index }: { member: TeamMember; index: number }) {
         <div className="grid grid-cols-[44px_1fr] items-center gap-3">
           <AssetImage src={member.weaponImageUrl} label={member.weapon} />
           <div className="min-w-0">
-            <p className="text-xs text-slate-500">おすすめ武器</p>
+            <p className="text-xs text-slate-500">{member.starRail ? `光円錐・S${member.starRail.superimposition}` : "おすすめ武器"}</p>
             <p className="break-words text-sm font-semibold text-slate-200">
               {member.weapon}
             </p>
           </div>
         </div>
-        <div className="grid grid-cols-[44px_1fr] items-center gap-3">
+        {member.starRail ? <RelicResult member={member} fixed={fixed} /> : <div className="grid grid-cols-[44px_1fr] items-center gap-3">
           <AssetImage src={member.artifactImageUrl} label={member.artifact} />
           <div className="min-w-0">
             <p className="text-xs text-slate-500">おすすめ聖遺物</p>
@@ -254,6 +272,7 @@ function BuildCard({ member, index }: { member: TeamMember; index: number }) {
             </p>
           </div>
         </div>
+        }
         <dl className="space-y-3 border-t border-slate-800 pt-4 text-sm">
           <div>
             <dt className="text-xs text-slate-500">メインステータス</dt>
@@ -466,12 +485,14 @@ function ResultView({
           </button>
         ))}
       </div>
+      {record.teamReasoning ? <p className="mt-6 whitespace-pre-wrap break-words rounded-xl border border-slate-700 p-4 text-sm leading-6 text-slate-300">{record.teamReasoning}</p> : null}
       {tab === "build" ? (
         <div className="mt-6 grid gap-4 lg:grid-cols-2">
           {record.members.map((member, index) => (
             <BuildCard
               key={`${member.id}-${index}`}
               member={member}
+              fixed={record.inputMembers?.find(input => input.name === member.name)}
               index={index}
             />
           ))}
@@ -518,11 +539,13 @@ function ResultView({
 
 function Composer({
   value,
+  game,
   onChange,
   onSubmit,
   disabled,
 }: {
   value: string;
+  game: GameId;
   onChange: (value: string) => void;
   onSubmit: () => void;
   disabled: boolean;
@@ -545,7 +568,7 @@ function Composer({
           id="team-request"
           rows={2}
           className="max-h-36 min-h-12 min-w-0 flex-1 resize-none bg-transparent px-3 py-2 text-sm leading-6 text-slate-100 placeholder:text-slate-600 focus:outline-none disabled:cursor-not-allowed"
-          placeholder="例：アルレッキーノ、夜蘭、ベネット、鍾離を調べたい"
+          placeholder={game === "genshin" ? "例：アルレッキーノ、夜蘭、ベネット、鍾離を調べたい" : "例：ホタル、ルアン・メェイ、開拓者・調和、ギャラガーを調べたい"}
           value={value}
           onChange={(event) => onChange(event.target.value)}
           onKeyDown={(event) => {
@@ -584,15 +607,24 @@ export function ResearchChatPrototype({
 }: {
   repository?: ResearchRepository;
 }) {
-  const chat = useResearchChat(repository);
-  const [composer, setComposer] = useState("");
+  const [game, setGame] = useState<GameId>("genshin");
+  const genshinChat = useResearchChat(repository, "genshin", game === "genshin");
+  const starRailChat = useResearchChat(repository, "star_rail", game === "star_rail");
+  const chat = game === "genshin" ? genshinChat : starRailChat;
+  const [composers, setComposers] = useState<Record<GameId, string>>({ genshin: "", star_rail: "" });
+  const composer = composers[game];
+  const setComposer = (value: string) => setComposers(previous => ({ ...previous, [game]: value }));
   const [sidebarOpen, setSidebarOpen] = useState(() =>
     typeof window.matchMedia === "function"
       ? window.matchMedia("(min-width: 1024px)").matches
       : true,
   );
   const [resultTab, setResultTab] = useState<ResultTab>("build");
-  const [revising, setRevising] = useState(false);
+  const [revisions, setRevisions] = useState<Record<GameId, boolean>>({ genshin: false, star_rail: false });
+  const revising = revisions[game];
+  const setRevising = (value: boolean) => setRevisions(previous => ({ ...previous, [game]: value }));
+  const [conditionDrafts, setConditionDrafts] = useState<Record<string, { members: import("./types").ResearchMemberInput[]; title: string }>>({});
+  const draftKey = chat.conversation ? `${game}:${chat.conversation.sessionId}:${chat.conversation.updatedAt}` : "";
   const reviseButtonRef = useRef<HTMLButtonElement>(null);
   const restoreRevisionFocus = useRef(false);
   const composerRef = useRef<HTMLDivElement>(null);
@@ -813,6 +845,14 @@ export function ResearchChatPrototype({
               {chat.stage === "result" ? chat.record?.title : "新しい編成調査"}
             </p>
           </div>
+          <div className="flex flex-wrap items-center gap-2" role="group" aria-label="ゲーム切替">
+            {(["genshin", "star_rail"] as const).map(choice => <button type="button" key={choice}
+              aria-pressed={game === choice} disabled={genshinChat.busy || starRailChat.busy}
+              aria-describedby={genshinChat.busy || starRailChat.busy ? "game-switch-busy" : undefined}
+              className={cn("min-h-11 rounded-lg border px-3 text-sm disabled:opacity-50", game === choice ? "border-amber-300 text-amber-200" : "border-slate-700 text-slate-300")}
+              onClick={() => { setGame(choice); setResultTab("build"); }}>{choice === "genshin" ? "原神" : "崩壊：スターレイル"}</button>)}
+            {genshinChat.busy || starRailChat.busy ? <span id="game-switch-busy" className="text-xs text-slate-400">処理中はゲームを切り替えられません</span> : null}
+          </div>
           <div className="flex flex-wrap items-center justify-end gap-3">
             <span className="py-2 text-xs text-slate-400">
               {demo ? "デモ表示" : import.meta.env.DEV ? "開発版" : "正式版"}
@@ -839,8 +879,9 @@ export function ResearchChatPrototype({
           ) : null}
           {!chat.conversation && chat.stage !== "result" ? (
             <EmptyConversation
+              game={game}
               onUseExample={() => {
-                setComposer(EXAMPLE_PROMPT);
+                setComposer(game === "genshin" ? EXAMPLE_PROMPT : "ホタル、ルアン・メェイ、開拓者・調和、ギャラガーの4人を調べたい。");
                 focusComposer();
               }}
             />
@@ -884,6 +925,8 @@ export function ResearchChatPrototype({
                 <ResearchConditionsEditor
                   key={`${chat.conversation.sessionId}:${chat.conversation.updatedAt}`}
                   conversation={chat.conversation}
+                  initialDraft={conditionDrafts[draftKey]}
+                  onDraftChange={draft => setConditionDrafts(previous => ({ ...previous, [draftKey]: draft }))}
                   disabled={chat.busy}
                   onResearch={(members, title) => void chat.start(members, title)}
                 />
@@ -909,7 +952,7 @@ export function ResearchChatPrototype({
             </section>
           ) : null}
           {revising && chat.record && chat.conversation &&
-          (chat.stage === "result" || chat.stage === "error") ? (
+          (chat.stage === "result" || chat.stage === "error" || chat.stage === "cancelled") ? (
             <section className="mx-auto w-full max-w-5xl flex-1 px-5 py-7 sm:px-8">
               <button
                 type="button"
@@ -928,10 +971,13 @@ export function ResearchChatPrototype({
               <ResearchConditionsEditor
                 key={`${chat.conversation.sessionId}:${chat.record.teamId}`}
                 conversation={chat.conversation}
+                initialDraft={conditionDrafts[draftKey]}
+                onDraftChange={draft => setConditionDrafts(previous => ({ ...previous, [draftKey]: draft }))}
                 disabled={chat.busy}
                 revision
                 onResearch={async (members, title) => {
                   if (await chat.start(members, title)) {
+                    setConditionDrafts(previous => { const next = { ...previous }; delete next[draftKey]; return next; });
                     setRevising(false);
                     setResultTab("build");
                   }
@@ -958,6 +1004,7 @@ export function ResearchChatPrototype({
         </div>
         {chat.stage !== "result" && !revising ? <div ref={composerRef}>
           <Composer
+            game={game}
             value={composer}
             onChange={setComposer}
             onSubmit={() => void handleSubmit()}

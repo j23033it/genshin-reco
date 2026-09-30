@@ -89,3 +89,21 @@ export const DEMO_TEAM: TeamMember[] = [
     ],
   },
 ];
+
+// Real character names, explicitly illustrative values; never stored as production research.
+export const DEMO_STAR_RAIL_TEAM: TeamMember[] = [
+  { name: "ホタル", element: "炎", weapon: "とある星神の殞落を記す", tunnel: "蝗害を一掃せし鉄騎", ornament: "劫火と蓮灯の鋳煉宮" },
+  { name: "ルアン・メェイ", element: "氷", weapon: "記憶の中の姿", tunnel: "夢を弄ぶ時計屋", ornament: "生命のウェンワーク" },
+  { name: "開拓者・調和", element: "虚数", weapon: "輪契", tunnel: "夢を弄ぶ時計屋", ornament: "盗賊公国タリア" },
+  { name: "ギャラガー", element: "炎", weapon: "何が真か", tunnel: "流雲無痕の過客", ornament: "折れた竜骨" },
+].map((entry, index) => ({
+  id: `demo-hsr-${index}`, name: entry.name, element: entry.element,
+  role: "表示確認用", constellation: "0凸", weapon: entry.weapon,
+  artifact: `${entry.tunnel}（4セット）`, mainStats: "表示確認用・本調査で確認", subStats: "表示確認用・本調査で確認", targetStats: [],
+  starRail: {
+    eidolon: 0, lightCone: entry.weapon, superimposition: 1,
+    tunnel: { kind: "four_piece", set: entry.tunnel }, ornament: entry.ornament,
+    tunnelEvidence: [{ set: entry.tunnel, reason: "デモの表示例です。", conditions: "効果は本調査で確認します。", sourceUrls: [] }],
+    ornamentEvidence: { set: entry.ornament, reason: "デモの表示例です。", conditions: "効果は本調査で確認します。", sourceUrls: [] },
+  },
+}));

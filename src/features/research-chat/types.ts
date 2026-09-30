@@ -1,3 +1,13 @@
+export type GameId = "genshin" | "star_rail";
+export type TunnelSelection = { kind: "four_piece"; set: string } | { kind: "two_plus_two"; sets: [string, string] };
+export interface RelicInput { tunnel: TunnelSelection | null; ornament: string | null }
+export interface SetEvidence { set: string; reason: string; conditions: string; sourceUrls: string[]; imageUrl?: string | null }
+export interface StarRailBuild {
+  eidolon: number; lightCone: string; superimposition: number;
+  tunnel: TunnelSelection; ornament: string;
+  tunnelEvidence: SetEvidence[]; ornamentEvidence: SetEvidence;
+}
+
 export type ResearchStage =
   | "empty"
   | "collecting"
@@ -14,6 +24,8 @@ export interface ResearchMember {
 }
 
 export interface ResearchMemberInput {
+  relics?: RelicInput | null;
+  // In Star Rail: weapon=light cone, constellation=eidolon, refinement=superimposition.
   slotIndex: number;
   name: string;
   weapon?: string | null;
@@ -22,6 +34,7 @@ export interface ResearchMemberInput {
 }
 
 export interface ResearchConversation {
+  game?: GameId; // Missing discriminator belongs to legacy Genshin data.
   sessionId: string;
   status:
     | "collecting"
@@ -44,6 +57,7 @@ export interface ResearchConversation {
 }
 
 export interface TeamMember extends ResearchMember {
+  starRail?: StarRailBuild | null;
   element: string;
   role: string;
   constellation: string;
@@ -58,6 +72,7 @@ export interface TeamMember extends ResearchMember {
 }
 
 export interface ResearchedTeamSummary {
+  game?: GameId; // Missing discriminator belongs to legacy Genshin data.
   teamId: string;
   title: string;
   updatedAt: string;
@@ -66,6 +81,9 @@ export interface ResearchedTeamSummary {
 }
 
 export interface ResearchedTeamRecord {
+  inputMembers?: ResearchMemberInput[] | null;
+  teamReasoning?: string | null;
+  game?: GameId; // Missing discriminator belongs to legacy Genshin data.
   teamId: string;
   sessionId: string;
   title: string;
@@ -78,6 +96,7 @@ export interface ResearchedTeamRecord {
 }
 
 export interface ResearchProgress {
+  game?: GameId; // Missing discriminator belongs to legacy Genshin data.
   sessionId: string;
   stage: string;
   detail: string;
@@ -89,6 +108,7 @@ export interface ResearchRepository {
   sendMessage(
     message: string,
     sessionId?: string,
+    game?: GameId,
   ): Promise<ResearchConversation>;
   updateConditions(
     sessionId: string,
@@ -97,7 +117,7 @@ export interface ResearchRepository {
   ): Promise<ResearchConversation>;
   startResearch(sessionId: string): Promise<ResearchedTeamRecord>;
   cancelResearch(sessionId: string): Promise<void>;
-  listTeams(): Promise<ResearchedTeamSummary[]>;
+  listTeams(game?: GameId): Promise<ResearchedTeamSummary[]>;
   loadConversation(sessionId: string): Promise<ResearchConversation | null>;
   loadTeam(teamId: string): Promise<ResearchedTeamRecord | null>;
   renameTeam(teamId: string, title: string): Promise<ResearchedTeamRecord>;

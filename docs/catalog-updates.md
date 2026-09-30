@@ -31,3 +31,15 @@
 ### 再生成
 
 `public/data/sources` の3ファイルを編集し、`import_catalog` でJSONとmanifestを再生成する。`src-tauri/src/catalog.rs` の件数・元ファイルのSHA-256もmanifestに合わせる。Rustコマンドの前には、プロジェクトルールに従って `scripts/use-cargo-target.ps1` を実行する。
+
+## スターレイル
+
+`public/data/star-rail/catalog.json` は `star-rail-catalog-v1` の独立した名称カタログ。キャラクターの別形態・属性・運命、光円錐の運命、トンネル遺物、オーナメントを分ける。初期スナップショットは3.0までの代表的な名称を収録し、全キャラ・全装備や最新版の網羅を保証しない。カタログは効果や基礎数値の図鑑ではない。新しいキャラ・装備・別形態はここへ正式名称で追加する必要がある。曖昧な略称は受付で確認する。
+
+更新時は許可されたスターレイル領域（WIKIWIKI `/star-rail/`、Game8 `/houkaistarrail/`、GameWith `/houkaistarrail/`、HoYoWiki `/pc/hsr/` または `/m/hsr/`）で名称と運命を確認し、`gameVersion` と `catalogUpdatedAt` を合わせて更新する。HoYoWikiの取得に失敗した場合も、他ゲームのページや別サイトへ切り替えない。取得できた個別本文のURLを検証記録に残す。
+
+画像は確認できた対応する項目のURLだけを登録する。初期カタログの画像は未登録（null）で文字の代替表示を使う。URLを推測して埋めない。トンネルとオーナメントの画像は独立して扱う。名称照合に失敗した固定指定は無言で削除されず、UIとRustが再確認を求める。
+
+同時編成できない別形態には同じ `exclusiveGroup` を付ける。開拓者の各運命は `trailblazer`、三月なのかと巡狩形態は `march-7th`。丹恒と飲月のようにゲーム内で併用できる項目へこの制限を付けない。入力と保存前の結果で同じ排他関係を検査する。
+
+`npm run check` の `catalog:check` は従来の原神カタログ検証に加え、Rustの `validate_star_rail_catalog` で新しいカタログの型、ゲーム識別、ID・名称の空欄と重複を検査する。Rustコマンドの前は `AGENTS.md` と同じPowerShellでビルド先を設定する。

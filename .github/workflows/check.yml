@@ -20,4 +20,9 @@ jobs:
         with:
           workspaces: './src-tauri -> target'
       - run: npm ci
-      - run: npm run check
+      - name: 作業パスに対応したビルド先で確認
+        shell: pwsh
+        run: |
+          git rev-parse --show-toplevel
+          ./scripts/use-cargo-target.ps1
+          npm run check

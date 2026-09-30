@@ -211,6 +211,7 @@ describe("実データの編成調査UI", () => {
     expect(repository.sendMessage).toHaveBeenCalledExactlyOnceWith(
       "4人を調べたい",
       undefined,
+      "genshin",
     );
     await waitFor(() => expect(input).toHaveValue(""));
   });
@@ -229,6 +230,7 @@ describe("実データの編成調査UI", () => {
     expect(repository.sendMessage).toHaveBeenCalledExactlyOnceWith(
       "4人を調べたい\n全員無凸です",
       undefined,
+      "genshin",
     );
   });
 
@@ -249,6 +251,7 @@ describe("実データの編成調査UI", () => {
     expect(repository.sendMessage).toHaveBeenCalledExactlyOnceWith(
       "全員無凸です",
       undefined,
+      "genshin",
     );
   });
 
@@ -328,6 +331,7 @@ describe("実データの編成調査UI", () => {
     expect(repository.sendMessage).toHaveBeenLastCalledWith(
       "全員無凸です",
       "session-1",
+      "genshin",
     );
     expect(
       await screen.findByRole("button", { name: /この内容で調査する/ }),

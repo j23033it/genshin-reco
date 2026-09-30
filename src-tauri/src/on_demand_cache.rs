@@ -3,7 +3,8 @@ use crate::{
     database::{Database, DatabaseError, timestamp},
     hashing::sha256_canonical,
     on_demand_domain::{ResearchIntake, ResearchMemberInput, ResearchSource, ResearchedTeamDraft},
-    source_policy::{is_direct_content_url, normalize_source_url},
+    on_demand_store::knowledge_type,
+    source_policy::{is_direct_content_url_for, normalize_source_url_for},
 };
 use rusqlite::{OptionalExtension, Transaction, params};
 use serde::{Deserialize, Serialize};
@@ -32,6 +33,13 @@ fn normalized_members(intake: &ResearchIntake) -> Vec<ResearchMemberInput> {
     let mut members = intake.members.clone();
     for member in &mut members {
         member.name = member.name.trim().to_lowercase();
+        if let Some(relics) = &mut member.relics {
+            relics.tunnel = relics.tunnel.as_ref().map(|tunnel| tunnel.normalized());
+            relics.ornament = relics.ornament.as_ref().map(|name| name.trim().to_owned());
+            if relics.tunnel.is_none() && relics.ornament.is_none() {
+                member.relics = None;
+            }
+        }
         member.weapon = member
             .weapon
             .as_ref()
@@ -51,7 +59,9 @@ pub(crate) fn research_cache_key(
 ) -> Result<String, String> {
     intake.validate()?;
     sha256_canonical(&serde_json::json!({
-        "cacheVersion": 1,
+        "cacheVersion": 2,
+        "game": intake.game,
+        "starRailCatalog": if intake.game == crate::game::GameId::StarRail { Some(include_str!("../../public/data/star-rail/catalog.json")) } else { None },
         "members": normalized_members(intake),
         "catalog": catalog,
         "researchRevision": research_revision,
@@ -82,7 +92,8 @@ impl CachedTeamResearch {
         game_version: &str,
         now: &str,
     ) -> Option<ResearchedTeamDraft> {
-        if self.cache_key != cache_key
+        if self.draft.game != intake.game
+            || self.cache_key != cache_key
             || self.members != normalized_members(intake)
             || self.draft.game_version != game_version
             || !is_recent(&self.researched_at, now)
@@ -115,7 +126,7 @@ impl CachedTeamResearch {
                 Some(member)
             })
             .collect::<Option<Vec<_>>>()?;
-        draft.validate().ok()?;
+        draft.validate_for_members(&intake.members).ok()?;
         Some(draft)
     }
 }
@@ -132,7 +143,11 @@ impl Database {
             .query_row(
                 "SELECT payload_json FROM on_demand_knowledge
              WHERE entity_type = ?1 AND name = ?2 AND game_version = ?3",
-                params![CACHE_ENTITY_TYPE, cache_key, game_version],
+                params![
+                    knowledge_type(intake.game, CACHE_ENTITY_TYPE),
+                    cache_key,
+                    game_version
+                ],
                 |row| row.get(0),
             )
             .optional()?;
@@ -165,9 +180,14 @@ impl Database {
             ] {
                 let Some(name) = name else { continue };
                 let entry: Option<(String, String)> = statement
-                    .query_row(params![entity_type, name.trim(), game_version], |row| {
-                        Ok((row.get(0)?, row.get(1)?))
-                    })
+                    .query_row(
+                        params![
+                            knowledge_type(intake.game, entity_type),
+                            name.trim(),
+                            game_version
+                        ],
+                        |row| Ok((row.get(0)?, row.get(1)?)),
+                    )
                     .optional()?;
                 let Some((payload, researched_at)) = entry else {
                     continue;
@@ -182,11 +202,11 @@ impl Database {
                 // 他の編成の数値は渡さず、確認し直す個別ページのURLだけを使う。
                 for source in known_sources {
                     if source.title.trim().is_empty()
-                        || !is_direct_content_url(&source.url).unwrap_or(false)
+                        || !is_direct_content_url_for(intake.game, &source.url).unwrap_or(false)
                     {
                         continue;
                     }
-                    let Ok(normalized) = normalize_source_url(&source.url) else {
+                    let Ok(normalized) = normalize_source_url_for(intake.game, &source.url) else {
                         continue;
                     };
                     if seen.insert(normalized) {
@@ -218,7 +238,7 @@ pub(crate) fn save_research_cache(
          WHERE CAST(excluded.updated_at AS REAL) >= CAST(on_demand_knowledge.updated_at AS REAL)",
         params![
             format!("team-research-{}", cache.cache_key),
-            CACHE_ENTITY_TYPE,
+            knowledge_type(cache.draft.game, CACHE_ENTITY_TYPE),
             cache.cache_key,
             cache.draft.game_version,
             serde_json::to_string(cache)?,
@@ -256,7 +276,10 @@ where
         .load_research_source_hints(intake, game_version)
         .map_err(|error| error.to_string())?;
     let draft = research(hints).await?;
-    draft.validate()?;
+    if draft.game != intake.game {
+        return Err("調査結果のゲームが指定と一致しません".into());
+    }
+    draft.validate_for_members(&intake.members)?;
     let cache = (draft.game_version == game_version).then(|| CachedTeamResearch {
         cache_key: cache_key.to_owned(),
         members: normalized_members(intake),
@@ -282,10 +305,12 @@ mod tests {
 
     fn intake() -> ResearchIntake {
         ResearchIntake {
+            game: Default::default(),
             members: ["アルレッキーノ", "夜蘭", "ベネット", "鍾離"]
                 .into_iter()
                 .enumerate()
                 .map(|(index, name)| ResearchMemberInput {
+                    relics: None,
                     slot_index: index as u8,
                     name: name.into(),
                     weapon: None,
@@ -303,7 +328,7 @@ mod tests {
             "title": "テスト編成", "gameVersion": load_embedded_catalog().unwrap().game_version,
             "members": intake.members.iter().map(|member| serde_json::json!({
                 "slotIndex": member.slot_index, "id": format!("member-{}", member.slot_index),
-                "name": member.name, "element": "炎", "role": "支援", "constellation": "無凸",
+                "name": member.name, "element": "炎", "role": "支援", "constellation": format!("{}凸", member.constellation.unwrap_or(0)),
                 "imageUrl": null, "weapon": member.weapon.as_deref().unwrap_or("西風長槍"),
                 "weaponImageUrl": null, "artifact": "旧貴族のしつけ", "artifactImageUrl": null,
                 "mainStats": "HP / HP / HP", "subStats": "HP",
@@ -342,6 +367,9 @@ mod tests {
         conversation.status = ResearchConversationStatus::Succeeded;
         let draft = draft(intake);
         let record = ResearchedTeamRecord {
+            game: Default::default(),
+            team_reasoning: None,
+            input_members: None,
             team_id: crate::database::new_id("team"),
             session_id: conversation.session_id.clone(),
             title: draft.title,
@@ -354,6 +382,40 @@ mod tests {
         };
         conversation.team_id = Some(record.team_id.clone());
         (conversation, record)
+    }
+
+    #[test]
+    fn 固定遺物の条件はキャラと組で正規化し未指定とゲームを分離する() {
+        use crate::star_rail::{RelicInput, TunnelSelection};
+        let (mut input, _) = crate::star_rail::tests::sample();
+        let catalog = load_embedded_catalog().unwrap();
+        let key =
+            |input: &ResearchIntake| research_cache_key(input, &catalog, "test-revision").unwrap();
+        let unspecified = key(&input);
+        input.members[0].relics = Some(RelicInput {
+            tunnel: Some(TunnelSelection::TwoPlusTwo {
+                sets: ["草の穂ガンマン".into(), "夢を弄ぶ時計屋".into()],
+            }),
+            ornament: None,
+        });
+        let fixed = key(&input);
+        assert_ne!(unspecified, fixed);
+        let mut reordered = input.clone();
+        reordered.members.reverse();
+        for (index, member) in reordered.members.iter_mut().enumerate() {
+            member.slot_index = index as u8;
+        }
+        reordered.members[3].relics.as_mut().unwrap().tunnel = Some(TunnelSelection::TwoPlusTwo {
+            sets: ["夢を弄ぶ時計屋".into(), "草の穂ガンマン".into()],
+        });
+        assert_eq!(fixed, key(&reordered));
+        let moved = input.members[0].relics.take();
+        input.members[1].relics = moved;
+        assert_ne!(fixed, key(&input));
+        input.members[1].relics = None;
+        assert_eq!(unspecified, key(&input));
+        input.game = crate::game::GameId::Genshin;
+        assert_ne!(unspecified, key(&input));
     }
 
     #[test]

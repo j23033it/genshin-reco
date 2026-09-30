@@ -22,11 +22,11 @@ describe("オンデマンド調査のTauri契約", () => {
     await researchRepository.renameTeam("t1", "変更後");
     await researchRepository.loadConversation("s1");
     expect(vi.mocked(invoke).mock.calls).toEqual([
-      ["send_on_demand_message", { sessionId: "s1", message: "条件" }],
+      ["send_on_demand_message", { sessionId: "s1", message: "条件", game: "genshin" }],
       ["update_on_demand_conditions", { sessionId: "s1", members, title: "新しい編成" }],
       ["start_on_demand_research", { sessionId: "s1" }],
       ["cancel_on_demand_research", { sessionId: "s1" }],
-      ["list_researched_teams"],
+      ["list_researched_teams", { game: "genshin" }],
       ["load_researched_team", { teamId: "t1" }],
       ["rename_researched_team", { teamId: "t1", title: "変更後" }],
       ["load_on_demand_conversation", { sessionId: "s1" }],

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type {
+  GameId,
   ResearchConversation,
   ResearchMemberInput,
   ResearchProgress,
@@ -10,6 +11,8 @@ import type {
 } from "./types";
 
 function membersFromRecord(record: ResearchedTeamRecord): ResearchMemberInput[] {
+  if (record.inputMembers) return record.inputMembers.map(member => ({ ...member }));
+  if (record.game === "star_rail") return record.members.map((member, slotIndex) => ({ slotIndex, name: member.name, weapon: null, constellation: null, refinement: null, relics: null }));
   return record.members.map((member, slotIndex) => {
     const constellation = member.constellation.trim();
     const level = constellation === "無凸" ? 0
@@ -32,7 +35,7 @@ function errorText(error: unknown) {
       : "処理に失敗しました。もう一度お試しください。";
 }
 
-export function useResearchChat(repository: ResearchRepository) {
+export function useResearchChat(repository: ResearchRepository, game: GameId = "genshin", enabled = true) {
   const [stage, setStage] = useState<ResearchStage>("empty");
   const [conversation, setConversation] = useState<ResearchConversation | null>(
     null,
@@ -57,11 +60,11 @@ export function useResearchChat(repository: ResearchRepository) {
   const refreshTeams = useCallback(() => {
     const request = ++listOperation.current.id;
     return Promise.resolve()
-      .then(() => repository.listTeams())
+      .then(() => repository.listTeams(game))
       .then(
         (result) => {
           if (alive.current && request === listOperation.current.id) {
-            setTeams(result);
+            setTeams(result.filter(team => (team.game ?? "genshin") === game));
             setListError("");
           }
         },
@@ -74,9 +77,10 @@ export function useResearchChat(repository: ResearchRepository) {
         if (alive.current && request === listOperation.current.id)
           setListLoading(false);
       });
-  }, [repository]);
+  }, [repository, game]);
 
   useEffect(() => {
+    if (!enabled) return;
     const operationState = operation.current;
     const listState = listOperation.current;
     alive.current = true;
@@ -88,7 +92,7 @@ export function useResearchChat(repository: ResearchRepository) {
       unsubscribe.current?.();
       unsubscribe.current = null;
     };
-  }, [refreshTeams]);
+  }, [refreshTeams, enabled]);
 
   function begin(label: string) {
     if (locked.current || cancelLocked.current) return null;
@@ -115,8 +119,10 @@ export function useResearchChat(repository: ResearchRepository) {
       const result = await repository.sendMessage(
         message,
         conversation?.sessionId,
+        game,
       );
       if (!current(request)) return false;
+      if ((result.game ?? "genshin") !== game) throw new Error("会話のゲームが一致しません。");
       setConversation({
         ...result,
         title: result.title ?? (record?.sessionId === result.sessionId ? record.title : null),
@@ -162,7 +168,7 @@ export function useResearchChat(repository: ResearchRepository) {
       setConversation(selectedConversation);
       setStage("researching");
       const unlisten = await repository.subscribeProgress((event) => {
-        if (current(request) && event.sessionId === selectedConversation.sessionId)
+        if (current(request) && event.sessionId === selectedConversation.sessionId && (event.game ?? "genshin") === game)
           setProgress(event);
       });
       let stopped = false;
@@ -176,12 +182,14 @@ export function useResearchChat(repository: ResearchRepository) {
       unsubscribe.current = stop;
       const result = await repository.startResearch(selectedConversation.sessionId);
       if (!current(request)) return false;
+      if ((result.game ?? "genshin") !== game) throw new Error("調査結果のゲームが一致しません。");
       succeededOperation.current = request;
       setRecord(result);
       setConversation((previous) =>
         previous?.sessionId === result.sessionId
           ? { ...previous, status: "succeeded", title: result.title, teamId: result.teamId }
           : {
+              game,
               sessionId: result.sessionId,
               status: "succeeded",
               messages: [],
@@ -245,7 +253,9 @@ export function useResearchChat(repository: ResearchRepository) {
         throw new Error(
           "この編成は見つかりません。保存一覧を更新してください。",
         );
+      if ((result.game ?? "genshin") !== game) throw new Error("別ゲームの編成は開けません。");
       const restored = await repository.loadConversation(result.sessionId);
+      if (restored && (restored.game ?? "genshin") !== game) throw new Error("会話のゲームが一致しません。");
       if (!current(request)) return;
       setRecord(result);
       setConversation(
@@ -254,6 +264,7 @@ export function useResearchChat(repository: ResearchRepository) {
           (previous?.sessionId === result.sessionId
             ? previous
             : {
+                game,
                 sessionId: result.sessionId,
                 status: "succeeded",
                 messages: [],
