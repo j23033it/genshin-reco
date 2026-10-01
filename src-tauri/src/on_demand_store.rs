@@ -110,8 +110,12 @@ impl Database {
                 |row| row.get::<_, String>(0),
             )
             .optional()?;
-        json.map(|json| serde_json::from_str(&json).map_err(DatabaseError::from))
-            .transpose()
+        json.map(|json| {
+            let mut conversation: ResearchConversation = serde_json::from_str(&json)?;
+            restore_conversation_cone_names(&mut conversation);
+            Ok(conversation)
+        })
+        .transpose()
     }
 
     pub fn save_researched_team(
@@ -291,6 +295,7 @@ impl Database {
             .optional()?;
         json.map(|json| {
             let mut record: ResearchedTeamRecord = serde_json::from_str(&json)?;
+            restore_record_cone_names(&mut record);
             let catalog = load_embedded_catalog()
                 .map_err(|error| DatabaseError::Invalid(error.to_string()))?;
             for member in &mut record.members {
@@ -320,6 +325,7 @@ impl Database {
             .optional()?
             .ok_or_else(|| DatabaseError::Invalid("この編成は見つかりません".into()))?;
         let mut record: ResearchedTeamRecord = serde_json::from_str(&record_json)?;
+        restore_record_cone_names(&mut record);
         let conversation_json: String = transaction
             .query_row(
                 "SELECT conversation_json FROM on_demand_research_sessions WHERE session_id = ?1",
@@ -329,6 +335,7 @@ impl Database {
             .optional()?
             .ok_or_else(|| DatabaseError::Invalid("編成の会話が見つかりません".into()))?;
         let mut conversation: ResearchConversation = serde_json::from_str(&conversation_json)?;
+        restore_conversation_cone_names(&mut conversation);
         let now = timestamp();
         record.title = title.clone();
         record.updated_at = now.clone();
@@ -357,6 +364,46 @@ impl Database {
                 row.get(0)
             })
             .map_err(DatabaseError::from)
+    }
+}
+
+fn restore_cone_name(name: &mut String) {
+    // 旧カタログの同一IDに対する誤表記だけを補正する。未知の装備は変更しない。
+    let corrected = match name.as_str() {
+        "逃げ場のない夢" => "逃げ場なし",
+        "天が落ちる" => "天傾",
+        "孤独の癒し" => "孤独の癒やし",
+        _ => return,
+    };
+    *name = corrected.into();
+}
+
+fn restore_conversation_cone_names(conversation: &mut ResearchConversation) {
+    if conversation.game == GameId::StarRail {
+        for member in &mut conversation.members {
+            if let Some(name) = &mut member.weapon {
+                restore_cone_name(name);
+            }
+        }
+    }
+}
+
+fn restore_record_cone_names(record: &mut ResearchedTeamRecord) {
+    if record.game != GameId::StarRail {
+        return;
+    }
+    if let Some(inputs) = &mut record.input_members {
+        for input in inputs {
+            if let Some(name) = &mut input.weapon {
+                restore_cone_name(name);
+            }
+        }
+    }
+    for member in &mut record.members {
+        restore_cone_name(&mut member.weapon);
+        if let Some(build) = &mut member.star_rail {
+            restore_cone_name(&mut build.light_cone);
+        }
     }
 }
 
@@ -413,6 +460,129 @@ fn upsert_knowledge(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn 旧光円錐名の保存結果と会話を正式名称で再調査できる() {
+        use crate::on_demand_domain::ResearchIntake;
+        for (old, current, character) in [
+            ("逃げ場のない夢", "逃げ場なし", "ホタル"),
+            ("天が落ちる", "天傾", "ホタル"),
+            ("孤独の癒し", "孤独の癒やし", "ルカ"),
+        ] {
+            let database = Database::open_in_memory().unwrap();
+            let (mut intake, mut draft) = crate::star_rail::tests::sample();
+            intake.members[0].name = character.into();
+            intake.members[0].weapon = Some(current.into());
+            draft.members[0].name = character.into();
+            draft.members[0].weapon = current.into();
+            draft.members[0].star_rail.as_mut().unwrap().light_cone = current.into();
+            intake.validate().unwrap();
+            draft.validate_for_members(&intake.members).unwrap();
+            let mut conversation = database
+                .create_on_demand_conversation_for(GameId::StarRail)
+                .unwrap();
+            conversation.members = intake.members.clone();
+            conversation.status = ResearchConversationStatus::Succeeded;
+            conversation.team_id = Some("legacy-team".into());
+            let mut value = serde_json::to_value(&draft).unwrap();
+            value["teamId"] = serde_json::json!("legacy-team");
+            value["sessionId"] = serde_json::json!(conversation.session_id);
+            value["inputMembers"] = serde_json::json!(intake.members);
+            value["createdAt"] = serde_json::json!(conversation.created_at);
+            value["updatedAt"] = serde_json::json!(conversation.updated_at);
+            let record: ResearchedTeamRecord = serde_json::from_value(value).unwrap();
+            database
+                .save_researched_team(&conversation, &record)
+                .unwrap();
+            let expected_record = database
+                .load_researched_team(&record.team_id)
+                .unwrap()
+                .unwrap();
+            // 更新前のSQLiteに実際に保存されていた表記を再現する。
+            let mut legacy_record = record.clone();
+            legacy_record.input_members.as_mut().unwrap()[0].weapon = Some(old.into());
+            legacy_record.members[0].weapon = old.into();
+            legacy_record.members[0]
+                .star_rail
+                .as_mut()
+                .unwrap()
+                .light_cone = old.into();
+            let mut legacy_conversation = conversation.clone();
+            legacy_conversation.members[0].weapon = Some(old.into());
+            let connection = database.connection().unwrap();
+            connection
+                .execute(
+                    "UPDATE researched_teams SET result_json=?1 WHERE team_id=?2",
+                    params![
+                        serde_json::to_string(&legacy_record).unwrap(),
+                        record.team_id
+                    ],
+                )
+                .unwrap();
+            connection.execute("UPDATE on_demand_research_sessions SET conversation_json=?1 WHERE session_id=?2", params![serde_json::to_string(&legacy_conversation).unwrap(), conversation.session_id]).unwrap();
+            drop(connection);
+            let restored = database
+                .load_on_demand_conversation(&conversation.session_id)
+                .unwrap()
+                .unwrap();
+            assert_eq!(restored, conversation);
+            ResearchIntake {
+                game: restored.game,
+                members: restored.members,
+                missing_fields: vec![],
+                ready_to_research: true,
+            }
+            .validate()
+            .unwrap();
+            assert_eq!(
+                database
+                    .load_researched_team(&record.team_id)
+                    .unwrap()
+                    .unwrap(),
+                expected_record
+            );
+            let renamed = database
+                .rename_researched_team(&record.team_id, "名称変更")
+                .unwrap();
+            assert_eq!(renamed.members[0].weapon, current);
+            assert_eq!(
+                renamed.input_members.unwrap()[0].weapon.as_deref(),
+                Some(current)
+            );
+            let connection = database.connection().unwrap();
+            let stored: String = connection
+                .query_row(
+                    "SELECT result_json FROM researched_teams WHERE team_id=?1",
+                    [&record.team_id],
+                    |row| row.get(0),
+                )
+                .unwrap();
+            assert!(!stored.contains(old));
+        }
+    }
+
+    #[test]
+    fn 旧光円錐の補正は原神と未知の名前を変更しない() {
+        let database = Database::open_in_memory().unwrap();
+        let mut conversation = database.create_on_demand_conversation().unwrap();
+        conversation.members = crate::star_rail::tests::sample().0.members;
+        conversation.members[0].weapon = Some("天が落ちる".into());
+        database.save_on_demand_conversation(&conversation).unwrap();
+        assert_eq!(
+            database
+                .load_on_demand_conversation(&conversation.session_id)
+                .unwrap()
+                .unwrap(),
+            conversation
+        );
+        conversation.game = GameId::StarRail;
+        conversation.members[0].weapon = Some("未登録の固定光円錐".into());
+        restore_conversation_cone_names(&mut conversation);
+        assert_eq!(
+            conversation.members[0].weapon.as_deref(),
+            Some("未登録の固定光円錐")
+        );
+    }
     use crate::on_demand_domain::{
         ResearchMessage, ResearchMessageRole, ResearchSource, ResearchedTargetStat,
         ResearchedTeamMember,

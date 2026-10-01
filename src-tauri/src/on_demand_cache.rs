@@ -45,7 +45,12 @@ fn normalized_members(intake: &ResearchIntake) -> Vec<ResearchMemberInput> {
             .as_ref()
             .map(|name| name.trim().to_lowercase());
     }
-    members.sort_by(|left, right| left.name.cmp(&right.name));
+    if intake.game == crate::game::GameId::StarRail {
+        // ルサカなどの効果は配置に依存するため、キャラの配置交換は別条件。
+        members.sort_by_key(|member| member.slot_index);
+    } else {
+        members.sort_by(|left, right| left.name.cmp(&right.name));
+    }
     for (index, member) in members.iter_mut().enumerate() {
         member.slot_index = index as u8;
     }
@@ -59,7 +64,7 @@ pub(crate) fn research_cache_key(
 ) -> Result<String, String> {
     intake.validate()?;
     sha256_canonical(&serde_json::json!({
-        "cacheVersion": 2,
+        "cacheVersion": 3,
         "game": intake.game,
         "starRailCatalog": if intake.game == crate::game::GameId::StarRail { Some(include_str!("../../public/data/star-rail/catalog.json")) } else { None },
         "members": normalized_members(intake),
@@ -89,13 +94,13 @@ impl CachedTeamResearch {
         &self,
         cache_key: &str,
         intake: &ResearchIntake,
-        game_version: &str,
+        game_version: Option<&str>,
         now: &str,
     ) -> Option<ResearchedTeamDraft> {
         if self.draft.game != intake.game
             || self.cache_key != cache_key
             || self.members != normalized_members(intake)
-            || self.draft.game_version != game_version
+            || game_version.is_some_and(|version| self.draft.game_version != version)
             || !is_recent(&self.researched_at, now)
             || self.draft.sources.len() > 32
             || self.draft.warnings.len() > 16
@@ -136,13 +141,16 @@ impl Database {
         &self,
         cache_key: &str,
         intake: &ResearchIntake,
-        game_version: &str,
+        game_version: Option<&str>,
     ) -> Result<Option<(CachedTeamResearch, ResearchedTeamDraft)>, DatabaseError> {
         let payload: Option<String> = self
             .connection()?
             .query_row(
                 "SELECT payload_json FROM on_demand_knowledge
-             WHERE entity_type = ?1 AND name = ?2 AND game_version = ?3",
+             WHERE entity_type = ?1 AND name = ?2 AND game_version = COALESCE(?3,
+                 (SELECT game_version FROM on_demand_knowledge WHERE entity_type = ?1
+                  ORDER BY CAST(updated_at AS REAL) DESC LIMIT 1))
+             ORDER BY CAST(updated_at AS REAL) DESC LIMIT 1",
                 params![
                     knowledge_type(intake.game, CACHE_ENTITY_TYPE),
                     cache_key,
@@ -163,12 +171,13 @@ impl Database {
     fn load_research_source_hints(
         &self,
         intake: &ResearchIntake,
-        game_version: &str,
+        game_version: Option<&str>,
     ) -> Result<Vec<ResearchSource>, DatabaseError> {
         let connection = self.connection()?;
         let mut statement = connection.prepare(
             "SELECT sources_json, updated_at FROM on_demand_knowledge
-             WHERE entity_type = ?1 AND name = ?2 AND game_version = ?3",
+             WHERE entity_type = ?1 AND name = ?2 AND (?3 IS NULL OR game_version = ?3)
+             ORDER BY CAST(updated_at AS REAL) DESC LIMIT 1",
         )?;
         let now = timestamp();
         let mut seen = HashSet::new();
@@ -237,7 +246,10 @@ pub(crate) fn save_research_cache(
             updated_at = excluded.updated_at
          WHERE CAST(excluded.updated_at AS REAL) >= CAST(on_demand_knowledge.updated_at AS REAL)",
         params![
-            format!("team-research-{}", cache.cache_key),
+            format!(
+                "team-research-{}-{}",
+                cache.cache_key, cache.draft.game_version
+            ),
             knowledge_type(cache.draft.game, CACHE_ENTITY_TYPE),
             cache.cache_key,
             cache.draft.game_version,
@@ -253,7 +265,7 @@ pub(crate) async fn resolve_team_research<F, Fut>(
     database: &Database,
     intake: &ResearchIntake,
     cache_key: &str,
-    game_version: &str,
+    game_version: Option<&str>,
     refresh: bool,
     research: F,
 ) -> Result<ResearchReuseOutcome, String>
@@ -280,12 +292,14 @@ where
         return Err("調査結果のゲームが指定と一致しません".into());
     }
     draft.validate_for_members(&intake.members)?;
-    let cache = (draft.game_version == game_version).then(|| CachedTeamResearch {
-        cache_key: cache_key.to_owned(),
-        members: normalized_members(intake),
-        researched_at: timestamp(),
-        draft: draft.clone(),
-    });
+    let cache = game_version
+        .is_none_or(|version| draft.game_version == version)
+        .then(|| CachedTeamResearch {
+            cache_key: cache_key.to_owned(),
+            members: normalized_members(intake),
+            researched_at: timestamp(),
+            draft: draft.clone(),
+        });
     Ok(ResearchReuseOutcome {
         draft,
         cache,
@@ -401,14 +415,16 @@ mod tests {
         let fixed = key(&input);
         assert_ne!(unspecified, fixed);
         let mut reordered = input.clone();
+        reordered.members[0].relics.as_mut().unwrap().tunnel = Some(TunnelSelection::TwoPlusTwo {
+            sets: ["夢を弄ぶ時計屋".into(), "草の穂ガンマン".into()],
+        });
+        assert_eq!(fixed, key(&reordered));
+        // 2＋2の並びだけは同条件。キャラの配置を変えると別条件。
         reordered.members.reverse();
         for (index, member) in reordered.members.iter_mut().enumerate() {
             member.slot_index = index as u8;
         }
-        reordered.members[3].relics.as_mut().unwrap().tunnel = Some(TunnelSelection::TwoPlusTwo {
-            sets: ["夢を弄ぶ時計屋".into(), "草の穂ガンマン".into()],
-        });
-        assert_eq!(fixed, key(&reordered));
+        assert_ne!(fixed, key(&reordered));
         let moved = input.members[0].relics.take();
         input.members[1].relics = moved;
         assert_ne!(fixed, key(&input));
@@ -435,7 +451,7 @@ mod tests {
             research_cache_key(&reordered, &catalog, "revision-1").unwrap()
         );
         let reused = cache(&original, &key)
-            .matching_draft(&key, &reordered, &catalog.game_version, &timestamp())
+            .matching_draft(&key, &reordered, Some(&catalog.game_version), &timestamp())
             .unwrap();
         assert_eq!(reused.members[0].name, "鍾離");
         assert_eq!(reused.members[0].slot_index, 0);
@@ -459,7 +475,7 @@ mod tests {
             );
             assert!(
                 cached
-                    .matching_draft(&key, &changed, &catalog.game_version, &timestamp())
+                    .matching_draft(&key, &changed, Some(&catalog.game_version), &timestamp())
                     .is_none()
             );
         }
@@ -480,7 +496,7 @@ mod tests {
         );
         assert!(
             cached
-                .matching_draft(&key, &original, "次の版", &timestamp())
+                .matching_draft(&key, &original, Some("次の版"), &timestamp())
                 .is_none()
         );
     }
@@ -495,17 +511,17 @@ mod tests {
         let at_expiry = format!("{}.000000000Z", 100 + MAX_CACHE_AGE_SECONDS);
         assert!(
             cached
-                .matching_draft("key", &intake, &version, &before_expiry)
+                .matching_draft("key", &intake, Some(&version), &before_expiry)
                 .is_some()
         );
         assert!(
             cached
-                .matching_draft("key", &intake, &version, &at_expiry)
+                .matching_draft("key", &intake, Some(&version), &at_expiry)
                 .is_none()
         );
         assert!(
             cached
-                .matching_draft("key", &intake, &version, "99.000000000Z")
+                .matching_draft("key", &intake, Some(&version), "99.000000000Z")
                 .is_none()
         );
         assert!(!is_recent("壊れた日時", &timestamp()));
@@ -513,8 +529,75 @@ mod tests {
         cached.draft.sources[0].url = "https://example.com/".into();
         assert!(
             cached
-                .matching_draft("key", &intake, &version, &timestamp())
+                .matching_draft("key", &intake, Some(&version), &timestamp())
                 .is_none()
+        );
+    }
+
+    #[tokio::test]
+    async fn 名称一覧の収録版と異なる本文の版も保持して最新結果と出典を再利用する() {
+        let database = Database::open_in_memory().unwrap();
+        let (intake, mut draft) = crate::star_rail::tests::sample();
+        for version in ["4.6", "4.7", "不明"] {
+            draft.game_version = version.into();
+            let result =
+                resolve_team_research(&database, &intake, "hsr-key", None, true, |_| async {
+                    Ok(draft.clone())
+                })
+                .await
+                .unwrap();
+            assert!(!result.reused);
+            let cached = result.cache.unwrap();
+            save_cache(&database, &cached);
+            let reused =
+                resolve_team_research(&database, &intake, "hsr-key", None, false, |_| async {
+                    panic!("現行本文の正常結果を再利用する")
+                })
+                .await
+                .unwrap();
+            assert!(reused.reused);
+            assert_eq!(reused.draft.game_version, version);
+        }
+        // 別条件の実調査で新しい版が判明したら、以前の版の結果は再利用しない。
+        let mut newer = CachedTeamResearch {
+            cache_key: "another-hsr-key".into(),
+            members: normalized_members(&intake),
+            researched_at: timestamp(),
+            draft: draft.clone(),
+        };
+        newer.draft.game_version = "4.8".into();
+        save_cache(&database, &newer);
+        assert!(
+            database
+                .load_reusable_research("hsr-key", &intake, None)
+                .unwrap()
+                .is_none()
+        );
+        let now = timestamp();
+        database
+            .connection()
+            .unwrap()
+            .execute(
+                "INSERT INTO on_demand_knowledge (knowledge_id, entity_type, name, game_version,
+             payload_json, sources_json, created_at, updated_at)
+             VALUES ('hsr-character-test', ?1, ?2, '4.6', '{}', ?3, ?4, ?4)",
+                params![
+                    knowledge_type(intake.game, "character"),
+                    intake.members[0].name,
+                    serde_json::to_string(&draft.sources).unwrap(),
+                    now
+                ],
+            )
+            .unwrap();
+        assert_eq!(
+            database.load_research_source_hints(&intake, None).unwrap(),
+            draft.sources
+        );
+        assert!(
+            database
+                .load_research_source_hints(&intake, Some("3.0"))
+                .unwrap()
+                .is_empty()
         );
     }
 
@@ -528,7 +611,7 @@ mod tests {
             &database,
             &intake,
             "key",
-            &cached.draft.game_version,
+            Some(&cached.draft.game_version),
             false,
             |_| async { panic!("一致した結果があればWeb調査を呼ばない") },
         )
@@ -540,7 +623,7 @@ mod tests {
             &database,
             &intake,
             "key",
-            &cached.draft.game_version,
+            Some(&cached.draft.game_version),
             true,
             |_| async { Ok(draft(&intake)) },
         )
@@ -563,7 +646,7 @@ mod tests {
             &database,
             &intake,
             "key",
-            &cached.draft.game_version,
+            Some(&cached.draft.game_version),
             false,
             |_| async { Ok(draft(&intake)) },
         )
@@ -574,7 +657,7 @@ mod tests {
             &database,
             &intake,
             "new-key",
-            &cached.draft.game_version,
+            Some(&cached.draft.game_version),
             false,
             |_| async { Err("調査失敗".into()) },
         )
@@ -582,7 +665,7 @@ mod tests {
         assert!(failure.is_err());
         assert!(
             database
-                .load_reusable_research("new-key", &intake, &cached.draft.game_version)
+                .load_reusable_research("new-key", &intake, Some(&cached.draft.game_version))
                 .unwrap()
                 .is_none()
         );
@@ -604,7 +687,7 @@ mod tests {
             &database,
             &changed,
             "changed-key",
-            &record.game_version,
+            Some(&record.game_version),
             false,
             |sources| async move {
                 assert_eq!(sources.len(), 1);
@@ -625,13 +708,13 @@ mod tests {
             .unwrap();
         assert!(
             database
-                .load_research_source_hints(&changed, &record.game_version)
+                .load_research_source_hints(&changed, Some(&record.game_version))
                 .unwrap()
                 .is_empty()
         );
         assert!(
             database
-                .load_research_source_hints(&changed, "別の版")
+                .load_research_source_hints(&changed, Some("別の版"))
                 .unwrap()
                 .is_empty()
         );

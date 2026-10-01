@@ -67,10 +67,12 @@ export function ResearchConditionsEditor({
   return (
     <section className="mt-6 rounded-2xl border border-slate-700 bg-slate-900/70 p-4 sm:p-6" aria-labelledby="research-conditions-title">
       <h2 id="research-conditions-title" className="text-lg font-semibold text-slate-50">
-        {revision ? starRail ? "光円錐・星魂・遺物を選び直す" : "武器と凸を選び直す" : "4人の条件を選ぶ"}
+        {revision ? starRail ? "光円錐・星魂・重畳・遺物を選び直す" : "武器と凸を選び直す" : "4人の条件を選ぶ"}
       </h2>
       <p className="mt-2 text-pretty text-sm leading-6 text-slate-400">
-        {starRail ? "指定したセットは変更せず、指定していない部分を編成全体に合わせて提案します。" : revision
+        {starRail ? revision
+          ? "キャラクターはこの4人で固定します。光円錐・星魂・重畳・遺物を選んで再調査できます。指定したセットは維持し、指定していない部分を編成全体に合わせて提案します。"
+          : "星魂・光円錐・重畳が未確定なら「指定なし」のままで大丈夫。調査時に一般的な前提を選びます。遺物は指定したセットを維持し、指定していない部分を編成全体に合わせて提案します。" : revision
           ? "キャラクターはこの4人で固定します。武器・命ノ星座・精錬を選んで再調査できます。"
           : "凸や武器が未確定なら「指定なし」のままで大丈夫。調査時に一般的な前提を選びます。"}
       </p>

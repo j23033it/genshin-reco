@@ -163,6 +163,9 @@ fn apply_conditions(
         return Ok(false);
     }
 
+    let star_rail = conversation.game == GameId::StarRail;
+    let weapon_label = if star_rail { "光円錐" } else { "武器" };
+    let refinement_label = if star_rail { "重畳" } else { "精錬" };
     conversation.missing_fields = members
         .iter()
         .flat_map(|member| {
@@ -171,9 +174,9 @@ fn apply_conditions(
                 missing.push(format!("{}の凸", member.name));
             }
             if member.weapon.is_none() {
-                missing.push(format!("{}の武器", member.name));
+                missing.push(format!("{}の{weapon_label}", member.name));
             } else if member.refinement.is_none() {
-                missing.push(format!("{}の精錬", member.name));
+                missing.push(format!("{}の{refinement_label}", member.name));
             }
             missing
         })
@@ -188,12 +191,12 @@ fn apply_conditions(
             let weapon = member
                 .weapon
                 .as_deref()
-                .map(|name| format!("武器は{name}"))
-                .unwrap_or_else(|| "武器は指定なし".into());
+                .map(|name| format!("{weapon_label}は{name}"))
+                .unwrap_or_else(|| format!("{weapon_label}は指定なし"));
             let refinement = member
                 .refinement
-                .map(|value| format!("R{value}"))
-                .unwrap_or_else(|| "精錬は指定なし".into());
+                .map(|value| format!("{}{value}", if star_rail { "S" } else { "R" }))
+                .unwrap_or_else(|| format!("{refinement_label}は指定なし"));
             format!(
                 "{}：{}、{}、{}",
                 member.name, constellation, weapon, refinement
@@ -234,11 +237,9 @@ pub async fn start_on_demand_research(
     };
     intake.validate()?;
     let catalog = load_embedded_catalog().map_err(|error| error.to_string())?;
-    let game_version = if intake.game == GameId::StarRail {
-        crate::star_rail::load_star_rail_catalog()?.game_version
-    } else {
-        catalog.game_version.clone()
-    };
+    // スターレイルの名称一覧は現行版の指定ではない。保存された本文の版を維持し、
+    // 最長7日の最新結果を使う。保存済み編成からの再調査は必ず本文を取り直す。
+    let game_version = (intake.game == GameId::Genshin).then_some(catalog.game_version.as_str());
     let cache_key = research_cache_key(&intake, &catalog, &on_demand_research_revision()?)?;
     // 保存済み編成からの再調査は、同じ条件でもWebで新しい情報を取り直す。
     let refresh = conversation.team_id.is_some();
@@ -271,7 +272,7 @@ pub async fn start_on_demand_research(
         &database,
         &intake,
         &cache_key,
-        &game_version,
+        game_version,
         refresh,
         |known_sources| {
             let app = &app;
@@ -312,7 +313,11 @@ pub async fn start_on_demand_research(
                 conversation.game,
                 "validating",
                 if outcome.reused {
-                    "同じ4人・武器・凸・精錬の調査結果を再利用し、保存しています"
+                    if conversation.game == GameId::StarRail {
+                        "同じ4人・光円錐・星魂・重畳・固定遺物の調査結果を再利用し、保存しています"
+                    } else {
+                        "同じ4人・武器・凸・精錬の調査結果を再利用し、保存しています"
+                    }
                 } else {
                     "目標ステータスと根拠ページを確認しています"
                 },
@@ -346,14 +351,7 @@ pub async fn start_on_demand_research(
     coordinator.active.lock().await.remove(&session_id);
     if let Err(error) = &result {
         let cancelled = cancellation.is_cancelled();
-        conversation.status = if cancelled {
-            ResearchConversationStatus::Cancelled
-        } else {
-            ResearchConversationStatus::Failed
-        };
-        conversation.error = Some(error.clone());
-        conversation.updated_at = timestamp();
-        let _ = database.save_on_demand_conversation(&conversation);
+        let _ = save_research_failure(&database, &mut conversation, error, cancelled);
         emit_progress(
             &app,
             &session_id,
@@ -368,6 +366,24 @@ pub async fn start_on_demand_research(
         );
     }
     result
+}
+
+fn save_research_failure(
+    database: &Database,
+    conversation: &mut ResearchConversation,
+    error: &str,
+    cancelled: bool,
+) -> Result<(), String> {
+    conversation.status = if cancelled {
+        ResearchConversationStatus::Cancelled
+    } else {
+        ResearchConversationStatus::Failed
+    };
+    conversation.error = Some(error.into());
+    conversation.updated_at = timestamp();
+    database
+        .save_on_demand_conversation(conversation)
+        .map_err(|error| error.to_string())
 }
 
 fn finalize_researched_team(
@@ -390,7 +406,11 @@ fn finalize_researched_team(
     draft.validate_for_members(&conversation.members)?;
     if reused {
         draft.warnings.push(
-            "過去7日以内に同じ4人・武器・凸・精錬で調べた結果を再利用しました。最新の情報は「条件を変えて再調査」で確認できます。".into(),
+            if conversation.game == GameId::StarRail {
+                "過去7日以内に同じ4人・光円錐・星魂・重畳・固定遺物で調べた結果を再利用しました。最新の情報は「条件を変えて再調査」で確認できます。"
+            } else {
+                "過去7日以内に同じ4人・武器・凸・精錬で調べた結果を再利用しました。最新の情報は「条件を変えて再調査」で確認できます。"
+            }.into(),
         );
     }
     let now = timestamp();
@@ -537,6 +557,175 @@ fn emit_progress(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[tokio::test]
+    #[ignore = "verify-star-rail-live.ps1から明示した実SQLiteを操作し、別プロセスで再読込する"]
+    async fn 実調査の条件と結果を保存して再起動後に読み直せる() {
+        use crate::app_server::validate_on_demand_sources;
+        use serde_json::{Value, json};
+        let read_json = |name: &str| -> Value {
+            serde_json::from_slice(&std::fs::read(std::env::var_os(name).unwrap()).unwrap())
+                .unwrap()
+        };
+        let intake: ResearchIntake =
+            serde_json::from_value(read_json("GENSHIN_RECO_INTAKE_PATH")).unwrap();
+        intake.validate().unwrap();
+        assert_eq!(intake.game, GameId::StarRail);
+        let database =
+            Database::open(std::env::var_os("GENSHIN_RECO_DATABASE_PATH").unwrap()).unwrap();
+        let mode = std::env::var("GENSHIN_RECO_STORE_MODE").unwrap();
+        let mut conversation = match std::env::var("GENSHIN_RECO_SESSION_ID") {
+            Ok(id) => database.load_on_demand_conversation(&id).unwrap().unwrap(),
+            Err(_) => {
+                assert_eq!(mode, "prepare");
+                let mut conversation = database
+                    .create_on_demand_conversation_for(intake.game)
+                    .unwrap();
+                // 受付済みの4人を起点に、画面と同じ条件更新処理を使う。
+                conversation.members = intake.members.clone();
+                conversation
+            }
+        };
+        assert_eq!(conversation.game, intake.game);
+        let previous = conversation
+            .team_id
+            .as_deref()
+            .and_then(|id| database.load_researched_team(id).unwrap());
+        let previous_json = serde_json::to_value(&previous).unwrap();
+        let catalog = load_embedded_catalog().unwrap();
+        let key =
+            research_cache_key(&intake, &catalog, &on_demand_research_revision().unwrap()).unwrap();
+        match mode.as_str() {
+            "prepare" => {
+                assert_ne!(conversation.status, ResearchConversationStatus::Researching);
+                apply_conditions(
+                    &mut conversation,
+                    intake.members.clone(),
+                    Some("実Web検証：スターレイル".into()),
+                )
+                .unwrap();
+                conversation.status = ResearchConversationStatus::Researching;
+                conversation.error = None;
+                conversation.updated_at = timestamp();
+                database.save_on_demand_conversation(&conversation).unwrap();
+            }
+            "save" => {
+                assert_eq!(conversation.status, ResearchConversationStatus::Researching);
+                assert_eq!(conversation.members, intake.members);
+                let report = read_json("GENSHIN_RECO_LIVE_REPORT_PATH");
+                assert!(
+                    matches!(
+                        report["verificationKind"].as_str(),
+                        Some("operator_verified_fixture" | "app_observation")
+                    ),
+                    "確認済みの検証用出力とアプリ実出力を区別すること"
+                );
+                assert_eq!(report["intake"], serde_json::to_value(&intake).unwrap());
+                let draft: ResearchedTeamDraft =
+                    serde_json::from_value(report["output"].clone()).unwrap();
+                let opened: Vec<String> =
+                    serde_json::from_value(report["openedUrls"].clone()).unwrap();
+                validate_on_demand_sources(intake.game, &draft.sources, &opened).unwrap();
+                let outcome =
+                    resolve_team_research(&database, &intake, &key, None, true, |_| async {
+                        Ok(draft)
+                    })
+                    .await
+                    .unwrap();
+                assert!(!outcome.reused);
+                let record = finalize_researched_team(
+                    &database,
+                    &mut conversation,
+                    outcome.draft,
+                    if report["verificationKind"] == "app_observation" {
+                        outcome.cache.as_ref()
+                    } else {
+                        // 保存境界の確認用出力を、製品の調査結果として再利用しない。
+                        None
+                    },
+                    false,
+                )
+                .unwrap();
+                if let Some(previous) = &previous {
+                    assert_eq!(record.team_id, previous.team_id);
+                    assert_eq!(record.created_at, previous.created_at);
+                }
+            }
+            "cancel" | "failure" | "abort" => {
+                assert_eq!(conversation.status, ResearchConversationStatus::Researching);
+                let error = if mode == "abort" {
+                    std::env::var("GENSHIN_RECO_FAILURE_MESSAGE").expect("実行失敗の理由があること")
+                } else {
+                    let report = read_json("GENSHIN_RECO_LIVE_REPORT_PATH");
+                    assert!(report.get("output").is_none());
+                    assert_eq!(report["cancelled"], mode == "cancel");
+                    assert_eq!(report["webSearchEnabled"], false);
+                    assert_eq!(report["faultInjected"], true);
+                    report["error"]
+                        .as_str()
+                        .expect("実際の調査エラーがあること")
+                        .to_owned()
+                };
+                save_research_failure(&database, &mut conversation, &error, mode == "cancel")
+                    .unwrap();
+                let retained = conversation
+                    .team_id
+                    .as_deref()
+                    .and_then(|id| database.load_researched_team(id).unwrap());
+                assert_eq!(serde_json::to_value(retained).unwrap(), previous_json);
+            }
+            "reuse" => {
+                let mut fresh = database
+                    .create_on_demand_conversation_for(intake.game)
+                    .unwrap();
+                fresh.members = intake.members.clone();
+                let outcome =
+                    resolve_team_research(&database, &intake, &key, None, false, |_| async {
+                        panic!("同一条件の実保存結果は再検索せず使えること")
+                    })
+                    .await
+                    .unwrap();
+                assert!(outcome.reused);
+                finalize_researched_team(
+                    &database,
+                    &mut fresh,
+                    outcome.draft,
+                    outcome.cache.as_ref(),
+                    true,
+                )
+                .unwrap();
+                conversation = fresh;
+            }
+            "verify" => {
+                assert_eq!(conversation.members, intake.members);
+                assert_eq!(conversation.status, ResearchConversationStatus::Succeeded);
+                let record = previous.as_ref().unwrap();
+                assert_eq!(record.input_members.as_ref(), Some(&intake.members));
+                ResearchedTeamDraft {
+                    game: record.game,
+                    team_reasoning: record.team_reasoning.clone(),
+                    title: record.title.clone(),
+                    game_version: record.game_version.clone(),
+                    members: record.members.clone(),
+                    sources: record.sources.clone(),
+                    warnings: record.warnings.clone(),
+                }
+                .validate_for_members(&intake.members)
+                .unwrap();
+            }
+            _ => panic!("不明な実保存検証モード"),
+        }
+        let saved = conversation
+            .team_id
+            .as_deref()
+            .and_then(|id| database.load_researched_team(id).unwrap());
+        let report = json!({"mode": mode, "sessionId": conversation.session_id, "conversation": conversation, "result": saved});
+        std::fs::write(
+            std::env::var_os("GENSHIN_RECO_STORE_REPORT_PATH").unwrap(),
+            serde_json::to_vec_pretty(&report).unwrap(),
+        )
+        .unwrap();
+    }
 
     fn conversation() -> ResearchConversation {
         ResearchConversation {

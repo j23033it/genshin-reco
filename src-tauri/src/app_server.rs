@@ -1127,13 +1127,28 @@ fn on_demand_evidence_schema() -> Value {
     })
 }
 
+const STAR_RAIL_CATALOG_PURPOSE: &str = "名称カタログは正式名称・属性・運命・装備カテゴリの照合用です。収録範囲を調査対象のゲーム版と解釈しないでください。調査日現在の個別本文で現行性能を確認し、旧性能の章と混同しないでください。gameVersionは本文で確認した現行版を出してください。版を確定できない場合は不明と明記し、根拠のない版番号を補わないでください。";
+
+fn star_rail_research_catalog() -> Result<Value, String> {
+    let catalog = crate::star_rail::load_star_rail_catalog()?;
+    Ok(json!({
+        "characters": catalog.characters,
+        "lightCones": catalog.light_cones,
+        "tunnelRelics": catalog.tunnel_relics,
+        "ornaments": catalog.ornaments,
+    }))
+}
+
 fn on_demand_evidence_prompt(
     intake: &ResearchIntake,
     known_sources: &[crate::on_demand_domain::ResearchSource],
 ) -> Result<String, String> {
     if intake.game == GameId::StarRail {
-        let input = serde_json::to_string(&json!({ "intake": intake, "knownSourcePages": known_sources, "catalog": crate::star_rail::load_star_rail_catalog()? })).map_err(|e| e.to_string())?;
-        return Ok(STAR_RAIL_EVIDENCE_PROMPT.replace("{evidence_json}", &input));
+        let input = serde_json::to_string(&json!({ "intake": intake, "knownSourcePages": known_sources, "catalog": star_rail_research_catalog()? })).map_err(|e| e.to_string())?;
+        return Ok(format!(
+            "{STAR_RAIL_CATALOG_PURPOSE}\n{}",
+            STAR_RAIL_EVIDENCE_PROMPT.replace("{evidence_json}", &input)
+        ));
     }
     let queries = intake
         .members
@@ -1316,6 +1331,7 @@ fn apply_source_url_repairs(
         .into_iter()
         .collect::<HashSet<_>>();
     let mut corrected = original.clone();
+    let mut replaced_urls = HashMap::new();
     for repair in repairs {
         if !pending.remove(&repair.source_index) {
             return Err(AppServerError::StructuredOutput(
@@ -1327,6 +1343,14 @@ fn apply_source_url_repairs(
                 "出力された根拠に対応する本文URLを特定できません".into(),
             )
         })?;
+        if let Some(old_url) = original["sources"][repair.source_index]["url"].as_str()
+            && let Some(previous) = replaced_urls.insert(old_url, url)
+            && previous != url
+        {
+            return Err(AppServerError::StructuredOutput(
+                "同じ根拠URLに異なる修正先が指定されました".into(),
+            ));
+        }
         // AIからはURLだけを受け取り、数値・説明・出典の件数と順番はホストが保持する。
         corrected["sources"][repair.source_index]["url"] = json!(url);
     }
@@ -1341,7 +1365,38 @@ fn apply_source_url_repairs(
     .map_err(|error| AppServerError::StructuredOutput(error.to_string()))?;
     validate_on_demand_sources(game, &sources, opened_urls)
         .map_err(AppServerError::StructuredOutput)?;
+    if game == GameId::StarRail
+        && let Some(members) = corrected["members"].as_array_mut()
+    {
+        for member in members {
+            let Some(build) = member["starRail"].as_object_mut() else {
+                continue;
+            };
+            let mut evidence = build
+                .get_mut("tunnelEvidence")
+                .and_then(Value::as_array_mut)
+                .into_iter()
+                .flatten()
+                .collect::<Vec<_>>();
+            for item in &mut evidence {
+                repair_set_evidence_urls(item, &replaced_urls);
+            }
+            if let Some(item) = build.get_mut("ornamentEvidence") {
+                repair_set_evidence_urls(item, &replaced_urls);
+            }
+        }
+    }
     Ok(corrected)
+}
+
+fn repair_set_evidence_urls(evidence: &mut Value, replacements: &HashMap<&str, &str>) {
+    if let Some(urls) = evidence["sourceUrls"].as_array_mut() {
+        for url in urls {
+            if let Some(replacement) = url.as_str().and_then(|old| replacements.get(old)) {
+                *url = json!(replacement);
+            }
+        }
+    }
 }
 
 async fn correct_on_demand_source_urls(
@@ -1399,6 +1454,7 @@ pub(crate) fn on_demand_research_revision() -> Result<String, String> {
         "starRailPrompt": STAR_RAIL_TEAM_PROMPT,
         "starRailInstructions": STAR_RAIL_TEAM_INSTRUCTIONS,
         "starRailEvidence": STAR_RAIL_EVIDENCE_PROMPT,
+        "starRailCatalogPurpose": STAR_RAIL_CATALOG_PURPOSE,
         "prompt": ON_DEMAND_TEAM_PROMPT,
         "instructions": ON_DEMAND_TEAM_INSTRUCTIONS,
         "sourceHints": ON_DEMAND_SOURCE_HINT_INSTRUCTIONS,
@@ -1416,7 +1472,7 @@ pub(crate) fn on_demand_research_revision() -> Result<String, String> {
         "threadConfig": on_demand_thread_config(true),
         "model": ON_DEMAND_CODEX_MODEL,
         "effort": ON_DEMAND_REASONING_EFFORT,
-        "sourceSelectionVersion": 1,
+        "sourceSelectionVersion": 2,
         "schema": team_research_output_schema(),
         "sourcePolicy": include_str!("source_policy.rs"),
     }))
@@ -1439,9 +1495,8 @@ fn on_demand_team_prompt(
     };
     if intake.game == GameId::StarRail {
         prompt.push_str(&format!(
-            "\n名称カタログ: {}",
-            serde_json::to_string(&crate::star_rail::load_star_rail_catalog()?)
-                .map_err(|e| e.to_string())?
+            "\n{STAR_RAIL_CATALOG_PURPOSE}\n名称カタログ: {}",
+            serde_json::to_string(&star_rail_research_catalog()?).map_err(|e| e.to_string())?
         ));
     }
     if !known_sources.is_empty() {
@@ -1489,7 +1544,7 @@ pub(crate) async fn research_on_demand_team(
     Ok(observed.output)
 }
 
-fn validate_on_demand_sources(
+pub(crate) fn validate_on_demand_sources(
     game: GameId,
     sources: &[crate::on_demand_domain::ResearchSource],
     opened_urls: &[String],
@@ -2798,6 +2853,53 @@ fn parse_device_login_start(result: &Value) -> Result<DeviceLoginStart, AppServe
 mod tests {
     use super::*;
     use tokio::io::{AsyncWriteExt, duplex};
+
+    #[test]
+    fn 名称カタログの収録版を調査する版へ混ぜない() {
+        let catalog = star_rail_research_catalog().unwrap();
+        let full = crate::star_rail::load_star_rail_catalog().unwrap();
+        assert_eq!(catalog["characters"], json!(full.characters));
+        assert_eq!(catalog["lightCones"], json!(full.light_cones));
+        for key in ["gameVersion", "catalogUpdatedAt", "schemaVersion"] {
+            assert!(catalog.get(key).is_none());
+        }
+        let (intake, _) = crate::star_rail::tests::sample();
+        for prompt in [
+            on_demand_evidence_prompt(&intake, &[]).unwrap(),
+            on_demand_team_prompt(&intake, &[]).unwrap(),
+        ] {
+            assert!(prompt.contains(STAR_RAIL_CATALOG_PURPOSE));
+            assert!(!prompt.contains("\"gameVersion\":\"3.0\""));
+        }
+    }
+
+    #[test]
+    fn 出典の修正を各セットの同じ参照にも反映する() {
+        let (intake, draft) = crate::star_rail::tests::sample();
+        let mut original = serde_json::to_value(&draft).unwrap();
+        let old = "https://game8.jp/houkaistarrail/12345";
+        let new = "https://game8.jp/houkaistarrail/613642";
+        let corrected = apply_source_url_repairs(
+            GameId::StarRail,
+            &original,
+            &[SourceUrlRepair {
+                source_index: 0,
+                replacement_url: Some(new.into()),
+            }],
+            &[new.into()],
+        )
+        .unwrap();
+        let repaired: ResearchedTeamDraft = serde_json::from_value(corrected.clone()).unwrap();
+        repaired.validate_for_members(&intake.members).unwrap();
+        // 元の説明・条件・装備はそのまま。変更は同じURLの参照だけ。
+        original["sources"][0]["url"] = json!(new);
+        for member in original["members"].as_array_mut().unwrap() {
+            member["starRail"]["tunnelEvidence"][0]["sourceUrls"] = json!([new]);
+            member["starRail"]["ornamentEvidence"]["sourceUrls"] = json!([new]);
+        }
+        assert_eq!(corrected, original);
+        assert!(!corrected.to_string().contains(old));
+    }
 
     #[test]
     fn 資料整理と出典選択を同じゲームの本文だけに限定する() {
@@ -4245,18 +4347,28 @@ mod tests {
                 { "slotIndex": 3, "name": "鍾離", "weapon": "黒纓槍", "constellation": 0, "refinement": 5 }
             ], "readyToResearch": true, "missingFields": []
         })).expect("指定条件を解析できること");
-        let intake = if std::env::var("GENSHIN_RECO_GAME").as_deref() == Ok("star_rail") {
+        let intake = if let Some(path) = std::env::var_os("GENSHIN_RECO_INTAKE_PATH") {
+            serde_json::from_slice::<ResearchIntake>(&std::fs::read(path).unwrap()).unwrap()
+        } else if std::env::var("GENSHIN_RECO_GAME").as_deref() == Ok("star_rail") {
             crate::star_rail::tests::sample().0
         } else {
             intake
         };
+        intake.validate().expect("実調査の入力条件が正しいこと");
+        let fault = std::env::var("GENSHIN_RECO_LIVE_FAULT").unwrap_or_default();
+        assert!(matches!(fault.as_str(), "" | "cancel" | "failure"));
+        let cancellation = ResearchCancellation::default();
+        let mut fault_injected = false;
         let single_turn = std::env::var("GENSHIN_RECO_SINGLE_TURN").as_deref() == Ok("1");
         let evidence_only = std::env::var("GENSHIN_RECO_EVIDENCE_ONLY").as_deref() == Ok("1");
         let profile =
             std::env::var("GENSHIN_RECO_SOURCE_PROFILE").unwrap_or_else(|_| "gamewith".into());
         assert!(matches!(profile.as_str(), "baseline" | "gamewith"));
-        let service_profile =
-            std::env::var("GENSHIN_RECO_SERVICE_PROFILE").unwrap_or_else(|_| "fast".into());
+        let service_profile = if fault.is_empty() {
+            std::env::var("GENSHIN_RECO_SERVICE_PROFILE").unwrap_or_else(|_| "fast".into())
+        } else {
+            "default".into()
+        };
         assert!(matches!(service_profile.as_str(), "default" | "fast"));
         let fast_mode = service_profile == "fast";
         let final_effort = std::env::var("GENSHIN_RECO_FINAL_EFFORT")
@@ -4306,7 +4418,7 @@ mod tests {
             assert_eq!(config["features"]["fast_mode"], false);
             assert_eq!(config["tools"]["web_search"]["context_size"], "low");
             assert_eq!(config["tools"]["web_search"]["allowed_domains"], json!(domains));
-            let mut thread_config = on_demand_thread_config(true);
+            let mut thread_config = on_demand_thread_config(fault.is_empty());
             thread_config["service_tier"] = json!(service_profile);
             thread_config["features.fast_mode"] = json!(fast_mode);
             thread_config["tools.web_search.context_size"] = json!("low");
@@ -4314,7 +4426,7 @@ mod tests {
             let thread = slot.as_mut().expect("専用セッションがあること").request("thread/start", Some(json!({
                 "model": model, "cwd": codex_home.join("workspace"),
                 "approvalPolicy": "never", "sandbox": "read-only",
-                "developerInstructions": source_text(if intake.game == GameId::StarRail { STAR_RAIL_TEAM_INSTRUCTIONS } else { ON_DEMAND_TEAM_INSTRUCTIONS }),
+                "developerInstructions": if fault.is_empty() { source_text(if intake.game == GameId::StarRail { STAR_RAIL_TEAM_INSTRUCTIONS } else { ON_DEMAND_TEAM_INSTRUCTIONS }) } else { "通信・中断の検証用。Web検索・外部ツールは禁止。指定された整数の計算だけ行う。".into() },
                 "config": thread_config,
                 "ephemeral": true, "experimentalRawEvents": false, "persistExtendedHistory": false
             }))).await?;
@@ -4325,6 +4437,27 @@ mod tests {
                 validate_on_demand_research_thread(&thread, &model)?;
             }
             let thread_id = required_json_string(&thread, &["thread", "id"])?;
+            if fault == "failure" {
+                // 自分が起動した実App Serverだけを終了し、通信切断を確認する。
+                slot.as_mut().unwrap().rpc.child.kill().await?;
+                fault_injected = true;
+                let error = slot.as_mut().unwrap().request("account/read", None).await
+                    .expect_err("終了した接続が応答しないこと");
+                return Err(error);
+            } else if fault == "cancel" {
+                fault_injected = true;
+                let delayed_cancellation = cancellation.clone();
+                tokio::spawn(async move {
+                    tokio::time::sleep(Duration::from_secs(5)).await;
+                    delayed_cancellation.cancel();
+                });
+                let observations = run_on_demand_turn(&mut slot, &thread_id,
+                    "1から100000までの各整数の平方を一つずつ計算し、resultへ全件列挙してください。省略しないでください。",
+                    json!({"type":"object", "properties":{"result":{"type":"string"}}, "required":["result"], "additionalProperties":false}),
+                    "low", Some(&cancellation)).await?;
+                assert_eq!(observations.completed_web_calls, 0);
+                return Err(AppServerError::Protocol("中断より先に検証用ターンが完了しました".into()));
+            }
             let prompt = source_text(&on_demand_team_prompt(&intake, &[]).expect("検討の入力を作れること"));
             if evidence_only {
                 let prompt = on_demand_evidence_prompt(&intake, &[]).expect("資料収集の入力を作れること");
@@ -4362,15 +4495,31 @@ mod tests {
                 Ok(Some(ObservedOnDemandOutput { output: serde_json::from_str::<ResearchedTeamDraft>(&message)?, opened_urls: observations.opened_urls, diagnostics: json!(null) }))
             } else {
                 let evidence = on_demand_evidence_prompt(&intake, &[]).expect("資料収集の入力を作れること");
-                run_on_demand_turns(intake.game, &mut slot, &thread_id, &prompt, team_research_output_schema_for(intake.game), None, Some(&evidence)).await.map(Some)
+                run_on_demand_turns(intake.game, &mut slot, &thread_id, &prompt, team_research_output_schema_for(intake.game), Some(&cancellation), Some(&evidence)).await.map(Some)
             }
         }.await;
         if let Some(session) = slot.take() {
+            if !fault.is_empty() {
+                let web_calls: usize = session
+                    .rpc
+                    .turn_observations
+                    .lock()
+                    .await
+                    .values()
+                    .map(|observation| observation.completed_web_calls)
+                    .sum();
+                report["completedWebCalls"] = json!(web_calls);
+                assert_eq!(web_calls, 0, "通信確認では検索を行わないこと");
+            }
             session.rpc.shutdown().await;
         }
         report["elapsedSeconds"] = json!(started.elapsed().as_secs_f64());
+        report["cancelled"] = json!(cancellation.is_cancelled());
+        report["webSearchEnabled"] = json!(fault.is_empty());
+        report["faultInjected"] = json!(fault_injected);
         match &result {
             Ok(Some(observed)) => {
+                report["verificationKind"] = json!("app_observation");
                 report["output"] = serde_json::to_value(&observed.output).unwrap();
                 report["openedUrls"] = json!(observed.opened_urls);
                 report["diagnostics"] = observed.diagnostics.clone();
@@ -4394,6 +4543,18 @@ mod tests {
             tokio::fs::write(path, serde_json::to_vec_pretty(&report).unwrap())
                 .await
                 .expect("比較記録を保存できること");
+        }
+        if !fault.is_empty() {
+            assert!(
+                fault_injected,
+                "準備段階のエラーを通信切断・中断の確認成功にしないこと"
+            );
+            assert!(
+                result.is_err(),
+                "実App Serverの停止・中断がエラーになること"
+            );
+            assert_eq!(cancellation.is_cancelled(), fault == "cancel");
+            return;
         }
         let Some(observed) = result.expect("実調査の確認が完了すること") else {
             return;

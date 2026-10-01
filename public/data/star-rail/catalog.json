@@ -2,7 +2,7 @@
   "schemaVersion": "star-rail-catalog-v1",
   "game": "star_rail",
   "gameVersion": "3.0",
-  "catalogUpdatedAt": "2026-09-30",
+  "catalogUpdatedAt": "2026-10-01",
   "characters": [
     {
       "id": "hsr-character-0",
@@ -497,6 +497,38 @@
       "path": "巡狩",
       "aliases": [],
       "imageUrl": null
+    },
+    {
+      "id": "hsr-character-61",
+      "name": "彦卿",
+      "element": "氷",
+      "path": "巡狩",
+      "aliases": [],
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-character-62",
+      "name": "ルカ",
+      "element": "物理",
+      "path": "虚無",
+      "aliases": [],
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-character-63",
+      "name": "雲璃",
+      "element": "物理",
+      "path": "壊滅",
+      "aliases": [],
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-character-64",
+      "name": "ブラックスワン",
+      "element": "風",
+      "path": "虚無",
+      "aliases": [],
+      "imageUrl": null
     }
   ],
   "lightCones": [
@@ -526,13 +558,13 @@
     },
     {
       "id": "hsr-cone-4",
-      "name": "逃げ場のない夢",
+      "name": "逃げ場なし",
       "path": "壊滅",
       "imageUrl": null
     },
     {
       "id": "hsr-cone-5",
-      "name": "天が落ちる",
+      "name": "天傾",
       "path": "壊滅",
       "imageUrl": null
     },
@@ -628,7 +660,7 @@
     },
     {
       "id": "hsr-cone-21",
-      "name": "孤独の癒し",
+      "name": "孤独の癒やし",
       "path": "虚無",
       "imageUrl": null
     },
@@ -744,6 +776,12 @@
       "id": "hsr-cone-40",
       "name": "鏡の中の私",
       "path": "調和",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-42",
+      "name": "等価交換",
+      "path": "豊穣",
       "imageUrl": null
     }
   ],

@@ -95,6 +95,11 @@ pub fn is_direct_content_url_for(game: GameId, raw: &str) -> Result<bool, Source
         GameId::Genshin => ("/genshinwiki", "/genshin"),
         GameId::StarRail => ("/star-rail", "/houkaistarrail"),
     };
+    // 数字のIDにも一覧ページがある。実際の攻略メニューで確認したものは
+    // 検索の入口には使えても、装備効果の個別本文候補には含めない。
+    if game == GameId::StarRail && is_star_rail_navigation(url.host_str(), path) {
+        return Ok(false);
+    }
     match url.host_str() {
         Some("wikiwiki.jp") => {
             let decoded = percent_encoding::percent_decode_str(path)
@@ -131,6 +136,33 @@ pub fn is_direct_content_url_for(game: GameId, raw: &str) -> Result<bool, Source
             .split_once("/entry/")
             .is_some_and(|(_, id)| !id.is_empty() && id.bytes().all(|byte| byte.is_ascii_digit()))),
         _ => Ok(false),
+    }
+}
+
+fn is_star_rail_navigation(host: Option<&str>, path: &str) -> bool {
+    let id = path.rsplit('/').next().unwrap_or("");
+    match host {
+        Some("game8.jp") => [
+            "522613", "523707", "523754", "523971", "523977", "523983", "524339", "524356",
+            "524357", "524359", "524364", "524365", "524366", "524367", "524368", "524369",
+            "524370", "524371", "524372", "524373", "524374", "524375", "524376", "524662",
+            "524663", "524664", "524665", "524666", "524667", "524668", "524699", "524705",
+            "524706", "524795", "524880", "524988", "525010", "525140", "525208", "525210",
+            "525211", "525291", "525329", "525364", "525405", "525406", "525616", "619853",
+            "620483", "620491", "620614", "620773", "621061", "649313", "650087", "650951",
+            "653235", "654569", "663497", "686477", "698597", "704297", "736857", "736858",
+            "736859", "754020", "760838", "761469", "764130", "764148",
+        ]
+        .contains(&id),
+        Some("gamewith.jp") => [
+            "387676", "387751", "387752", "387753", "392812", "392916", "392917", "392918",
+            "392919", "392920", "392921", "392922", "392923", "392924", "392925", "392926",
+            "392927", "392928", "392929", "392930", "392931", "394481", "395118", "396232",
+            "396257", "396729", "407940", "422627", "432939", "437010", "438009", "482015",
+            "483233", "483675", "484221", "484344", "484646", "538540", "545450", "545542",
+        ]
+        .contains(&id),
+        _ => false,
     }
 }
 
@@ -207,6 +239,33 @@ mod tests {
 #[cfg(test)]
 mod star_rail_tests {
     use super::*;
+    #[test]
+    fn 数字番号の一覧を拒否して実在する個別本文と公式wiki本文を許可する() {
+        for url in [
+            "https://game8.jp/houkaistarrail/523971",
+            "https://game8.jp/houkaistarrail/525616#ornament",
+            "https://gamewith.jp/houkaistarrail/article/show/387753",
+            "https://gamewith.jp/houkaistarrail/article/show/394481",
+        ] {
+            assert!(
+                !is_direct_content_url_for(GameId::StarRail, url).unwrap(),
+                "{url}"
+            );
+        }
+        for url in [
+            "https://game8.jp/houkaistarrail/613642",
+            "https://game8.jp/houkaistarrail/524823",
+            "https://wiki.hoyolab.com/pc/hsr/entry/1537?crawler=Googlebot",
+        ] {
+            assert!(
+                is_direct_content_url_for(GameId::StarRail, url).unwrap(),
+                "{url}"
+            );
+        }
+        assert!(
+            is_direct_content_url_for(GameId::Genshin, "https://game8.jp/genshin/523971").unwrap()
+        );
+    }
     #[test]
     fn スターレイル本文と原神を相互に分離する() {
         for url in [

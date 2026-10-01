@@ -397,6 +397,33 @@ pub(crate) mod tests {
     }
 
     #[test]
+    fn 実在する収録対象と正式な光円錐名を固定指定できる() {
+        let (mut intake, _) = sample();
+        for (index, name) in ["彦卿", "ルカ", "雲璃", "ブラックスワン"]
+            .into_iter()
+            .enumerate()
+        {
+            intake.members[index].name = name.into();
+            intake.members[index].weapon = None;
+            intake.members[index].refinement = None;
+        }
+        intake.validate().unwrap();
+        for name in ["逃げ場なし", "天傾"] {
+            let (mut intake, _) = sample();
+            intake.members[0].weapon = Some(name.into());
+            intake.validate().unwrap();
+        }
+        for (slot, name) in [(1, "孤独の癒やし"), (3, "等価交換")] {
+            let (mut intake, _) = sample();
+            if slot == 1 {
+                intake.members[slot].name = "ルカ".into();
+            }
+            intake.members[slot].weapon = Some(name.into());
+            intake.validate().unwrap();
+        }
+    }
+
+    #[test]
     fn 代表編成のモチーフ光円錐も正式名称と運命で指定できる() {
         let (mut intake, _) = sample();
         intake.members[0].weapon = Some("夢が帰り着く場所".into());
