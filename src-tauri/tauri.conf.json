@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "原神 聖遺物レコメンダー",
+        "title": "ビルドレコメンダー",
         "width": 1440,
         "height": 900,
         "minWidth": 960,

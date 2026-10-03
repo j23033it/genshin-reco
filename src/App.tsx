@@ -80,7 +80,7 @@ function LoadingScreen() {
     <main className="grid min-h-dvh place-items-center bg-slate-950 px-6 text-slate-100">
       <div className="max-w-md text-center" role="status" aria-live="polite">
         <p className="text-sm font-semibold text-amber-400">凍結カタログを検証中</p>
-        <h1 className="mt-3 text-balance text-3xl font-bold">原神ビルド推薦を準備しています</h1>
+        <h1 className="mt-3 text-balance text-3xl font-bold">ビルドレコメンダーを準備しています</h1>
       </div>
     </main>
   );
@@ -545,7 +545,7 @@ function Workspace({ catalog }: { catalog: Catalog }) {
         >
             <div className="flex items-start justify-between gap-3">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-amber-400">Genshin Reco</p>
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-amber-400">ビルドレコメンダー</p>
                 <h1 className="mt-2 text-balance text-xl font-bold">根拠付き編成ビルド</h1>
                 <p className="mt-2 text-sm leading-6 text-slate-400">
                   Ver.{catalog.gameVersion} / {catalog.characters.length}キャラ

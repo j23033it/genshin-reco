@@ -531,6 +531,12 @@ describe("実データの編成調査UI", () => {
     expect(screen.queryByRole("textbox")).not.toBeInTheDocument();
     expect(screen.getByRole("group", { name: "テストキャラの条件" })).toBeInTheDocument();
     expect(screen.getByRole("group", { name: "夜蘭の条件" })).toBeInTheDocument();
+    // This legacy fixture contains unknown characters/equipment. Confirm before resubmitting.
+    expect(screen.getByRole("button", { name: "この条件で再調査する" })).toBeDisabled();
+    for (const select of screen.getAllByRole("combobox", { name: "武器" })) {
+      await waitFor(() => expect(select).toBeEnabled());
+      await user.selectOptions(select, "");
+    }
     await user.click(screen.getByRole("button", { name: "この条件で再調査する" }));
     await waitFor(() => expect(repository.updateConditions).toHaveBeenCalledWith(
       "session-1", expect.arrayContaining([expect.objectContaining({ name: "テストキャラ" })]), "テスト編成",

@@ -3,6 +3,7 @@ import type { ChangeEvent } from "react";
 import type { AnalysisMode } from "../../domain/analysisTypes";
 import type { Catalog, Character, Weapon } from "../../domain/catalogTypes";
 import { cn } from "../../lib/cn";
+import { EquipmentSelect } from "../../components/EquipmentSelect";
 import {
   validatePartyDraft,
   type PartyValidationError,
@@ -109,14 +110,6 @@ function CharacterOption({ character, disabled }: { character: Character; disabl
   );
 }
 
-function WeaponOption({ weapon, disabled }: { weapon: Weapon; disabled: boolean }) {
-  return (
-    <option value={weapon.id} disabled={disabled}>
-      {weapon.name}（★{weapon.rarity}）{disabled ? " — 使用不可" : ""}
-    </option>
-  );
-}
-
 function PartySlot({
   catalog,
   characterById,
@@ -163,10 +156,9 @@ function PartySlot({
     [character, matchingCharacters],
   );
   const weaponOptions = useMemo(
-    () => (character ? catalog.weapons.filter((weapon) => weapon.weaponType === character.weaponType) : []),
+    () => (character?.weaponType ? catalog.weapons.filter((weapon) => weapon.weaponType === character.weaponType) : []),
     [catalog.weapons, character],
   );
-  const currentWeaponIsVisible = member.weaponId !== null && weaponOptions.some((weapon) => weapon.id === member.weaponId);
   const selectedTravelerKey = member.characterId?.startsWith("traveler-") || member.characterId?.startsWith("traveler_") || member.characterId === "traveler" ? "traveler" : null;
 
   return (
@@ -212,18 +204,18 @@ function PartySlot({
               const characterId = event.target.value || null;
               const nextCharacter = characterId ? characterById.get(characterId) : undefined;
               onChange(slotIndex, (previousMember) => {
-                const previousCharacter = previousMember.characterId
-                  ? characterById.get(previousMember.characterId)
+                const previousWeapon = previousMember.weaponId
+                  ? weaponById.get(previousMember.weaponId)
                   : undefined;
-                const sameWeaponType =
-                  nextCharacter !== undefined &&
-                  previousCharacter !== undefined &&
-                  nextCharacter.weaponType === previousCharacter.weaponType;
+                const compatibleWeapon =
+                  Boolean(nextCharacter?.weaponType) &&
+                  previousWeapon !== undefined &&
+                  nextCharacter?.weaponType === previousWeapon.weaponType;
                 return {
                   ...previousMember,
                   characterId,
-                  weaponId: sameWeaponType ? previousMember.weaponId : null,
-                  refinement: sameWeaponType ? previousMember.refinement : 1,
+                  weaponId: compatibleWeapon ? previousMember.weaponId : null,
+                  refinement: compatibleWeapon ? previousMember.refinement : 1,
                 };
               });
             }}
@@ -248,29 +240,20 @@ function PartySlot({
         </div>
 
         <div className="min-w-0">
-          <label htmlFor={`party-weapon-${slotIndex}`} className="text-sm font-semibold text-slate-200">
-            武器
-          </label>
-          <select
+          <EquipmentSelect
+            key={member.characterId ?? "empty"}
             id={`party-weapon-${slotIndex}`}
-            className="mt-2 min-h-11 w-full min-w-0 rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100 hover:border-slate-500 disabled:cursor-not-allowed disabled:opacity-60"
+            label="武器"
             value={member.weaponId ?? ""}
-            onChange={(event) => {
-              const weaponId = event.target.value || null;
+            options={weaponOptions.map(weapon => ({ value: weapon.id, label: `${weapon.name}（★${weapon.rarity}）` }))}
+            onChange={value => {
+              const weaponId = value || null;
               onChange(slotIndex, (previousMember) => ({ ...previousMember, weaponId }));
             }}
             disabled={disabled || character === undefined}
-          >
-            <option value="">{character ? "武器を選択" : "先にキャラクターを選択"}</option>
-            {member.weaponId && !currentWeaponIsVisible && (
-              <option value={member.weaponId} disabled>
-                現在の武器（種別不一致）
-              </option>
-            )}
-            {weaponOptions.map((weapon) => (
-              <WeaponOption key={weapon.id} weapon={weapon} disabled={false} />
-            ))}
-          </select>
+            searchDisabled={!character?.weaponType}
+            emptyLabel={character ? "武器を選択" : "先にキャラクターを選択"}
+          />
           {character && <p className="mt-2 text-xs text-slate-400">武器種: {character.weaponType}</p>}
         </div>
 
