@@ -120,6 +120,19 @@ async function send(
 }
 
 describe("実データの編成調査UI", () => {
+  it("武器名と構造化した精錬ランクを保存結果で表示する", async () => {
+    const { repository } = setupRepository();
+    repository.listTeams = vi.fn(async () => [{ teamId: record.teamId, title: record.title, updatedAt: record.updatedAt, memberImageUrls: [], memberNames: ["テストキャラ"] }]);
+    repository.loadTeam = vi.fn(async () => ({
+      ...record,
+      members: [{ ...record.members[0], weapon: "蝶の羽化", refinement: 1 }],
+    }));
+    render(<ResearchChatPrototype repository={repository} />);
+    await userEvent.setup().click(await screen.findByRole("button", { name: /テスト編成/ }));
+    expect(await screen.findByText("蝶の羽化")).toBeInTheDocument();
+    expect(screen.getByText("おすすめ武器・R1")).toBeInTheDocument();
+  });
+
   it("初回表示と新規ボタン操作後はクリックせず入力できる", async () => {
     const user = userEvent.setup();
     const { repository } = setupRepository();

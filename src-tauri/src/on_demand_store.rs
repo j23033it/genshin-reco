@@ -151,8 +151,9 @@ impl Database {
             sources: record.sources.clone(),
             warnings: record.warnings.clone(),
         };
-        // Revalidate Star Rail constraints at the persistence boundary too.
-        if record.game == GameId::StarRail {
+        // Old Genshin records without an input snapshot remain readable/saveable.
+        // New results for both games must preserve the request at persistence too.
+        if record.game == GameId::StarRail || record.input_members.is_some() {
             if record.input_members.as_ref() != Some(&conversation.members) {
                 return Err(DatabaseError::Invalid(
                     "保存条件が会話と一致しません".into(),
@@ -590,6 +591,7 @@ mod tests {
 
     fn member(slot_index: u8) -> ResearchedTeamMember {
         ResearchedTeamMember {
+            refinement: Some(1),
             star_rail: None,
             slot_index,
             id: format!("character-{slot_index}"),

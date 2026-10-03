@@ -287,11 +287,11 @@ where
     let hints = database
         .load_research_source_hints(intake, game_version)
         .map_err(|error| error.to_string())?;
-    let draft = research(hints).await?;
+    let mut draft = research(hints).await?;
     if draft.game != intake.game {
         return Err("調査結果のゲームが指定と一致しません".into());
     }
-    draft.validate_for_members(&intake.members)?;
+    draft.normalize_for_intake(intake)?;
     let cache = game_version
         .is_none_or(|version| draft.game_version == version)
         .then(|| CachedTeamResearch {
@@ -343,7 +343,7 @@ mod tests {
             "members": intake.members.iter().map(|member| serde_json::json!({
                 "slotIndex": member.slot_index, "id": format!("member-{}", member.slot_index),
                 "name": member.name, "element": "炎", "role": "支援", "constellation": format!("{}凸", member.constellation.unwrap_or(0)),
-                "imageUrl": null, "weapon": member.weapon.as_deref().unwrap_or("西風長槍"),
+                "imageUrl": null, "weapon": member.weapon.as_deref().unwrap_or("西風長槍"), "refinement": member.refinement.unwrap_or(1),
                 "weaponImageUrl": null, "artifact": "旧貴族のしつけ", "artifactImageUrl": null,
                 "mainStats": "HP / HP / HP", "subStats": "HP",
                 "targetStats": [

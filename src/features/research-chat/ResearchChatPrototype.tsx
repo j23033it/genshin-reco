@@ -257,7 +257,7 @@ function BuildCard({ member, index, fixed }: { member: TeamMember; index: number
         <div className="grid grid-cols-[44px_1fr] items-center gap-3">
           <AssetImage src={member.weaponImageUrl} label={member.weapon} />
           <div className="min-w-0">
-            <p className="text-xs text-slate-500">{member.starRail ? `光円錐・S${member.starRail.superimposition}` : "おすすめ武器"}</p>
+            <p className="text-xs text-slate-500">{member.starRail ? `光円錐・S${member.starRail.superimposition}` : member.refinement ? `おすすめ武器・R${member.refinement}` : "おすすめ武器"}</p>
             <p className="break-words text-sm font-semibold text-slate-200">
               {member.weapon}
             </p>

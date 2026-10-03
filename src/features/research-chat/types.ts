@@ -57,6 +57,7 @@ export interface ResearchConversation {
 }
 
 export interface TeamMember extends ResearchMember {
+  refinement?: number | null;
   starRail?: StarRailBuild | null;
   element: string;
   role: string;
