@@ -728,7 +728,7 @@ export function ResearchChatPrototype({
           >
             <div className="flex items-center justify-between gap-3">
               <div>
-                <p className="font-bold">編成ノート</p>
+                <p className="font-bold">ビルドレコメンダー</p>
                 <p className="text-xs text-slate-500">Codexで調べて保存</p>
               </div>
               <button

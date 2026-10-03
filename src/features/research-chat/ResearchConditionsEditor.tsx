@@ -3,6 +3,7 @@ import type { Catalog, StarRailCatalog } from "../../domain/catalogTypes";
 import { loadCatalog, loadStarRailCatalog } from "../catalog/loadCatalog";
 import { cn } from "../../lib/cn";
 import { OperationProgress } from "../../components/OperationProgress";
+import { EquipmentSelect } from "../../components/EquipmentSelect";
 import type { ResearchConversation, ResearchMemberInput } from "./types";
 
 import { StarRailRelicsEditor } from "./StarRailRelicsEditor";
@@ -62,7 +63,14 @@ export function ResearchConditionsEditor({
     onDraftChange?.({ members: next, title });
   };
 
-  const inputErrors = starRail ? members.map(member => validateRelicInput(member, starRailCatalog)).filter(Boolean) : [];
+  const equipmentErrors = members.flatMap(member => {
+    if (!member.weapon || (!catalog && !catalogFailed)) return [];
+    const character = catalog?.characters.find(entry => entry.name === member.name);
+    const compatible = character?.weaponType && catalog?.weapons.some(weapon => weapon.name === member.weapon && weapon.weaponType === character.weaponType);
+    return compatible ? [] : [`${member.name}の${starRail ? "光円錐" : "武器"}「${member.weapon}」は装備可能と確認できません。選び直すか「指定なし」に戻してください。`];
+  });
+  // Equipment is checked above for both games; retain Star Rail's character/relic validation.
+  const inputErrors = starRail ? members.map(member => validateRelicInput({ ...member, weapon: null }, starRailCatalog)).filter(Boolean) : [];
 
   return (
     <section className="mt-6 rounded-2xl border border-slate-700 bg-slate-900/70 p-4 sm:p-6" aria-labelledby="research-conditions-title">
@@ -94,9 +102,7 @@ export function ResearchConditionsEditor({
       </div> : null}
       {catalogFailed ? (
         <p role="status" className="mt-3 text-sm text-amber-200">
-          {starRail ? "カタログを読み込めません。指定は保持しています。読み込みが復旧してから再確認してください。" : revision
-            ? "武器一覧を読み込めません。現在の武器か「指定なし」を選べます。"
-            : "武器一覧を読み込めないため、武器名は手入力できます。"}
+          {starRail ? "カタログを読み込めません。指定は保持しています。画面を開き直して再確認してください。" : "カタログを読み込めません。指定は保持しています。装備を「指定なし」に戻すか、画面を開き直して再確認してください。"}
         </p>
       ) : null}
       {!catalog && !catalogFailed ? (
@@ -108,11 +114,8 @@ export function ResearchConditionsEditor({
             (entry) => entry.name === member.name,
           );
           const weapons = catalog?.weapons.filter(
-            (weapon) => !character || weapon.weaponType === character.weaponType,
+            (weapon) => Boolean(character?.weaponType) && weapon.weaponType === character?.weaponType,
           );
-          const selectedOutsideCatalog =
-            member.weapon &&
-            !weapons?.some((weapon) => weapon.name === member.weapon);
           const weaponId = `weapon-${member.slotIndex}`;
           const refinementId = `refinement-${member.slotIndex}`;
           return (
@@ -151,56 +154,35 @@ export function ResearchConditionsEditor({
                   })}
                 </div>
               </fieldset>
-              <div className="mt-4 grid gap-3 sm:grid-cols-[minmax(0,1fr)_8rem]">
+              <div className="mt-4 grid gap-3 sm:grid-cols-[minmax(0,1fr)_6rem]">
                 <div className="min-w-0">
-                  <label htmlFor={weaponId} className="mb-2 block text-sm font-medium text-slate-300">
-                    {starRail ? "光円錐" : "武器"}
-                  </label>
-                  {catalogFailed && !revision ? (
-                    <input
-                      id={weaponId}
-                      type="text"
-                      value={member.weapon ?? ""}
-                      placeholder="空欄なら指定なし"
-                      disabled={disabled}
-                      onChange={(event) => changeMember(member.slotIndex, {
-                        weapon: event.target.value || null,
-                        refinement: null,
-                      })}
-                      className="min-h-11 w-full rounded-lg border border-slate-600 bg-slate-900 px-3 text-sm text-slate-100 focus-visible:outline-2 focus-visible:outline-amber-300 disabled:opacity-50"
-                    />
-                  ) : (
-                    <select
-                      id={weaponId}
-                      value={member.weapon ?? ""}
-                      disabled={disabled || (!catalog && !catalogFailed)}
-                      onChange={(event) => changeMember(member.slotIndex, {
-                        weapon: event.target.value || null,
-                        refinement: null,
-                      })}
-                      className="min-h-11 w-full rounded-lg border border-slate-600 bg-slate-900 px-3 text-sm text-slate-100 focus-visible:outline-2 focus-visible:outline-amber-300 disabled:opacity-50"
-                    >
-                      <option value="">指定なし（未確定）</option>
-                      {catalogFailed && member.weapon ? (
-                        <option value={member.weapon}>{member.weapon}</option>
-                      ) : null}
-                      {!catalogFailed && selectedOutsideCatalog ? (
-                        <option value={member.weapon ?? ""}>{member.weapon}</option>
-                      ) : null}
-                      {weapons?.map((weapon) => (
-                        <option key={weapon.id} value={weapon.name}>{weapon.name}</option>
-                      ))}
-                    </select>
-                  )}
+                  <EquipmentSelect
+                    key={`${conversation.game ?? "genshin"}:${member.name}`}
+                    id={weaponId}
+                    label={starRail ? "光円錐" : "武器"}
+                    value={member.weapon ?? ""}
+                    options={(weapons ?? []).map(weapon => ({ value: weapon.name, label: weapon.name }))}
+                    disabled={disabled || (!catalog && !catalogFailed)}
+                    searchDisabled={!character?.weaponType}
+                    onChange={value => changeMember(member.slotIndex, {
+                      weapon: value || null,
+                      refinement: null,
+                    })}
+                  />
+                  {catalog && !character?.weaponType ? (
+                    <p className="mt-2 text-xs text-amber-200">
+                      {starRail ? "運命" : "武器種"}をカタログで確認できないため、候補を表示できません。{starRail ? "キャラクター名・形態を確認するか、カタログを更新してください。" : "「指定なし」で進むか、カタログを更新してください。"}
+                    </p>
+                  ) : null}
                 </div>
-                <div>
+                <div className="self-end">
                   <label htmlFor={refinementId} className="mb-2 block text-sm font-medium text-slate-300">
                     {starRail ? "重畳" : "精錬"}
                   </label>
                   <select
                     id={refinementId}
                     value={member.refinement ?? ""}
-                    disabled={disabled || !member.weapon}
+                    disabled={disabled || !member.weapon || !weapons?.some(weapon => weapon.name === member.weapon)}
                     onChange={(event) => changeMember(member.slotIndex, {
                       refinement: event.target.value ? Number(event.target.value) : null,
                     })}
@@ -218,10 +200,11 @@ export function ResearchConditionsEditor({
           );
         })}
       </div>
+      {equipmentErrors.length ? <p role="alert" className="mt-4 whitespace-pre-line break-words text-sm text-amber-200">{equipmentErrors.join("\n")}</p> : null}
       {inputErrors.length ? <p role="alert" className="mt-4 break-words text-sm text-amber-200">{[...new Set(inputErrors)].join("\n")}</p> : null}
       <button
         type="button"
-        disabled={disabled || inputErrors.length > 0}
+        disabled={disabled || (!catalog && !catalogFailed) || equipmentErrors.length > 0 || inputErrors.length > 0}
         className="mt-6 inline-flex min-h-11 items-center justify-center rounded-xl bg-amber-300 px-5 py-2 font-semibold text-slate-950 hover:bg-amber-200 disabled:cursor-not-allowed disabled:opacity-50"
         onClick={() => onResearch(members, title.trim() || null)}
       >

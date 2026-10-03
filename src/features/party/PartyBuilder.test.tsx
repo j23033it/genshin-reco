@@ -1,5 +1,5 @@
 import "@testing-library/jest-dom/vitest";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { useState } from "react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
@@ -106,6 +106,43 @@ describe("PartyBuilder", () => {
     expect(weaponSelect.querySelector('option[value="bow-weapon"]')).not.toBeInTheDocument();
   });
 
+  it("武器検索中も武器種を限定し、キャラ変更で検索と不適合武器を解除する", async () => {
+    const user = userEvent.setup();
+    function ControlledBuilder() {
+      const [draft, setDraft] = useState(fullDraft());
+      return <PartyBuilder catalog={catalog} draft={draft} onChange={setDraft} onAnalyze={vi.fn()} />;
+    }
+    render(<ControlledBuilder />);
+    const slot = within(screen.getByTestId("party-slot-1"));
+    await user.type(slot.getByRole("searchbox", { name: "武器を検索" }), "両手剣");
+    expect(slot.getByText("一致する武器はありません。 選択中の装備は保持しています。")).toBeInTheDocument();
+    expect(slot.getByRole("combobox", { name: "武器" })).toHaveValue("sword");
+    expect(slot.queryByRole("option", { name: "両手剣（★5）" })).not.toBeInTheDocument();
+    // Release the third slot so its claymore character can move to the first slot.
+    await user.selectOptions(screen.getAllByRole("combobox", { name: "キャラクター" })[2], "");
+    await user.selectOptions(slot.getByRole("combobox", { name: "キャラクター" }), "claymore");
+    expect(slot.getByRole("searchbox", { name: "武器を検索" })).toHaveValue("");
+    const select = slot.getByRole("combobox", { name: "武器" });
+    expect(select).toHaveValue("");
+    expect(within(select).queryByRole("option", { name: /片手剣/ })).not.toBeInTheDocument();
+    await user.selectOptions(select, "claymore-weapon");
+    expect(select).toHaveValue("claymore-weapon");
+    expect(slot.getByRole("combobox", { name: "精錬" })).toHaveValue("1");
+  });
+
+  it("保存済みの種別不一致武器は候補にせず、分析を止める", () => {
+    const draft = fullDraft();
+    draft.members[0].weaponId = "bow-weapon";
+    renderBuilder(draft);
+    const slot = within(screen.getByTestId("party-slot-1"));
+    const select = slot.getByRole("combobox", { name: "武器" });
+    expect(select).toHaveAttribute("aria-invalid", "true");
+    expect(within(select).queryByRole("option", { name: "弓（★4）" })).not.toBeInTheDocument();
+    expect(within(select).getByRole("option", { name: "装備を選び直してください" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "分析を開始" })).toBeDisabled();
+    expect(screen.getAllByText(/武器種が一致していません/).length).toBeGreaterThan(0);
+  });
+
   it("名前・元素・武器種でキャラクター候補を検索できる", async () => {
     const user = userEvent.setup();
     function ControlledBuilder() {
@@ -189,6 +226,18 @@ describe("PartyBuilder", () => {
     fireEvent.change(characterSelect, { target: { value: "claymore" } });
     const reset = onChange.mock.calls[onChange.mock.calls.length - 1]?.[0] as PartyDraft;
     expect(reset.members[0]).toMatchObject({ characterId: "claymore", weaponId: null, refinement: 1 });
+  });
+
+  it("同じ武器種の別キャラへ変更しても、保存済みの不適合・未登録武器は解除する", () => {
+    for (const weaponId of ["bow-weapon", "unknown"]) {
+      const draft = fullDraft();
+      draft.members[0] = { ...draft.members[0], weaponId, refinement: 4 };
+      const onChange = vi.fn();
+      const view = renderBuilder(draft, onChange);
+      fireEvent.change(screen.getAllByLabelText("キャラクター")[0], { target: { value: "traveler-geo" } });
+      expect(onChange.mock.lastCall?.[0].members[0]).toMatchObject({ characterId: "traveler-geo", weaponId: null, refinement: 1 });
+      view.unmount();
+    }
   });
 
   it("分析可能な編成では分析だけを呼び出せる", async () => {

@@ -2627,7 +2627,7 @@ async fn start_managed_session(app: &tauri::AppHandle) -> Result<ManagedAppServe
             Some(json!({
                 "clientInfo": {
                     "name": "genshin_reco",
-                    "title": "原神 聖遺物レコメンダー",
+                    "title": "ビルドレコメンダー",
                     "version": env!("CARGO_PKG_VERSION")
                 }
             })),

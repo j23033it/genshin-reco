@@ -98,10 +98,9 @@ const validSavedParty: PartyDraft = {
 async function fillValidParty(user: ReturnType<typeof userEvent.setup>, name: string) {
   await user.type(screen.getByRole("textbox", { name: "編成名" }), name);
   const characterSelects = screen.getAllByRole("combobox", { name: "キャラクター" });
-  const weaponSelects = screen.getAllByRole("combobox", { name: "武器" });
   for (const [index, characterId] of ["char-a", "char-b", "char-c", "char-d"].entries()) {
     await user.selectOptions(characterSelects[index], characterId);
-    await user.selectOptions(weaponSelects[index], "weapon-a");
+    await user.selectOptions(screen.getAllByRole("combobox", { name: "武器" })[index], "weapon-a");
   }
 }
 

@@ -3,7 +3,7 @@ name: genshin-reco-release
 description: このリポジトリのWindows版アプリをGitHub経由で更新・公開するときに、版番号、UIの開発版確認、署名付きビルド、正式公開、公開後の保存データ確認を扱う。公開手順の見直しにも使う。
 ---
 
-# 原神 聖遺物レコメンダーの正式版公開
+# ビルドレコメンダーの正式版公開
 
 このリポジトリ専用。ソースと変更履歴、配布物は公開の `j23033it/genshin-reco-releases` に統合している。以前の非公開リポジトリ `j23033it/genshin-reco` は過去の Issue・PR と作業ブランチを保管するアーカイブで、今後の開発・検査・公開には使わない。既存アプリの更新先 URL を保つため、統合先のリポジトリ名を変更しない。配布物は Windows 用 NSIS インストーラーと `latest.json`。タグは `app-v<版番号>`、配布名は `genshin-reco_<版番号>_x64-setup.exe`。
 
@@ -16,7 +16,7 @@ description: このリポジトリのWindows版アプリをGitHub経由で更新
 
 ## UI 変更の確認
 
-- UI 変更があるときだけ `tauri dev` で確認する。Tauri の `--config` に渡す開発用 JSON はリポジトリ外に置き、以後再利用する。例えば `{"productName":"原神 聖遺物レコメンダー 開発版","identifier":"jp.taiki.genshinreco.dev"}` とし、正式版の設定ファイルは変更しない。開発版の保存先が正式版と分かれることを確認する。既存の正式版データを開発版にコピーしない。必要なら開発版の保存先だけに仮データを作る。
+- UI 変更があるときだけ `tauri dev` で確認する。Tauri の `--config` に渡す開発用 JSON はリポジトリ外に置き、以後再利用する。例えば `{"productName":"ビルドレコメンダー 開発版","identifier":"jp.taiki.genshinreco.dev"}` とし、正式版の設定ファイルは変更しない。開発版の保存先が正式版と分かれることを確認する。既存の正式版データを開発版にコピーしない。必要なら開発版の保存先だけに仮データを作る。
 - リポジトリ直下で `git rev-parse --show-toplevel` を確認し、同じ PowerShell で `./scripts/use-cargo-target.ps1` を実行してから `npm run tauri -- dev --config <開発用 JSON のパス>` で起動する。開発版で確認できる画面と変更した操作を確認して終了する。開発版で確認できる UI に失敗した場合は公開しない。実際の保存データがないと確認できない範囲は公開後へ回し、未確認と報告する。
 - 正式版の保存データが必要な一覧・結果・条件変更や更新動作は、公開後にユーザーが正式版を更新してから確認する。開発版の仮データで見た画面と、正式版の保存データでの動作確認を区別して報告する。
 
@@ -148,7 +148,7 @@ try {
   $assetUrl = "https://github.com/$repo/releases/download/$tag/$assetName"
   $metadata = @{
     version = $version
-    notes = "原神 聖遺物レコメンダー $version"
+    notes = "ビルドレコメンダー $version"
     pub_date = (Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ')
     platforms = @{ 'windows-x86_64' = @{ url = $assetUrl; signature = $signature } }
   }
@@ -156,7 +156,7 @@ try {
     Set-Content -LiteralPath $metadataPath -Encoding utf8NoBOM
   $localHash = (Get-FileHash -LiteralPath $assetPath -Algorithm SHA256).Hash.ToLowerInvariant()
   $metadataHash = (Get-FileHash -LiteralPath $metadataPath -Algorithm SHA256).Hash.ToLowerInvariant()
-  gh release create $tag $assetPath $metadataPath --repo $repo --target $head --draft --title "原神 聖遺物レコメンダー $version" --notes "Windows向け正式版。ソースのコミット: $head"
+  gh release create $tag $assetPath $metadataPath --repo $repo --target $head --draft --title "ビルドレコメンダー $version" --notes "Windows向け正式版。ソースのコミット: $head"
   if ($LASTEXITCODE -ne 0) { throw '公開下書きの作成に失敗しました。' }
   $releaseJson = gh release view $tag --repo $repo --json isDraft,body,assets
   if ($LASTEXITCODE -ne 0) { throw '作成した下書きを確認できません。' }

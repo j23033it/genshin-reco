@@ -47,7 +47,7 @@ export function CodexConnectionGate() {
   return (
     <main className="grid min-h-dvh place-items-center bg-slate-950 px-5 py-10 text-slate-100">
       <section className="w-full max-w-xl rounded-2xl border border-slate-800 bg-slate-900 p-6 sm:p-8">
-        <p className="text-sm font-semibold text-amber-300">編成ノート</p>
+        <p className="text-sm font-semibold text-amber-300">ビルドレコメンダー</p>
         <h1 className="mt-2 text-balance text-2xl font-bold">Codexに接続</h1>
         <div className="mt-4 flex justify-start"><AppUpdateControl /></div>
         {!desktopRuntime ? (
