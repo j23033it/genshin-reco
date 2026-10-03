@@ -59,7 +59,8 @@ Rust/Tauriを使うPowerShellでは、`tauri dev`や`check`の前にビルド先
 - 保存だけを確認するときは、`-ResultDirectory <確認済み出力の置き場>` を追加する。`mixed.json`・`fixed.json`・`released.json` に `intake`・`output`・`openedUrls`・`verificationKind` を渡す。確認方法はアプリ実出力なら `app_observation`、作業者が本文を照合した検証用出力なら `operator_verified_fixture`。後者は自動調査の成功として扱わず、調査結果の再利用候補へ保存しない。
 - 画面を含む開発アプリの確認は `npm run tauri dev` で行う。この開発版から正式版の更新はしない。
 - 正式版はWindows用インストーラーで一度だけ導入する。デスクトップにアプリのショートカットができ、以後はアプリ内の「更新を確認」から署名済みの新しい版を導入する。
-- ソースは非公開のGitHubリポジトリで管理する。公開するのは別リポジトリ `j23033it/genshin-reco-releases` の署名済みインストーラーと `latest.json` だけ。更新の通信先はそこだけで、デモや開発版は更新しない。
+- ソースと変更履歴、署名済みインストーラー、`latest.json` は、公開リポジトリ [j23033it/genshin-reco-releases](https://github.com/j23033it/genshin-reco-releases) でまとめて管理する。既存アプリの更新先URLを保つため、リポジトリ名は変更しない。デモや開発版は更新しない。
+- 以前の非公開リポジトリ `j23033it/genshin-reco` は、過去のIssue・PRと作業ブランチを保管する読み取り専用のアーカイブとする。今後の開発と公開は統合先で行う。
 
 ## 正式版の更新手順（管理者向け）
 

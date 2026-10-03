@@ -5,7 +5,7 @@ description: このリポジトリのWindows版アプリをGitHub経由で更新
 
 # 原神 聖遺物レコメンダーの正式版公開
 
-このリポジトリ専用。ソースは非公開の `j23033it/genshin-reco`、配布先は公開の `j23033it/genshin-reco-releases`。公開物は Windows 用 NSIS インストーラーと `latest.json`。タグは `app-v<版番号>`、配布名は `genshin-reco_<版番号>_x64-setup.exe`。
+このリポジトリ専用。ソースと変更履歴、配布物は公開の `j23033it/genshin-reco-releases` に統合している。以前の非公開リポジトリ `j23033it/genshin-reco` は過去の Issue・PR と作業ブランチを保管するアーカイブで、今後の開発・検査・公開には使わない。既存アプリの更新先 URL を保つため、統合先のリポジトリ名を変更しない。配布物は Windows 用 NSIS インストーラーと `latest.json`。タグは `app-v<版番号>`、配布名は `genshin-reco_<版番号>_x64-setup.exe`。
 
 ## 公開の条件
 
@@ -77,8 +77,7 @@ Rust/Tauri 側の3か所は上の置換前検査で同じ旧版と確認して�
 
 ```powershell
 $ErrorActionPreference = 'Stop'
-$sourceRepo = 'j23033it/genshin-reco'
-$releaseRepo = 'j23033it/genshin-reco-releases'
+$repo = 'j23033it/genshin-reco-releases'
 $root = (git rev-parse --show-toplevel).Trim()
 if ($LASTEXITCODE -ne 0 -or
     [IO.Path]::GetFullPath((Resolve-Path .).Path) -ne [IO.Path]::GetFullPath($root)) {
@@ -104,14 +103,14 @@ git fetch --quiet origin main
 if ($LASTEXITCODE -ne 0 -or (git rev-parse origin/main).Trim() -ne $head) {
   throw 'ローカル main と origin/main が一致しません。'
 }
-$runJson = gh run list --repo $sourceRepo --workflow check.yml --branch main --commit $head --event push --json headSha,status,conclusion,url --limit 1
+$runJson = gh run list --repo $repo --workflow check.yml --branch main --commit $head --event push --json headSha,status,conclusion,url --limit 1
 if ($LASTEXITCODE -ne 0) { throw 'GitHub の全体検査を取得できません。' }
 $runs = @(ConvertFrom-Json -InputObject ($runJson -join [Environment]::NewLine))
 if ($runs.Count -ne 1 -or $runs[0].headSha -ne $head -or
     $runs[0].status -ne 'completed' -or $runs[0].conclusion -ne 'success') {
   throw 'このコミットの GitHub 全体検査が成功していません。'
 }
-$listJson = gh release list --repo $releaseRepo --limit 1000 --json tagName
+$listJson = gh release list --repo $repo --limit 1000 --json tagName
 if ($LASTEXITCODE -ne 0) { throw '配布先のタグを確認できません。' }
 $releases = @(ConvertFrom-Json -InputObject ($listJson -join [Environment]::NewLine))
 if (@($releases | Where-Object tagName -eq $tag).Count -gt 0) {
@@ -146,7 +145,7 @@ try {
   $assetPath = Join-Path $stageDir $assetName
   $metadataPath = Join-Path $stageDir 'latest.json'
   Copy-Item -LiteralPath $installers[0].FullName -Destination $assetPath
-  $assetUrl = "https://github.com/$releaseRepo/releases/download/$tag/$assetName"
+  $assetUrl = "https://github.com/$repo/releases/download/$tag/$assetName"
   $metadata = @{
     version = $version
     notes = "原神 聖遺物レコメンダー $version"
@@ -157,9 +156,9 @@ try {
     Set-Content -LiteralPath $metadataPath -Encoding utf8NoBOM
   $localHash = (Get-FileHash -LiteralPath $assetPath -Algorithm SHA256).Hash.ToLowerInvariant()
   $metadataHash = (Get-FileHash -LiteralPath $metadataPath -Algorithm SHA256).Hash.ToLowerInvariant()
-  gh release create $tag $assetPath $metadataPath --repo $releaseRepo --target main --draft --title "原神 聖遺物レコメンダー $version" --notes "Windows向け正式版。ソースのコミット: $head"
+  gh release create $tag $assetPath $metadataPath --repo $repo --target $head --draft --title "原神 聖遺物レコメンダー $version" --notes "Windows向け正式版。ソースのコミット: $head"
   if ($LASTEXITCODE -ne 0) { throw '公開下書きの作成に失敗しました。' }
-  $releaseJson = gh release view $tag --repo $releaseRepo --json isDraft,body,assets
+  $releaseJson = gh release view $tag --repo $repo --json isDraft,body,assets
   if ($LASTEXITCODE -ne 0) { throw '作成した下書きを確認できません。' }
   $release = $releaseJson | ConvertFrom-Json
   $exe = @($release.assets | Where-Object name -eq $assetName)
@@ -170,7 +169,7 @@ try {
       $json[0].digest -ne "sha256:$metadataHash") {
     throw '下書きの内容またはハッシュが一致しません。公開せず確認してください。'
   }
-  Write-Output "下書き: https://github.com/$releaseRepo/releases/tag/$tag"
+  Write-Output "下書き: https://github.com/$repo/releases/tag/$tag"
   Write-Output "下書きとの照合用: $($installers[0].FullName)"
   Write-Output "SHA256: $localHash"
   Write-Output "ソース: $head / 全体検査: $($runs[0].url)"
@@ -182,7 +181,7 @@ finally {
 }
 ```
 
-`gh release view` の SHA256 はアップロード後の配布物を確認するために使う。表示されない場合は、下書きのファイルを認証付きでダウンロードしてハッシュを照合し、成功するまで正式公開へ進まない。秘密鍵の内容やソースを配布先へ送らない。一時ファイルの削除は配布確認後に、表示された絶対パスと内容を確認して別の操作で行う。
+`gh release view` の SHA256 はアップロード後の配布物を確認するために使う。表示されない場合は、下書きのファイルを認証付きでダウンロードしてハッシュを照合し、成功するまで正式公開へ進まない。リリースのタグは検査済みのソース SHA を指す。秘密鍵の内容や認証情報をリポジトリや配布物へ含めない。一時ファイルの削除は配布確認後に、表示された絶対パスと内容を確認して別の操作で行う。
 
 ## 正式公開
 
