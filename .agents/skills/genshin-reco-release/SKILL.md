@@ -5,7 +5,7 @@ description: このリポジトリのWindows版アプリをGitHub経由で更新
 
 # ビルドレコメンダーの正式版公開
 
-このリポジトリ専用。ソースと変更履歴、配布物は公開の `j23033it/genshin-reco-releases` に統合している。以前の非公開リポジトリ `j23033it/genshin-reco` は過去の Issue・PR と作業ブランチを保管するアーカイブで、今後の開発・検査・公開には使わない。既存アプリの更新先 URL を保つため、統合先のリポジトリ名を変更しない。配布物は Windows 用 NSIS インストーラーと `latest.json`。タグは `app-v<版番号>`、配布名は `genshin-reco_<版番号>_x64-setup.exe`。
+このリポジトリ専用。ソースと変更履歴、配布物は公開の `j23033it/genshin-reco-releases` に統合している。以前の非公開リポジトリ `j23033it/genshin-reco` は削除済み。全ブランチの Git 履歴と、過去の Issue・PR の本文・コメント・差分は、リポジトリ外のローカルバックアップに保存している。今後の開発・検査・公開は統合先だけで行う。既存アプリの更新先 URL を保つため、統合先のリポジトリ名を変更しない。配布物は Windows 用 NSIS インストーラーと `latest.json`。タグは `app-v<版番号>`、配布名は `genshin-reco_<版番号>_x64-setup.exe`。
 
 ## 公開の条件
 
