@@ -106,6 +106,10 @@ pub struct ResearchSource {
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct ResearchedTeamMember {
+    // Older saved results did not carry a structured Genshin refinement rank.
+    #[serde(default)]
+    #[schemars(range(min = 1, max = 5))]
+    pub refinement: Option<u8>,
     #[serde(default)]
     pub star_rail: Option<StarRailBuild>,
     pub slot_index: u8,
@@ -309,10 +313,137 @@ pub fn team_research_output_schema_for(game: GameId) -> serde_json::Value {
     } else {
         serde_json::json!({"$ref": "#/$defs/StarRailBuild"})
     };
+    schema["$defs"]["ResearchedTeamMember"]["properties"]["refinement"] = if game == GameId::Genshin
+    {
+        serde_json::json!({"type": "integer", "minimum": 1, "maximum": 5})
+    } else {
+        serde_json::json!({"type": "null"})
+    };
     schema
 }
 
+/// Bind identity and fixed equipment to this request, while leaving build advice open.
+pub fn team_research_output_schema_for_intake(
+    intake: &ResearchIntake,
+) -> Result<serde_json::Value, String> {
+    intake.validate()?;
+    if intake.members.len() != 4 {
+        return Err("調査には4人の指定が必要です".into());
+    }
+    let mut schema = team_research_output_schema_for(intake.game);
+    let catalog = crate::catalog::load_embedded_catalog().map_err(|error| error.to_string())?;
+    let mut choices = Vec::new();
+    for input in &intake.members {
+        let mut member = schema["$defs"]["ResearchedTeamMember"].clone();
+        let properties = &mut member["properties"];
+        properties["slotIndex"] =
+            serde_json::json!({"type": "integer", "enum": [input.slot_index]});
+        properties["name"] = serde_json::json!({"type": "string", "enum": [input.name.trim()]});
+        if intake.game == GameId::Genshin {
+            if let Some(character) = catalog
+                .characters
+                .iter()
+                .find(|c| c.name == input.name.trim())
+            {
+                properties["id"] = serde_json::json!({"type": "string", "enum": [character.id]});
+            }
+            if let Some(rank) = input.refinement {
+                properties["refinement"] = serde_json::json!({"type": "integer", "enum": [rank]});
+            }
+        } else {
+            let mut build = schema["$defs"]["StarRailBuild"].clone();
+            if let Some(level) = input.constellation {
+                build["properties"]["eidolon"] =
+                    serde_json::json!({"type": "integer", "enum": [level]});
+            }
+            if let Some(weapon) = &input.weapon {
+                build["properties"]["lightCone"] =
+                    serde_json::json!({"type": "string", "enum": [weapon]});
+            }
+            if let Some(rank) = input.refinement {
+                build["properties"]["superimposition"] =
+                    serde_json::json!({"type": "integer", "enum": [rank]});
+            }
+            properties["starRail"] = build;
+        }
+        if let Some(weapon) = &input.weapon {
+            properties["weapon"] = serde_json::json!({"type": "string", "enum": [weapon.trim()]});
+        }
+        if let Some(level) = input.constellation {
+            properties["constellation"] =
+                serde_json::json!({"type": "string", "enum": [format!("{level}凸")]});
+        }
+        choices.push(member);
+    }
+    schema["properties"]["members"]["items"] = serde_json::json!({"anyOf": choices});
+    Ok(schema)
+}
+
+fn canonical_name(value: &str, mut names: impl Iterator<Item = impl AsRef<str>>) -> String {
+    let normalized = normalize_asset_name(value);
+    names
+        .find(|name| normalize_asset_name(name.as_ref()) == normalized)
+        .map(|name| name.as_ref().to_owned())
+        .unwrap_or_else(|| value.trim().to_owned())
+}
+
+// Only recognized catalog names followed by a complete rank annotation are split.
+// Alternatives, character readings and ambiguous names are never guessed.
+fn genshin_weapon_label(value: &str, catalog: &Catalog) -> (String, Option<u8>) {
+    let normalized = normalize_asset_name(value);
+    for weapon in &catalog.weapons {
+        let name = normalize_asset_name(&weapon.name);
+        let Some(suffix) = normalized.strip_prefix(&name) else {
+            continue;
+        };
+        if suffix.is_empty() {
+            return (weapon.name.clone(), None);
+        }
+        let suffix = suffix
+            .strip_prefix('(')
+            .and_then(|s| s.strip_suffix(')'))
+            .unwrap_or(suffix);
+        for rank in 1..=5 {
+            if suffix.eq_ignore_ascii_case(&format!("R{rank}"))
+                || suffix == format!("精錬{rank}")
+                || suffix == format!("精錬ランク{rank}")
+                || suffix == format!("{}凸", rank - 1)
+                || (rank == 1 && suffix == "無凸")
+            {
+                return (weapon.name.clone(), Some(rank));
+            }
+        }
+    }
+    (value.trim().to_owned(), None)
+}
+
+fn merge_refinement(rank: Option<u8>, annotation: Option<u8>) -> Result<Option<u8>, String> {
+    if rank
+        .zip(annotation)
+        .is_some_and(|(rank, annotation)| rank != annotation)
+    {
+        return Err("武器名の精錬表記と精錬ランクが一致しません".into());
+    }
+    Ok(rank.or(annotation))
+}
+
 impl ResearchIntake {
+    pub(crate) fn normalize(&mut self) -> Result<(), String> {
+        if self.game == GameId::Genshin {
+            let catalog = crate::catalog::load_embedded_catalog().map_err(|e| e.to_string())?;
+            for member in &mut self.members {
+                member.name =
+                    canonical_name(&member.name, catalog.characters.iter().map(|c| &c.name));
+                if let Some(weapon) = &member.weapon {
+                    let (name, rank) = genshin_weapon_label(weapon, &catalog);
+                    member.refinement = merge_refinement(member.refinement, rank)?;
+                    member.weapon = Some(name);
+                }
+            }
+        }
+        self.validate()
+    }
+
     pub fn validate(&self) -> Result<(), String> {
         if self.members.len() > 4 {
             return Err("調査対象は4人までです".into());
@@ -362,6 +493,29 @@ impl ResearchIntake {
 }
 
 impl ResearchedTeamDraft {
+    pub(crate) fn normalize_for_intake(&mut self, intake: &ResearchIntake) -> Result<(), String> {
+        intake.validate()?;
+        if self.game != intake.game {
+            return Err("調査結果のゲームが一致しません".into());
+        }
+        // Array order is transport detail. slotIndex remains the requested placement.
+        self.members.sort_by_key(|member| member.slot_index);
+        if self.game == GameId::Genshin {
+            let catalog = crate::catalog::load_embedded_catalog().map_err(|e| e.to_string())?;
+            for member in &mut self.members {
+                member.name =
+                    canonical_name(&member.name, catalog.characters.iter().map(|c| &c.name));
+                if let Some(character) = catalog.characters.iter().find(|c| c.name == member.name) {
+                    member.id = character.id.clone();
+                }
+                let (weapon, rank) = genshin_weapon_label(&member.weapon, &catalog);
+                member.refinement = merge_refinement(member.refinement, rank)?;
+                member.weapon = weapon;
+            }
+        }
+        self.validate_for_members(&intake.members)
+    }
+
     pub fn validate_for_members(&self, requested: &[ResearchMemberInput]) -> Result<(), String> {
         self.validate()?;
         if requested.len() != self.members.len() {
@@ -373,15 +527,27 @@ impl ResearchedTeamDraft {
             } else if member.star_rail.is_some() || input.relics.is_some() {
                 return Err("異なるゲームの装備結果です".into());
             }
-            if input.name.trim() != member.name.trim()
-                || input
-                    .weapon
-                    .as_deref()
-                    .is_some_and(|weapon| weapon.trim() != member.weapon.trim())
+            if input.name.trim() != member.name.trim() {
+                return Err(format!(
+                    "指定キャラクターが変更されています（指定: {}、結果: {}）",
+                    input.name, member.name
+                ));
+            }
+            if let Some(weapon) = &input.weapon
+                && weapon.trim() != member.weapon.trim()
             {
                 return Err(format!(
-                    "{}の指定キャラクターまたは武器が変更されています",
-                    input.name
+                    "{}の指定武器が変更されています（指定: {}、結果: {}）",
+                    input.name, weapon, member.weapon
+                ));
+            }
+            if self.game == GameId::Genshin
+                && let Some(rank) = input.refinement
+                && member.refinement != Some(rank)
+            {
+                return Err(format!(
+                    "{}の指定精錬ランクが変更されています（指定: R{}、結果: {:?}）",
+                    input.name, rank, member.refinement
                 ));
             }
             if let Some(level) = input.constellation {
@@ -425,6 +591,12 @@ impl ResearchedTeamDraft {
         }
         let mut names = HashSet::new();
         for (index, member) in self.members.iter().enumerate() {
+            if member
+                .refinement
+                .is_some_and(|rank| !(1..=5).contains(&rank))
+            {
+                return Err("調査結果の精錬ランクは1〜5で指定してください".into());
+            }
             if member.slot_index != index as u8 {
                 return Err("調査結果のslotIndexが不正です".into());
             }
@@ -503,7 +675,7 @@ fn validate_https_url(raw: &str, label: &str) -> Result<(), String> {
 }
 
 #[cfg(test)]
-mod tests {
+pub(crate) mod tests {
     use super::*;
 
     #[test]
@@ -529,6 +701,7 @@ mod tests {
 
     fn sample_draft() -> ResearchedTeamDraft {
         let member = ResearchedTeamMember {
+            refinement: Some(1),
             star_rail: None,
             slot_index: 0,
             id: "sample".into(),
@@ -578,6 +751,160 @@ mod tests {
             }],
             warnings: Vec::new(),
         }
+    }
+
+    // Synthetic advice: this tests the transport/conditions contract, not game values.
+    pub(crate) fn reported_team() -> (ResearchIntake, ResearchedTeamDraft) {
+        let mut draft = sample_draft();
+        for (member, (name, weapon)) in draft.members.iter_mut().zip([
+            ("コロンビーナ", "龍殺しの英傑"),
+            ("イルーガ", "西風長槍"),
+            ("リンネア", "西風猟弓"),
+            ("兹白", "蝶の羽化"),
+        ]) {
+            member.name = name.into();
+            member.weapon = weapon.into();
+            member.target_stats[0].primary = true;
+        }
+        draft.members[3].constellation = "1凸".into();
+        let intake = ResearchIntake {
+            game: GameId::Genshin,
+            members: draft
+                .members
+                .iter()
+                .map(|member| ResearchMemberInput {
+                    slot_index: member.slot_index,
+                    name: member.name.clone(),
+                    weapon: (member.slot_index == 3).then(|| member.weapon.clone()),
+                    constellation: (member.slot_index == 3).then_some(1),
+                    refinement: (member.slot_index == 3).then_some(1),
+                    relics: None,
+                })
+                .collect(),
+            missing_fields: Vec::new(),
+            ready_to_research: true,
+        };
+        (intake, draft)
+    }
+
+    #[test]
+    fn 報告された編成の武器表記差と配列順を正規化して条件を維持する() {
+        let (intake, original) = reported_team();
+        for label in [
+            "蝶の羽化（R１）",
+            " 蝶の羽化 (精錬1) ",
+            "蝶の羽化（無凸）",
+            "蝶の羽化",
+        ] {
+            let mut draft = original.clone();
+            draft.members[3].weapon = label.into();
+            draft.members.swap(0, 3);
+            draft.normalize_for_intake(&intake).unwrap();
+            assert_eq!(draft.members[3].id, "shihak");
+            assert_eq!(draft.members[3].name, "兹白");
+            assert_eq!(draft.members[3].weapon, "蝶の羽化");
+            assert_eq!(draft.members[3].constellation, "1凸");
+            assert_eq!(draft.members[3].refinement, Some(1));
+            assert!(intake.members[..3].iter().all(|m| m.weapon.is_none()
+                && m.constellation.is_none()
+                && m.refinement.is_none()));
+        }
+    }
+
+    #[test]
+    fn 正規化は別キャラ武器精錬凸や矛盾する注釈を黙認しない() {
+        let (intake, original) = reported_team();
+        for (field, value) in [
+            ("name", "鍾離"),
+            ("name", "しはく"),
+            ("name", "茲白"),
+            ("weapon", "西風剣"),
+            ("weapon", "蝶の羽化/西風剣"),
+            ("weapon", "蝶の羽化（R5）"),
+            ("constellation", "2凸"),
+        ] {
+            let mut value_draft = serde_json::to_value(&original).unwrap();
+            value_draft["members"][3][field] = serde_json::json!(value);
+            let mut draft: ResearchedTeamDraft = serde_json::from_value(value_draft).unwrap();
+            assert!(
+                draft.normalize_for_intake(&intake).is_err(),
+                "{field}: {value}"
+            );
+        }
+        for rank in [None, Some(2)] {
+            let mut draft = original.clone();
+            draft.members[3].refinement = rank;
+            assert!(
+                draft
+                    .normalize_for_intake(&intake)
+                    .unwrap_err()
+                    .contains("精錬")
+            );
+        }
+        let mut draft = original;
+        draft.members[0].slot_index = 3;
+        assert!(draft.normalize_for_intake(&intake).is_err());
+    }
+
+    #[test]
+    fn 武器の無凸をr1へ分離しキャラの凸と未指定を維持する() {
+        let (mut intake, _) = reported_team();
+        intake.members[3].weapon = Some("蝶の羽化（無凸）".into());
+        intake.members[3].refinement = None;
+        intake.normalize().unwrap();
+        assert_eq!(intake.members[3].weapon.as_deref(), Some("蝶の羽化"));
+        assert_eq!(intake.members[3].refinement, Some(1));
+        assert_eq!(intake.members[3].constellation, Some(1));
+        assert!(
+            intake.members[..3]
+                .iter()
+                .all(|member| member.refinement.is_none())
+        );
+        intake.members[3].weapon = Some("蝶の羽化（R5）".into());
+        assert!(intake.normalize().is_err());
+    }
+
+    #[test]
+    fn 調査schemaは今回の指定だけ固定し未指定ビルドを開放する() {
+        let (intake, _) = reported_team();
+        let schema = team_research_output_schema_for_intake(&intake).unwrap();
+        let choices = schema["properties"]["members"]["items"]["anyOf"]
+            .as_array()
+            .unwrap();
+        let fixed = &choices[3]["properties"];
+        assert_eq!(fixed["name"]["enum"], serde_json::json!(["兹白"]));
+        assert_eq!(fixed["id"]["enum"], serde_json::json!(["shihak"]));
+        assert_eq!(fixed["weapon"]["enum"], serde_json::json!(["蝶の羽化"]));
+        assert_eq!(fixed["refinement"]["enum"], serde_json::json!([1]));
+        assert_eq!(fixed["constellation"]["enum"], serde_json::json!(["1凸"]));
+        for key in [
+            "weapon",
+            "refinement",
+            "constellation",
+            "artifact",
+            "targetStats",
+        ] {
+            assert!(choices[0]["properties"][key].get("enum").is_none(), "{key}");
+        }
+        let (other, _) = crate::star_rail::tests::sample();
+        let schema = team_research_output_schema_for_intake(&other).unwrap();
+        let fixed = &schema["properties"]["members"]["items"]["anyOf"][0]["properties"];
+        assert_eq!(
+            fixed["starRail"]["properties"]["superimposition"]["enum"],
+            serde_json::json!([1])
+        );
+    }
+
+    #[test]
+    fn 旧保存結果の精錬欠落は読み込み可能で新規の固定精錬には使わない() {
+        let (intake, draft) = reported_team();
+        let mut value = serde_json::to_value(&draft).unwrap();
+        for member in value["members"].as_array_mut().unwrap() {
+            member.as_object_mut().unwrap().remove("refinement");
+        }
+        let restored: ResearchedTeamDraft = serde_json::from_value(value).unwrap();
+        restored.validate().unwrap();
+        assert!(restored.validate_for_members(&intake.members).is_err());
     }
 
     #[test]

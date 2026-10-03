@@ -8,12 +8,13 @@ use crate::{
     game::GameId,
     on_demand_cache::{CachedTeamResearch, research_cache_key, resolve_team_research},
     on_demand_domain::{
-        OnDemandResearchProgress, ResearchConversation, ResearchConversationStatus, ResearchIntake,
-        ResearchMemberInput, ResearchMessage, ResearchMessageRole, ResearchedTeamDraft,
-        ResearchedTeamRecord, ResearchedTeamSummary, validated_team_title,
+        IntakeAgentOutput, OnDemandResearchProgress, ResearchConversation,
+        ResearchConversationStatus, ResearchIntake, ResearchMemberInput, ResearchMessage,
+        ResearchMessageRole, ResearchedTeamDraft, ResearchedTeamRecord, ResearchedTeamSummary,
+        validated_team_title,
     },
 };
-use std::collections::HashMap;
+use std::{collections::HashMap, future::Future};
 use tauri::{AppHandle, Emitter, State};
 use tokio::sync::Mutex;
 
@@ -28,15 +29,34 @@ pub struct OnDemandResearchCoordinator {
 pub async fn send_on_demand_message(
     app: AppHandle,
     supervisor: State<'_, AppServerSupervisor>,
+    coordinator: State<'_, OnDemandResearchCoordinator>,
     database: State<'_, Database>,
     session_id: Option<String>,
     message: String,
     game: Option<GameId>,
 ) -> Result<ResearchConversation, String> {
+    send_message_with_intake(&database, &coordinator, session_id, message, game, |conversation| async move {
+        collect_on_demand_intake(&app, &supervisor, &conversation).await
+    }).await
+}
+
+async fn send_message_with_intake<F, Fut>(
+    database: &Database,
+    coordinator: &OnDemandResearchCoordinator,
+    session_id: Option<String>,
+    message: String,
+    game: Option<GameId>,
+    collect: F,
+) -> Result<ResearchConversation, String>
+where
+    F: FnOnce(ResearchConversation) -> Fut,
+    Fut: Future<Output = Result<IntakeAgentOutput, String>>,
+{
     let message = message.trim();
     if message.is_empty() || message.chars().count() > 2_000 {
         return Err("メッセージは1〜2000文字で入力してください".into());
     }
+    let mut active = coordinator.active.lock().await;
     let mut conversation = match session_id {
         Some(session_id) => database
             .load_on_demand_conversation(&session_id)
@@ -48,6 +68,9 @@ pub async fn send_on_demand_message(
     };
     if game.is_some_and(|game| game != conversation.game) {
         return Err("会話と要求のゲームが異なります".into());
+    }
+    if active.contains_key(&conversation.session_id) {
+        return Err("受付または調査の完了後に条件を変更してください".into());
     }
     if conversation.status == ResearchConversationStatus::Researching {
         return Err("調査中のため、完了またはキャンセル後に条件を変更してください".into());
@@ -64,8 +87,16 @@ pub async fn send_on_demand_message(
     database
         .save_on_demand_conversation(&conversation)
         .map_err(|error| error.to_string())?;
+    active.insert(
+        conversation.session_id.clone(),
+        ResearchCancellation::default(),
+    );
+    drop(active);
 
-    match collect_on_demand_intake(&app, &supervisor, &conversation).await {
+    let output = collect(conversation.clone()).await;
+    let mut active = coordinator.active.lock().await;
+    active.remove(&conversation.session_id);
+    match output {
         Ok(output) => {
             if output.intake.game != conversation.game {
                 return Err("受付結果のゲームが一致しません".into());
@@ -117,6 +148,9 @@ pub async fn update_on_demand_conditions(
         .ok_or_else(|| "指定された編成チャットが見つかりません".to_string())?;
     if conversation.status == ResearchConversationStatus::Researching {
         return Err("調査中のため、完了またはキャンセル後に条件を変更してください".into());
+    }
+    if conversation.status == ResearchConversationStatus::Collecting {
+        return Err("受付が完了してから条件を変更してください".into());
     }
     if apply_conditions(&mut conversation, members, title)? {
         database
@@ -225,10 +259,18 @@ pub async fn start_on_demand_research(
     database: State<'_, Database>,
     session_id: String,
 ) -> Result<ResearchedTeamRecord, String> {
+    // Read the input and register the run under the same lock as condition updates.
+    let mut active = coordinator.active.lock().await;
+    if active.contains_key(&session_id) {
+        return Err("この編成はすでに調査中です".into());
+    }
     let mut conversation = database
         .load_on_demand_conversation(&session_id)
         .map_err(|error| error.to_string())?
         .ok_or_else(|| "指定された編成チャットが見つかりません".to_string())?;
+    if conversation.status == ResearchConversationStatus::Collecting {
+        return Err("受付が完了してから調査を開始してください".into());
+    }
     let intake = ResearchIntake {
         game: conversation.game,
         members: conversation.members.clone(),
@@ -245,20 +287,15 @@ pub async fn start_on_demand_research(
     let refresh = conversation.team_id.is_some();
 
     let cancellation = ResearchCancellation::default();
-    {
-        let mut active = coordinator.active.lock().await;
-        if active.contains_key(&session_id) {
-            return Err("この編成はすでに調査中です".into());
-        }
-        active.insert(session_id.clone(), cancellation.clone());
-    }
+    active.insert(session_id.clone(), cancellation.clone());
     conversation.status = ResearchConversationStatus::Researching;
     conversation.error = None;
     conversation.updated_at = timestamp();
     if let Err(error) = database.save_on_demand_conversation(&conversation) {
-        coordinator.active.lock().await.remove(&session_id);
+        active.remove(&session_id);
         return Err(error.to_string());
     }
+    drop(active);
     emit_progress(
         &app,
         &session_id,
@@ -403,7 +440,12 @@ fn finalize_researched_team(
     if draft.game != conversation.game {
         return Err("調査結果のゲームが一致しません".into());
     }
-    draft.validate_for_members(&conversation.members)?;
+    draft.normalize_for_intake(&ResearchIntake {
+        game: conversation.game,
+        members: conversation.members.clone(),
+        missing_fields: Vec::new(),
+        ready_to_research: true,
+    })?;
     if reused {
         draft.warnings.push(
             if conversation.game == GameId::StarRail {
@@ -557,6 +599,139 @@ fn emit_progress(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[tokio::test]
+    async fn 同じ会話の受付を重ねず失敗後も次の条件を受け付ける() {
+        let database = Database::open_in_memory().unwrap();
+        let coordinator = OnDemandResearchCoordinator::default();
+        let (intake, _) = crate::on_demand_domain::tests::reported_team();
+        let conversation = database.create_on_demand_conversation().unwrap();
+        let session = conversation.session_id;
+        let (started_tx, started_rx) = tokio::sync::oneshot::channel();
+        let (release_tx, release_rx) = tokio::sync::oneshot::channel();
+        let first = send_message_with_intake(
+            &database,
+            &coordinator,
+            Some(session.clone()),
+            "最初の条件".into(),
+            None,
+            |_| async {
+                started_tx.send(()).unwrap();
+                release_rx.await.unwrap();
+                Err("模擬通信失敗".into())
+            },
+        );
+        let overlap = async {
+            started_rx.await.unwrap();
+            assert!(coordinator.active.lock().await.contains_key(&session));
+            let result = send_message_with_intake(
+                &database,
+                &coordinator,
+                Some(session.clone()),
+                "重複した条件".into(),
+                None,
+                |_| async { panic!("重複受付は外部処理を呼ばない") },
+            )
+            .await;
+            assert!(result.unwrap_err().contains("受付または調査"));
+            release_tx.send(()).unwrap();
+        };
+        let (failed, ()) = tokio::join!(first, overlap);
+        assert_eq!(failed.unwrap_err(), "模擬通信失敗");
+        assert!(!coordinator.active.lock().await.contains_key(&session));
+        let accepted = send_message_with_intake(
+            &database,
+            &coordinator,
+            Some(session.clone()),
+            "次の条件".into(),
+            None,
+            |_| async {
+                Ok(IntakeAgentOutput {
+                    assistant_message: "条件が揃いました".into(),
+                    intake: intake.clone(),
+                })
+            },
+        )
+        .await
+        .unwrap();
+        assert_eq!(accepted.members, intake.members);
+        assert_eq!(accepted.status, ResearchConversationStatus::Ready);
+        assert!(
+            accepted
+                .messages
+                .iter()
+                .all(|m| m.content != "重複した条件")
+        );
+        assert_eq!(
+            database.load_on_demand_conversation(&session).unwrap(),
+            Some(accepted)
+        );
+    }
+
+    #[tokio::test]
+    async fn 報告編成の結果を条件と共に保存し再利用と失敗時の保持を確認する() {
+        let database = Database::open_in_memory().unwrap();
+        let (intake, mut draft) = crate::on_demand_domain::tests::reported_team();
+        let mut conversation = database.create_on_demand_conversation().unwrap();
+        conversation.members = intake.members.clone();
+        conversation.status = ResearchConversationStatus::Ready;
+        database.save_on_demand_conversation(&conversation).unwrap();
+        draft.members[3].weapon = "蝶の羽化（R１）".into();
+        draft.members.reverse();
+        let key = research_cache_key(
+            &intake,
+            &load_embedded_catalog().unwrap(),
+            &on_demand_research_revision().unwrap(),
+        )
+        .unwrap();
+        let outcome = resolve_team_research(&database, &intake, &key, None, false, |_| async {
+            Ok(draft)
+        })
+        .await
+        .unwrap();
+        let record = finalize_researched_team(
+            &database,
+            &mut conversation,
+            outcome.draft.clone(),
+            outcome.cache.as_ref(),
+            false,
+        )
+        .unwrap();
+        assert_eq!(record.input_members.as_ref(), Some(&intake.members));
+        assert_eq!(record.members[3].weapon, "蝶の羽化");
+        assert_eq!(record.members[3].refinement, Some(1));
+        assert_eq!(
+            database.load_researched_team(&record.team_id).unwrap(),
+            Some(record.clone())
+        );
+        let reused = resolve_team_research(&database, &intake, &key, None, false, |_| async {
+            panic!("同条件は正規化した保存結果を再利用する")
+        })
+        .await
+        .unwrap();
+        assert!(reused.reused);
+        let mut invalid = outcome.draft;
+        invalid.members[3].weapon = "西風剣".into();
+        assert!(
+            finalize_researched_team(&database, &mut conversation, invalid, None, false).is_err()
+        );
+        save_research_failure(&database, &mut conversation, "条件不一致", false).unwrap();
+        assert_eq!(
+            database.load_researched_team(&record.team_id).unwrap(),
+            Some(record)
+        );
+        let mut changed = intake.clone();
+        changed.members[3].constellation = Some(2);
+        assert_ne!(
+            research_cache_key(
+                &changed,
+                &load_embedded_catalog().unwrap(),
+                &on_demand_research_revision().unwrap()
+            )
+            .unwrap(),
+            key
+        );
+    }
 
     #[tokio::test]
     #[ignore = "verify-star-rail-live.ps1から明示した実SQLiteを操作し、別プロセスで再読込する"]
