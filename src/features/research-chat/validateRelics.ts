@@ -5,6 +5,9 @@ export function validateRelicInput(member: ResearchMemberInput, catalog: StarRai
   if (!catalog) return "カタログを読み込んでから調査してください。指定は保持しています。";
   const character = catalog.characters.find(entry => entry.name === member.name);
   if (!character) return `${member.name}の形態・運命またはカタログ登録を確認してください。`;
+  const legacyNames = [member.weapon, ...(member.relics?.tunnel?.kind === "four_piece" ? [member.relics.tunnel.set] : member.relics?.tunnel?.sets ?? []), member.relics?.ornament];
+  const legacy = [...catalog.lightCones, ...catalog.tunnelRelics, ...catalog.ornaments].find(entry => entry.legacyOnly && legacyNames.includes(entry.name));
+  if (legacy) return `「${legacy.name}」の実在対象を確認できません。保存した指定は保持しています。再選択してください。`;
   if (member.weapon && !catalog.lightCones.some(cone => cone.name === member.weapon && cone.path === character.path)) return `光円錐「${member.weapon}」は未登録または運命が一致しません。再選択してください。`;
   const tunnel = member.relics?.tunnel;
   const names = tunnel?.kind === "four_piece" ? [tunnel.set] : tunnel?.sets ?? [];
@@ -14,4 +17,3 @@ export function validateRelicInput(member: ResearchMemberInput, catalog: StarRai
   if (member.relics?.ornament && !catalog.ornaments.some(entry => entry.name === member.relics?.ornament)) return "オーナメントの指定は未登録またはカテゴリが異なります。再選択してください。";
   return null;
 }
-

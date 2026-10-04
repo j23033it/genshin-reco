@@ -1073,7 +1073,7 @@ fn on_demand_intake_prompt(conversation: &ResearchConversation) -> Result<String
         "次の会話から、ユーザーが調べたい原神の4人編成だけを整理してください。キャラクターが4人未満なら、不足している名前だけを短く質問してください。4人揃っている場合はreadyToResearchをtrueにし、武器・命ノ星座・精錬の未指定はmissingFieldsへ入れつつ、未指定のまま調査開始できることをassistantMessageで案内してください。ユーザーが既存条件を変更した場合は、会話全体の最新指定を優先してください。Web検索は不要です。会話:\n{transcript}"
     );
     if conversation.game == GameId::StarRail {
-        let catalog = crate::star_rail::load_star_rail_catalog()?;
+        let catalog = star_rail_research_catalog()?;
         prompt = format!(
             "崩壊：スターレイルの4人だけを整理してください。gameはstar_rail。weaponは光円錐、constellationは星魂、refinementは重畳の互換フィールドです。未指定はnullで維持してください。relicsは固定指定だけを保持し、提案を入力へ追加しないでください。キャラクターの別形態・運命が曖昧な時はassistantMessageで確認し、確定したメンバーだけ出してください。4人が確定したらreadyToResearchをtrueにしてください。武器や遺物の未指定は調査開始を妨げません。カタログ未登録の名前を架空の名前へ変換せず確認してください。現在の条件: {}\n選択できるカタログ: {}\n会話:\n{transcript}",
             serde_json::to_string(&conversation.members).map_err(|e| e.to_string())?,
@@ -1146,7 +1146,10 @@ fn on_demand_evidence_schema() -> Value {
 const STAR_RAIL_CATALOG_PURPOSE: &str = "名称カタログは正式名称・属性・運命・装備カテゴリの照合用です。収録範囲を調査対象のゲーム版と解釈しないでください。調査日現在の個別本文で現行性能を確認し、旧性能の章と混同しないでください。gameVersionは本文で確認した現行版を出してください。版を確定できない場合は不明と明記し、根拠のない版番号を補わないでください。";
 
 fn star_rail_research_catalog() -> Result<Value, String> {
-    let catalog = crate::star_rail::load_star_rail_catalog()?;
+    let mut catalog = crate::star_rail::load_star_rail_catalog()?;
+    catalog.light_cones.retain(|entry| !entry.legacy_only);
+    catalog.tunnel_relics.retain(|entry| !entry.legacy_only);
+    catalog.ornaments.retain(|entry| !entry.legacy_only);
     Ok(json!({
         "characters": catalog.characters,
         "lightCones": catalog.light_cones,
@@ -2924,7 +2927,24 @@ mod tests {
         let catalog = star_rail_research_catalog().unwrap();
         let full = crate::star_rail::load_star_rail_catalog().unwrap();
         assert_eq!(catalog["characters"], json!(full.characters));
-        assert_eq!(catalog["lightCones"], json!(full.light_cones));
+        assert_eq!(
+            catalog["lightCones"],
+            json!(
+                full.light_cones
+                    .iter()
+                    .filter(|e| !e.legacy_only)
+                    .collect::<Vec<_>>()
+            )
+        );
+        assert_eq!(
+            catalog["ornaments"],
+            json!(
+                full.ornaments
+                    .iter()
+                    .filter(|e| !e.legacy_only)
+                    .collect::<Vec<_>>()
+            )
+        );
         for key in ["gameVersion", "catalogUpdatedAt", "schemaVersion"] {
             assert!(catalog.get(key).is_none());
         }
@@ -2934,7 +2954,10 @@ mod tests {
             on_demand_team_prompt(&intake, &[]).unwrap(),
         ] {
             assert!(prompt.contains(STAR_RAIL_CATALOG_PURPOSE));
-            assert!(!prompt.contains("\"gameVersion\":\"3.0\""));
+            assert!(!prompt.contains(&format!("\"gameVersion\":\"{}\"", full.game_version)));
+            assert!(!prompt.contains("瞬間を記憶に留めて"));
+            assert!(!prompt.contains("悠久の地アムフォレウス"));
+            assert!(prompt.contains("明日に捧げる色"));
         }
     }
 

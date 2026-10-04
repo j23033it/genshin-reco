@@ -1,8 +1,8 @@
 {
   "schemaVersion": "star-rail-catalog-v1",
   "game": "star_rail",
-  "gameVersion": "3.0",
-  "catalogUpdatedAt": "2026-10-01",
+  "gameVersion": "4.6",
+  "catalogUpdatedAt": "2026-10-04",
   "characters": [
     {
       "id": "hsr-character-0",
@@ -529,6 +529,234 @@
       "path": "虚無",
       "aliases": [],
       "imageUrl": null
+    },
+    {
+      "id": "hsr-character-65",
+      "name": "ギルガメッシュ",
+      "element": "雷",
+      "path": "壊滅",
+      "aliases": [],
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-character-66",
+      "name": "セイバー",
+      "element": "風",
+      "path": "壊滅",
+      "aliases": [],
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-character-67",
+      "name": "モーディス",
+      "element": "虚数",
+      "path": "壊滅",
+      "aliases": [],
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-character-68",
+      "name": "ファイノン",
+      "element": "物理",
+      "path": "壊滅",
+      "aliases": [],
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-character-69",
+      "name": "不死途",
+      "element": "雷",
+      "path": "巡狩",
+      "aliases": [],
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-character-70",
+      "name": "アーチャー",
+      "element": "量子",
+      "path": "巡狩",
+      "aliases": [],
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-character-71",
+      "name": "姫子・旅立ち",
+      "element": "炎",
+      "path": "知恵",
+      "aliases": [],
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-character-72",
+      "name": "アナイクス",
+      "element": "風",
+      "path": "知恵",
+      "aliases": [],
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-character-73",
+      "name": "遠坂凛",
+      "element": "量子",
+      "path": "知恵",
+      "aliases": [],
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-character-74",
+      "name": "ケリュドラ",
+      "element": "風",
+      "path": "調和",
+      "aliases": [],
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-character-75",
+      "name": "トリビー",
+      "element": "量子",
+      "path": "調和",
+      "aliases": [],
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-character-76",
+      "name": "千冶・刃",
+      "element": "炎",
+      "path": "虚無",
+      "aliases": [],
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-character-77",
+      "name": "ダリア",
+      "element": "炎",
+      "path": "虚無",
+      "aliases": [],
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-character-78",
+      "name": "サフェル",
+      "element": "量子",
+      "path": "虚無",
+      "aliases": [],
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-character-79",
+      "name": "セイレンス",
+      "element": "物理",
+      "path": "虚無",
+      "aliases": [],
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-character-80",
+      "name": "丹恒・騰荒",
+      "element": "物理",
+      "path": "存護",
+      "aliases": [],
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-character-81",
+      "name": "キュレネ",
+      "element": "氷",
+      "path": "記憶",
+      "aliases": [],
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-character-82",
+      "name": "長夜月",
+      "element": "氷",
+      "path": "記憶",
+      "aliases": [],
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-character-83",
+      "name": "ロビン・夏空の歌",
+      "element": "風",
+      "path": "記憶",
+      "aliases": [],
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-character-84",
+      "name": "ヒアンシー",
+      "element": "風",
+      "path": "記憶",
+      "aliases": [],
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-character-85",
+      "name": "キャストリス",
+      "element": "量子",
+      "path": "記憶",
+      "aliases": [],
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-character-86",
+      "name": "火花",
+      "element": "炎",
+      "path": "愉悦",
+      "aliases": [],
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-character-87",
+      "name": "パール",
+      "element": "氷",
+      "path": "愉悦",
+      "aliases": [],
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-character-88",
+      "name": "開拓者・愉悦",
+      "element": "雷",
+      "path": "愉悦",
+      "aliases": [
+        "愉悦主人公",
+        "開拓者（愉悦）"
+      ],
+      "exclusiveGroup": "trailblazer",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-character-89",
+      "name": "銀狼LV.999",
+      "element": "虚数",
+      "path": "愉悦",
+      "aliases": [],
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-character-90",
+      "name": "アベンチュリン・波と戯れる夏",
+      "element": "量子",
+      "path": "愉悦",
+      "aliases": [],
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-character-91",
+      "name": "緋英",
+      "element": "物理",
+      "path": "愉悦",
+      "aliases": [],
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-character-92",
+      "name": "爻光",
+      "element": "物理",
+      "path": "愉悦",
+      "aliases": [],
+      "imageUrl": null
     }
   ],
   "lightCones": [
@@ -764,7 +992,8 @@
       "id": "hsr-cone-38",
       "name": "瞬間を記憶に留めて",
       "path": "記憶",
-      "imageUrl": null
+      "imageUrl": null,
+      "legacyOnly": true
     },
     {
       "id": "hsr-cone-39",
@@ -781,6 +1010,780 @@
     {
       "id": "hsr-cone-42",
       "name": "等価交換",
+      "path": "豊穣",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-43",
+      "name": "明日に捧げる色",
+      "path": "愉悦",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-44",
+      "name": "波しぶきが躍る夏へ",
+      "path": "愉悦",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-45",
+      "name": "立ち上がり高らかな歌を",
+      "path": "記憶",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-46",
+      "name": "静かに瞬く小さな火",
+      "path": "知恵",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-47",
+      "name": "在るがままの我",
+      "path": "壊滅",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-48",
+      "name": "夜を照らす導きの星",
+      "path": "知恵",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-49",
+      "name": "煉獄に焼かれし新身",
+      "path": "虚無",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-50",
+      "name": "再び花が咲く季節に",
+      "path": "愉悦",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-51",
+      "name": "銀河シティへようこそ",
+      "path": "愉悦",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-52",
+      "name": "愉悦溢れる祝福",
+      "path": "愉悦",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-53",
+      "name": "或る嘘の終幕",
+      "path": "巡狩",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-54",
+      "name": "きらびやかな世界",
+      "path": "愉悦",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-55",
+      "name": "彼女が視ると決めた時",
+      "path": "愉悦",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-56",
+      "name": "彼女の炎を忘れずに",
+      "path": "虚無",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-57",
+      "name": "愛はいま永遠に",
+      "path": "記憶",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-58",
+      "name": "万里の山河を越えて",
+      "path": "存護",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-59",
+      "name": "長き夜に輝く星へ",
+      "path": "記憶",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-60",
+      "name": "黄金の血で刻む時代",
+      "path": "調和",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-61",
+      "name": "海の歌は何がため",
+      "path": "虚無",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-62",
+      "name": "報われぬ戴冠",
+      "path": "壊滅",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-63",
+      "name": "理想を焼く奈落で",
+      "path": "巡狩",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-64",
+      "name": "燃え盛る黎明のように",
+      "path": "壊滅",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-65",
+      "name": "風に揺蕩う虚言",
+      "path": "虚無",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-66",
+      "name": "空の虹が消えぬように",
+      "path": "記憶",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-67",
+      "name": "生命、焼滅すべし",
+      "path": "知恵",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-68",
+      "name": "永訣よ美しくあれ",
+      "path": "記憶",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-69",
+      "name": "尽きぬ追憶",
+      "path": "記憶",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-70",
+      "name": "前途燃やす血の如き炎",
+      "path": "壊滅",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-71",
+      "name": "もしも時が花だったら",
+      "path": "調和",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-72",
+      "name": "光陰を織り黄金と成す",
+      "path": "記憶",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-73",
+      "name": "触れてはならぬ領域へ",
+      "path": "知恵",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-74",
+      "name": "長途はやがて帰途へと続く",
+      "path": "虚無",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-75",
+      "name": "大地より天を目指して",
+      "path": "調和",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-76",
+      "name": "忍法帖・繚乱破魔",
+      "path": "知恵",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-77",
+      "name": "昔日の香りは今も猶",
+      "path": "豊穣",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-78",
+      "name": "我が征く巡狩の道",
+      "path": "巡狩",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-79",
+      "name": "幾度目かの春",
+      "path": "虚無",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-80",
+      "name": "夕日に舞う",
+      "path": "壊滅",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-81",
+      "name": "絶え間ない演算",
+      "path": "知恵",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-82",
+      "name": "されど希望の銘は無価",
+      "path": "知恵",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-83",
+      "name": "二度目の生に向かって",
+      "path": "巡狩",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-84",
+      "name": "光あふれる夜",
+      "path": "調和",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-85",
+      "name": "運命は常に不公平",
+      "path": "存護",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-86",
+      "name": "流れ逝く岸を歩いて",
+      "path": "虚無",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-87",
+      "name": "人生は遊び",
+      "path": "調和",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-88",
+      "name": "時間の記憶を再構築して",
+      "path": "虚無",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-89",
+      "name": "純粋なる思惟の洗礼",
+      "path": "巡狩",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-90",
+      "name": "その一刻、目に焼き付けて",
+      "path": "知恵",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-91",
+      "name": "驚魂の夜",
+      "path": "豊穣",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-92",
+      "name": "悩んで笑って",
+      "path": "巡狩",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-93",
+      "name": "この身は剣なり",
+      "path": "壊滅",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-94",
+      "name": "閉ざした瞳",
+      "path": "存護",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-95",
+      "name": "陽光より輝くもの",
+      "path": "壊滅",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-96",
+      "name": "着かない彼岸",
+      "path": "壊滅",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-97",
+      "name": "棺のこだま",
+      "path": "豊穣",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-98",
+      "name": "降りやまぬ雨",
+      "path": "虚無",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-99",
+      "name": "泥の如き眠り",
+      "path": "巡狩",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-100",
+      "name": "世界の名を以て",
+      "path": "虚無",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-101",
+      "name": "地平線のゴールへ",
+      "path": "巡狩",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-102",
+      "name": "バカンスのひと時",
+      "path": "愉悦",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-103",
+      "name": "みんなで一緒に未来へ",
+      "path": "愉悦",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-104",
+      "name": "今日は好運",
+      "path": "愉悦",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-105",
+      "name": "タケタケ冒険記",
+      "path": "愉悦",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-106",
+      "name": "ピンク色の明日へ",
+      "path": "記憶",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-107",
+      "name": "永遠の迷境ごはん",
+      "path": "調和",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-108",
+      "name": "麦の香り漂う夢",
+      "path": "知恵",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-109",
+      "name": "風を追う時",
+      "path": "調和",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-110",
+      "name": "休日のバルネア大冒険",
+      "path": "虚無",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-111",
+      "name": "終点でまた会おう",
+      "path": "巡狩",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-112",
+      "name": "花は忘れない",
+      "path": "記憶",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-113",
+      "name": "古より受け継がれる血",
+      "path": "壊滅",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-114",
+      "name": "明日の明日まで",
+      "path": "豊穣",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-115",
+      "name": "旅が平穏であるように",
+      "path": "存護",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-116",
+      "name": "物語をめくって",
+      "path": "記憶",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-117",
+      "name": "宇宙一の大商い！",
+      "path": "知恵",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-118",
+      "name": "天才たちの「挨拶」",
+      "path": "記憶",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-119",
+      "name": "瞬刻の勝機",
+      "path": "記憶",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-120",
+      "name": "忍事録・音律狩猟",
+      "path": "壊滅",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-121",
+      "name": "夢のモンタージュ",
+      "path": "豊穣",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-122",
+      "name": "夜は影のように付き纏う",
+      "path": "巡狩",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-123",
+      "name": "美しき華よ今咲かん",
+      "path": "調和",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-124",
+      "name": "調和が沈黙した後",
+      "path": "知恵",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-125",
+      "name": "明日のための旅",
+      "path": "調和",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-126",
+      "name": "終わりなき舞踏",
+      "path": "虚無",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-127",
+      "name": "二人だけのコンサート",
+      "path": "存護",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-128",
+      "name": "心に刻まれた約束",
+      "path": "壊滅",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-129",
+      "name": "ショーの始まり",
+      "path": "虚無",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-130",
+      "name": "銀河が陥落した日",
+      "path": "知恵",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-131",
+      "name": "烈火の彼方",
+      "path": "壊滅",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-132",
+      "name": "ドリームタウンの大冒険",
+      "path": "調和",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-133",
+      "name": "運命を紡ぐ糸",
+      "path": "存護",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-134",
+      "name": "よぉ、ここにいるぜ",
+      "path": "豊穣",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-135",
+      "name": "初めてのクエストの前に",
+      "path": "虚無",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-136",
+      "name": "我ら地炎",
+      "path": "存護",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-137",
+      "name": "春水に初生する",
+      "path": "巡狩",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-138",
+      "name": "フォローして！",
+      "path": "巡狩",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-139",
+      "name": "星間市場のトレンド",
+      "path": "存護",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-140",
+      "name": "今が丁度",
+      "path": "豊穣",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-141",
+      "name": "今日も平和な一日",
+      "path": "知恵",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-142",
+      "name": "彫月裁雲の意",
+      "path": "調和",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-143",
+      "name": "幽冥に帰す",
+      "path": "巡狩",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-144",
+      "name": "これがウチだよ！",
+      "path": "存護",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-145",
+      "name": "またお会いしましょう",
+      "path": "虚無",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-146",
+      "name": "暖かい夜は長くない",
+      "path": "豊穣",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-147",
+      "name": "ワン！散歩の時間！",
+      "path": "壊滅",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-148",
+      "name": "この世界に喧噪を",
+      "path": "知恵",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-149",
+      "name": "惑星との出会い",
+      "path": "調和",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-150",
+      "name": "獲物の視線",
+      "path": "虚無",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-151",
+      "name": "「私」の誕生",
+      "path": "知恵",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-152",
+      "name": "モグラ党へようこそ",
+      "path": "壊滅",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-153",
+      "name": "沈黙のみ",
+      "path": "巡狩",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-154",
+      "name": "残涙",
+      "path": "愉悦",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-155",
+      "name": "嗤笑",
+      "path": "愉悦",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-156",
+      "name": "辿る記憶",
+      "path": "記憶",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-157",
+      "name": "燃ゆる影",
+      "path": "記憶",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-158",
+      "name": "見識",
+      "path": "知恵",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-159",
+      "name": "同調",
+      "path": "調和",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-160",
+      "name": "匿影",
+      "path": "虚無",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-161",
+      "name": "新天地",
+      "path": "存護",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-162",
+      "name": "倶歿",
+      "path": "壊滅",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-163",
+      "name": "相抗",
+      "path": "巡狩",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-164",
+      "name": "霊鍵",
+      "path": "知恵",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-165",
+      "name": "防衛",
+      "path": "存護",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-166",
+      "name": "楽壊",
+      "path": "壊滅",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-167",
+      "name": "嘉果",
+      "path": "豊穣",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-168",
+      "name": "離弦",
+      "path": "巡狩",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-169",
+      "name": "斉頌",
+      "path": "調和",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-170",
+      "name": "幽邃",
+      "path": "虚無",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-cone-171",
+      "name": "物穣",
       "path": "豊穣",
       "imageUrl": null
     }
@@ -905,6 +1908,56 @@
       "id": "hsr-tunnel-23",
       "name": "亡国の悲哀を詠う詩人",
       "imageUrl": null
+    },
+    {
+      "id": "hsr-tunnel-24",
+      "name": "烈陽と雷鳴の武神",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-tunnel-25",
+      "name": "荒海を越える船長",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-tunnel-26",
+      "name": "天地再創の救世主",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-tunnel-27",
+      "name": "星の光を隠した隠者",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-tunnel-28",
+      "name": "功績輝く魔法少女",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-tunnel-29",
+      "name": "天命に従う旅の卜者",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-tunnel-30",
+      "name": "星巡るナビゲーター「シケン」",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-tunnel-31",
+      "name": "神業を探求する名匠",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-tunnel-32",
+      "name": "星灯す夢芝居の伶人",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-tunnel-33",
+      "name": "禁断の果実を貪る異端者",
+      "imageUrl": null
     }
   ],
   "ornaments": [
@@ -1006,6 +2059,52 @@
     {
       "id": "hsr-ornament-19",
       "name": "悠久の地アムフォレウス",
+      "imageUrl": null,
+      "legacyOnly": true
+    },
+    {
+      "id": "hsr-ornament-20",
+      "name": "深慮に浸る巨樹",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-ornament-21",
+      "name": "夢を紡ぐ妖精の楽園",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-ornament-22",
+      "name": "酩酊の海域",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-ornament-23",
+      "name": "永遠の地オンパロス",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-ornament-24",
+      "name": "天国@配信ルーム",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-ornament-25",
+      "name": "ステージゼロ：パンクロード",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-ornament-26",
+      "name": "千の星が集う街",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-ornament-27",
+      "name": "墜星の出航地",
+      "imageUrl": null
+    },
+    {
+      "id": "hsr-ornament-28",
+      "name": "宇宙生命科学研究院",
       "imageUrl": null
     }
   ]
