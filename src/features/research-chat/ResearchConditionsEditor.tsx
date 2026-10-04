@@ -42,7 +42,7 @@ export function ResearchConditionsEditor({
     let active = true;
     const load = starRail ? loadStarRailCatalog().then(loaded => {
       if (active) setStarRailCatalog(loaded);
-      return { characters: loaded.characters.map(character => ({ ...character, weaponType: character.path, imageUrl: character.imageUrl ?? "", rarity: 5 })), weapons: loaded.lightCones.map(cone => ({ ...cone, weaponType: cone.path, imageUrl: cone.imageUrl ?? "", rarity: 5 })) };
+      return { characters: loaded.characters.map(character => ({ ...character, weaponType: character.path, imageUrl: character.imageUrl ?? "", rarity: 5 })), weapons: loaded.lightCones.filter(cone => !cone.legacyOnly).map(cone => ({ ...cone, weaponType: cone.path, imageUrl: cone.imageUrl ?? "", rarity: 5 })) };
     }) : loadCatalog();
     void load.then(
       (loaded) => {
@@ -65,6 +65,9 @@ export function ResearchConditionsEditor({
 
   const equipmentErrors = members.flatMap(member => {
     if (!member.weapon || (!catalog && !catalogFailed)) return [];
+    if (starRailCatalog?.lightCones.some(cone => cone.name === member.weapon && cone.legacyOnly)) {
+      return [`光円錐「${member.weapon}」の実在対象を確認できません。保存した指定は保持しています。再選択してください。`];
+    }
     const character = catalog?.characters.find(entry => entry.name === member.name);
     const compatible = character?.weaponType && catalog?.weapons.some(weapon => weapon.name === member.weapon && weapon.weaponType === character.weaponType);
     return compatible ? [] : [`${member.name}の${starRail ? "光円錐" : "武器"}「${member.weapon}」は装備可能と確認できません。選び直すか「指定なし」に戻してください。`];

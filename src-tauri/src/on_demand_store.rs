@@ -463,6 +463,100 @@ mod tests {
     use super::*;
 
     #[test]
+    fn 最新版の固定編成を保存し再読込でき旧未確認装備も改変せず読み出せる() {
+        use crate::on_demand_domain::ResearchIntake;
+        let database = Database::open_in_memory().unwrap();
+        let (intake, draft) = crate::star_rail::tests::latest_sample();
+        intake.validate().unwrap();
+        let mut conversation = database
+            .create_on_demand_conversation_for(GameId::StarRail)
+            .unwrap();
+        conversation.members = intake.members.clone();
+        conversation.status = ResearchConversationStatus::Succeeded;
+        conversation.team_id = Some("catalog-4-6".into());
+        let mut value = serde_json::to_value(&draft).unwrap();
+        value["teamId"] = serde_json::json!("catalog-4-6");
+        value["sessionId"] = serde_json::json!(conversation.session_id);
+        value["inputMembers"] = serde_json::json!(intake.members);
+        value["createdAt"] = serde_json::json!(conversation.created_at);
+        value["updatedAt"] = serde_json::json!(conversation.updated_at);
+        let record: ResearchedTeamRecord = serde_json::from_value(value).unwrap();
+        database
+            .save_researched_team(&conversation, &record)
+            .unwrap();
+        assert_eq!(
+            database
+                .load_researched_team(&record.team_id)
+                .unwrap()
+                .unwrap(),
+            record
+        );
+
+        let mut legacy = record;
+        legacy.input_members.as_mut().unwrap()[0].name = "開拓者・記憶".into();
+        legacy.input_members.as_mut().unwrap()[0].weapon = Some("瞬間を記憶に留めて".into());
+        legacy.input_members.as_mut().unwrap()[0]
+            .relics
+            .as_mut()
+            .unwrap()
+            .ornament = Some("悠久の地アムフォレウス".into());
+        legacy.members[0].name = "開拓者・記憶".into();
+        legacy.members[0].weapon = "瞬間を記憶に留めて".into();
+        let build = legacy.members[0].star_rail.as_mut().unwrap();
+        build.light_cone = "瞬間を記憶に留めて".into();
+        build.ornament = "悠久の地アムフォレウス".into();
+        build.ornament_evidence.set = build.ornament.clone();
+        conversation.members = legacy.input_members.clone().unwrap();
+        let connection = database.connection().unwrap();
+        // 更新前に保存されたJSONを再現する。新規保存の検証を緩めない。
+        connection
+            .execute(
+                "UPDATE researched_teams SET result_json=?1 WHERE team_id=?2",
+                params![serde_json::to_string(&legacy).unwrap(), legacy.team_id],
+            )
+            .unwrap();
+        connection
+            .execute(
+                "UPDATE on_demand_research_sessions SET conversation_json=?1 WHERE session_id=?2",
+                params![
+                    serde_json::to_string(&conversation).unwrap(),
+                    conversation.session_id
+                ],
+            )
+            .unwrap();
+        drop(connection);
+        assert_eq!(
+            database
+                .load_researched_team(&legacy.team_id)
+                .unwrap()
+                .unwrap(),
+            legacy
+        );
+        let restored = database
+            .load_on_demand_conversation(&conversation.session_id)
+            .unwrap()
+            .unwrap();
+        assert_eq!(restored, conversation);
+        let intake = ResearchIntake {
+            game: restored.game,
+            members: restored.members,
+            missing_fields: vec![],
+            ready_to_research: true,
+        };
+        assert!(intake.validate().unwrap_err().contains("再選択"));
+        assert!(
+            database
+                .save_researched_team(&conversation, &legacy)
+                .is_err()
+        );
+        let renamed = database
+            .rename_researched_team(&legacy.team_id, "保存名を変更")
+            .unwrap();
+        assert_eq!(renamed.members, legacy.members);
+        assert_eq!(renamed.input_members, legacy.input_members);
+    }
+
+    #[test]
     fn 旧光円錐名の保存結果と会話を正式名称で再調査できる() {
         use crate::on_demand_domain::ResearchIntake;
         for (old, current, character) in [

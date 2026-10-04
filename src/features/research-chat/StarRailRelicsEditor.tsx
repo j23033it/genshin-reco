@@ -35,12 +35,12 @@ export function StarRailRelicsEditor({ member, catalog, disabled, onChange }: {
     {(tunnel?.kind === "four_piece" ? [tunnel.set] : tunnel?.sets ?? []).map((name, index) => <div key={index} className="min-w-0">
       <label className="mb-1 block text-sm text-slate-400" htmlFor={`${prefix}-set-${index}`}>{tunnel?.kind === "four_piece" ? "4セット名" : `2＋2セット名 ${index + 1}`}</label>
       <select id={`${prefix}-set-${index}`} className={selectClass} value={name} onChange={event => setName(index, event.target.value)}>
-        {options(catalog?.tunnelRelics ?? [], name)}
+        {options(catalog?.tunnelRelics.filter(entry => !entry.legacyOnly) ?? [], name)}
       </select>
     </div>)}
     <label className="block text-sm text-slate-300" htmlFor={`${prefix}-ornament`}>オーナメント（2セット）</label>
     <select id={`${prefix}-ornament`} className={selectClass} value={relics.ornament ?? ""} onChange={event => onChange({ ...relics, ornament: event.target.value || null })}>
-      {options(catalog?.ornaments ?? [], relics.ornament ?? "")}
+      {options(catalog?.ornaments.filter(entry => !entry.legacyOnly) ?? [], relics.ornament ?? "")}
     </select>
   </fieldset>;
 }

@@ -1,0 +1,1691 @@
+{
+  "gameVersion": "4.6",
+  "referenceDate": "2026-10-04",
+  "officialReleaseUrl": "https://prtimes.jp/main/html/rd/p/000000451.000096124.html",
+  "counts": {
+    "characters": 93,
+    "lightCones": 170,
+    "tunnelRelics": 34,
+    "ornaments": 28
+  },
+  "characters": [
+    {
+      "name": "ホタル",
+      "element": "炎",
+      "path": "壊滅",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/%E3%83%9B%E3%82%BF%E3%83%AB"
+    },
+    {
+      "name": "フック",
+      "element": "炎",
+      "path": "壊滅",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/%E3%83%95%E3%83%83%E3%82%AF"
+    },
+    {
+      "name": "鏡流",
+      "element": "氷",
+      "path": "壊滅",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/%E9%8F%A1%E6%B5%81"
+    },
+    {
+      "name": "ミーシャ",
+      "element": "氷",
+      "path": "壊滅",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/%E3%83%9F%E3%83%BC%E3%82%B7%E3%83%A3"
+    },
+    {
+      "name": "ギルガメッシュ",
+      "element": "雷",
+      "path": "壊滅",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/%E3%82%AE%E3%83%AB%E3%82%AC%E3%83%A1%E3%83%83%E3%82%B7%E3%83%A5"
+    },
+    {
+      "name": "アーラン",
+      "element": "雷",
+      "path": "壊滅",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/%E3%82%A2%E3%83%BC%E3%83%A9%E3%83%B3"
+    },
+    {
+      "name": "セイバー",
+      "element": "風",
+      "path": "壊滅",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/%E3%82%BB%E3%82%A4%E3%83%90%E3%83%BC"
+    },
+    {
+      "name": "刃",
+      "element": "風",
+      "path": "壊滅",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/%E5%88%83"
+    },
+    {
+      "name": "モーディス",
+      "element": "虚数",
+      "path": "壊滅",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/%E3%83%A2%E3%83%BC%E3%83%87%E3%82%A3%E3%82%B9"
+    },
+    {
+      "name": "丹恒・飲月",
+      "element": "虚数",
+      "path": "壊滅",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/%E4%B8%B9%E6%81%92%E3%83%BB%E9%A3%B2%E6%9C%88"
+    },
+    {
+      "name": "雪衣",
+      "element": "量子",
+      "path": "壊滅",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/%E9%9B%AA%E8%A1%A3"
+    },
+    {
+      "name": "ファイノン",
+      "element": "物理",
+      "path": "壊滅",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/%E3%83%95%E3%82%A1%E3%82%A4%E3%83%8E%E3%83%B3"
+    },
+    {
+      "name": "雲璃",
+      "element": "物理",
+      "path": "壊滅",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/%E9%9B%B2%E7%92%83"
+    },
+    {
+      "name": "クラーラ",
+      "element": "物理",
+      "path": "壊滅",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/%E3%82%AF%E3%83%A9%E3%83%BC%E3%83%A9"
+    },
+    {
+      "name": "開拓者・壊滅",
+      "element": "物理",
+      "path": "壊滅",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/%E9%96%8B%E6%8B%93%E8%80%85-%E5%A3%8A%E6%BB%85"
+    },
+    {
+      "name": "トパーズ＆カブ",
+      "element": "炎",
+      "path": "巡狩",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/%E3%83%88%E3%83%91%E3%83%BC%E3%82%BA%EF%BC%86%E3%82%AB%E3%83%96"
+    },
+    {
+      "name": "彦卿",
+      "element": "氷",
+      "path": "巡狩",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/%E5%BD%A6%E5%8D%BF"
+    },
+    {
+      "name": "不死途",
+      "element": "雷",
+      "path": "巡狩",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/%E4%B8%8D%E6%AD%BB%E9%80%94"
+    },
+    {
+      "name": "モゼ",
+      "element": "雷",
+      "path": "巡狩",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/%E3%83%A2%E3%82%BC"
+    },
+    {
+      "name": "飛霄",
+      "element": "風",
+      "path": "巡狩",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/%E9%A3%9B%E9%9C%84"
+    },
+    {
+      "name": "丹恒",
+      "element": "風",
+      "path": "巡狩",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/%E4%B8%B9%E6%81%92"
+    },
+    {
+      "name": "Dr.レイシオ",
+      "element": "虚数",
+      "path": "巡狩",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/Dr.%E3%83%AC%E3%82%A4%E3%82%B7%E3%82%AA"
+    },
+    {
+      "name": "三月なのか・巡狩",
+      "element": "虚数",
+      "path": "巡狩",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/%E4%B8%89%E6%9C%88%E3%81%AA%E3%81%AE%E3%81%8B-%E5%B7%A1%E7%8B%A9"
+    },
+    {
+      "name": "アーチャー",
+      "element": "量子",
+      "path": "巡狩",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/%E3%82%A2%E3%83%BC%E3%83%81%E3%83%A3%E3%83%BC"
+    },
+    {
+      "name": "ゼーレ",
+      "element": "量子",
+      "path": "巡狩",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/%E3%82%BC%E3%83%BC%E3%83%AC"
+    },
+    {
+      "name": "ブートヒル",
+      "element": "物理",
+      "path": "巡狩",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/%E3%83%96%E3%83%BC%E3%83%88%E3%83%92%E3%83%AB"
+    },
+    {
+      "name": "素裳",
+      "element": "物理",
+      "path": "巡狩",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/%E7%B4%A0%E8%A3%B3"
+    },
+    {
+      "name": "姫子・旅立ち",
+      "element": "炎",
+      "path": "知恵",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/%E5%A7%AB%E5%AD%90%E3%83%BB%E6%97%85%E7%AB%8B%E3%81%A1"
+    },
+    {
+      "name": "姫子",
+      "element": "炎",
+      "path": "知恵",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/%E5%A7%AB%E5%AD%90"
+    },
+    {
+      "name": "マダム・ヘルタ",
+      "element": "氷",
+      "path": "知恵",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/%E3%83%9E%E3%83%80%E3%83%A0%E3%83%BB%E3%83%98%E3%83%AB%E3%82%BF"
+    },
+    {
+      "name": "ヘルタ",
+      "element": "氷",
+      "path": "知恵",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/%E3%83%98%E3%83%AB%E3%82%BF"
+    },
+    {
+      "name": "景元",
+      "element": "雷",
+      "path": "知恵",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/%E6%99%AF%E5%85%83"
+    },
+    {
+      "name": "セーバル",
+      "element": "雷",
+      "path": "知恵",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/%E3%82%BB%E3%83%BC%E3%83%90%E3%83%AB"
+    },
+    {
+      "name": "アナイクス",
+      "element": "風",
+      "path": "知恵",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/%E3%82%A2%E3%83%8A%E3%82%A4%E3%82%AF%E3%82%B9"
+    },
+    {
+      "name": "乱破",
+      "element": "虚数",
+      "path": "知恵",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/%E4%B9%B1%E7%A0%B4"
+    },
+    {
+      "name": "遠坂凛",
+      "element": "量子",
+      "path": "知恵",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/%E9%81%A0%E5%9D%82%E5%87%9B"
+    },
+    {
+      "name": "ジェイド",
+      "element": "量子",
+      "path": "知恵",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/%E3%82%B8%E3%82%A7%E3%82%A4%E3%83%89"
+    },
+    {
+      "name": "青雀",
+      "element": "量子",
+      "path": "知恵",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/%E9%9D%92%E9%9B%80"
+    },
+    {
+      "name": "アルジェンティ",
+      "element": "物理",
+      "path": "知恵",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/%E3%82%A2%E3%83%AB%E3%82%B8%E3%82%A7%E3%83%B3%E3%83%86%E3%82%A3"
+    },
+    {
+      "name": "アスター",
+      "element": "炎",
+      "path": "調和",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/%E3%82%A2%E3%82%B9%E3%82%BF%E3%83%BC"
+    },
+    {
+      "name": "ルアン・メェイ",
+      "element": "氷",
+      "path": "調和",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/%E3%83%AB%E3%82%A2%E3%83%B3%E3%83%BB%E3%83%A1%E3%82%A7%E3%82%A4"
+    },
+    {
+      "name": "停雲",
+      "element": "雷",
+      "path": "調和",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/%E5%81%9C%E9%9B%B2"
+    },
+    {
+      "name": "ケリュドラ",
+      "element": "風",
+      "path": "調和",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/%E3%82%B1%E3%83%AA%E3%83%A5%E3%83%89%E3%83%A9"
+    },
+    {
+      "name": "ブローニャ",
+      "element": "風",
+      "path": "調和",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/%E3%83%96%E3%83%AD%E3%83%BC%E3%83%8B%E3%83%A3"
+    },
+    {
+      "name": "サンデー",
+      "element": "虚数",
+      "path": "調和",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/%E3%82%B5%E3%83%B3%E3%83%87%E3%83%BC"
+    },
+    {
+      "name": "開拓者・調和",
+      "element": "虚数",
+      "path": "調和",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/%E9%96%8B%E6%8B%93%E8%80%85-%E8%AA%BF%E5%92%8C"
+    },
+    {
+      "name": "御空",
+      "element": "虚数",
+      "path": "調和",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/%E5%BE%A1%E7%A9%BA"
+    },
+    {
+      "name": "トリビー",
+      "element": "量子",
+      "path": "調和",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/%E3%83%88%E3%83%AA%E3%83%93%E3%83%BC"
+    },
+    {
+      "name": "花火",
+      "element": "量子",
+      "path": "調和",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/%E8%8A%B1%E7%81%AB"
+    },
+    {
+      "name": "ロビン",
+      "element": "物理",
+      "path": "調和",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/%E3%83%AD%E3%83%93%E3%83%B3"
+    },
+    {
+      "name": "寒鴉",
+      "element": "物理",
+      "path": "調和",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/%E5%AF%92%E9%B4%89"
+    },
+    {
+      "name": "千冶・刃",
+      "element": "炎",
+      "path": "虚無",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/%E5%8D%83%E5%86%B6%E3%83%BB%E5%88%83"
+    },
+    {
+      "name": "ダリア",
+      "element": "炎",
+      "path": "虚無",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/%E3%83%80%E3%83%AA%E3%82%A2"
+    },
+    {
+      "name": "帰忘の流離人",
+      "element": "炎",
+      "path": "虚無",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/%E5%B8%B0%E5%BF%98%E3%81%AE%E6%B5%81%E9%9B%A2%E4%BA%BA"
+    },
+    {
+      "name": "椒丘",
+      "element": "炎",
+      "path": "虚無",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/%E6%A4%92%E4%B8%98"
+    },
+    {
+      "name": "桂乃芬",
+      "element": "炎",
+      "path": "虚無",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/%E6%A1%82%E4%B9%83%E8%8A%AC"
+    },
+    {
+      "name": "ペラ",
+      "element": "氷",
+      "path": "虚無",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/%E3%83%9A%E3%83%A9"
+    },
+    {
+      "name": "黄泉",
+      "element": "雷",
+      "path": "虚無",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/%E9%BB%84%E6%B3%89"
+    },
+    {
+      "name": "カフカ",
+      "element": "雷",
+      "path": "虚無",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/%E3%82%AB%E3%83%95%E3%82%AB"
+    },
+    {
+      "name": "ブラックスワン",
+      "element": "風",
+      "path": "虚無",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/%E3%83%96%E3%83%A9%E3%83%83%E3%82%AF%E3%82%B9%E3%83%AF%E3%83%B3"
+    },
+    {
+      "name": "サンポ",
+      "element": "風",
+      "path": "虚無",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/%E3%82%B5%E3%83%B3%E3%83%9D"
+    },
+    {
+      "name": "ヴェルト",
+      "element": "虚数",
+      "path": "虚無",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/%E3%83%B4%E3%82%A7%E3%83%AB%E3%83%88"
+    },
+    {
+      "name": "サフェル",
+      "element": "量子",
+      "path": "虚無",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/%E3%82%B5%E3%83%95%E3%82%A7%E3%83%AB"
+    },
+    {
+      "name": "銀狼",
+      "element": "量子",
+      "path": "虚無",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/%E9%8A%80%E7%8B%BC"
+    },
+    {
+      "name": "セイレンス",
+      "element": "物理",
+      "path": "虚無",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/%E3%82%BB%E3%82%A4%E3%83%AC%E3%83%B3%E3%82%B9"
+    },
+    {
+      "name": "ルカ",
+      "element": "物理",
+      "path": "虚無",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/%E3%83%AB%E3%82%AB"
+    },
+    {
+      "name": "開拓者・存護",
+      "element": "炎",
+      "path": "存護",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/%E9%96%8B%E6%8B%93%E8%80%85-%E5%AD%98%E8%AD%B7"
+    },
+    {
+      "name": "ジェパード",
+      "element": "氷",
+      "path": "存護",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/%E3%82%B8%E3%82%A7%E3%83%91%E3%83%BC%E3%83%89"
+    },
+    {
+      "name": "三月なのか",
+      "element": "氷",
+      "path": "存護",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/%E4%B8%89%E6%9C%88%E3%81%AA%E3%81%AE%E3%81%8B"
+    },
+    {
+      "name": "アベンチュリン",
+      "element": "虚数",
+      "path": "存護",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/%E3%82%A2%E3%83%99%E3%83%B3%E3%83%81%E3%83%A5%E3%83%AA%E3%83%B3"
+    },
+    {
+      "name": "符玄",
+      "element": "量子",
+      "path": "存護",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/%E7%AC%A6%E7%8E%84"
+    },
+    {
+      "name": "丹恒・騰荒",
+      "element": "物理",
+      "path": "存護",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/%E4%B8%B9%E6%81%92%E3%83%BB%E9%A8%B0%E8%8D%92"
+    },
+    {
+      "name": "霊砂",
+      "element": "炎",
+      "path": "豊穣",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/%E9%9C%8A%E7%A0%82"
+    },
+    {
+      "name": "ギャラガー",
+      "element": "炎",
+      "path": "豊穣",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/%E3%82%AE%E3%83%A3%E3%83%A9%E3%82%AC%E3%83%BC"
+    },
+    {
+      "name": "白露",
+      "element": "雷",
+      "path": "豊穣",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/%E7%99%BD%E9%9C%B2"
+    },
+    {
+      "name": "フォフォ",
+      "element": "風",
+      "path": "豊穣",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/%E3%83%95%E3%82%A9%E3%83%95%E3%82%A9"
+    },
+    {
+      "name": "羅刹",
+      "element": "虚数",
+      "path": "豊穣",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/%E7%BE%85%E5%88%B9"
+    },
+    {
+      "name": "リンクス",
+      "element": "量子",
+      "path": "豊穣",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/%E3%83%AA%E3%83%B3%E3%82%AF%E3%82%B9"
+    },
+    {
+      "name": "ナターシャ",
+      "element": "物理",
+      "path": "豊穣",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/%E3%83%8A%E3%82%BF%E3%83%BC%E3%82%B7%E3%83%A3"
+    },
+    {
+      "name": "キュレネ",
+      "element": "氷",
+      "path": "記憶",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/%E3%82%AD%E3%83%A5%E3%83%AC%E3%83%8D"
+    },
+    {
+      "name": "長夜月",
+      "element": "氷",
+      "path": "記憶",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/%E9%95%B7%E5%A4%9C%E6%9C%88"
+    },
+    {
+      "name": "開拓者・記憶",
+      "element": "氷",
+      "path": "記憶",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/%E9%96%8B%E6%8B%93%E8%80%85-%E8%A8%98%E6%86%B6"
+    },
+    {
+      "name": "アグライア",
+      "element": "雷",
+      "path": "記憶",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/%E3%82%A2%E3%82%B0%E3%83%A9%E3%82%A4%E3%82%A2"
+    },
+    {
+      "name": "ロビン・夏空の歌",
+      "element": "風",
+      "path": "記憶",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/%E3%83%AD%E3%83%93%E3%83%B3%E3%83%BB%E5%A4%8F%E7%A9%BA%E3%81%AE%E6%AD%8C"
+    },
+    {
+      "name": "ヒアンシー",
+      "element": "風",
+      "path": "記憶",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/%E3%83%92%E3%82%A2%E3%83%B3%E3%82%B7%E3%83%BC"
+    },
+    {
+      "name": "キャストリス",
+      "element": "量子",
+      "path": "記憶",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/%E3%82%AD%E3%83%A3%E3%82%B9%E3%83%88%E3%83%AA%E3%82%B9"
+    },
+    {
+      "name": "火花",
+      "element": "炎",
+      "path": "愉悦",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/%E7%81%AB%E8%8A%B1"
+    },
+    {
+      "name": "パール",
+      "element": "氷",
+      "path": "愉悦",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/%E3%83%91%E3%83%BC%E3%83%AB"
+    },
+    {
+      "name": "開拓者・愉悦",
+      "element": "雷",
+      "path": "愉悦",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/%E9%96%8B%E6%8B%93%E8%80%85-%E6%84%89%E6%82%A6"
+    },
+    {
+      "name": "銀狼LV.999",
+      "element": "虚数",
+      "path": "愉悦",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/%E9%8A%80%E7%8B%BCLV.999"
+    },
+    {
+      "name": "アベンチュリン・波と戯れる夏",
+      "element": "量子",
+      "path": "愉悦",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/%E3%82%A2%E3%83%99%E3%83%B3%E3%83%81%E3%83%A5%E3%83%AA%E3%83%B3%E3%83%BB%E6%B3%A2%E3%81%A8%E6%88%AF%E3%82%8C%E3%82%8B%E5%A4%8F"
+    },
+    {
+      "name": "緋英",
+      "element": "物理",
+      "path": "愉悦",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/%E7%B7%8B%E8%8B%B1"
+    },
+    {
+      "name": "爻光",
+      "element": "物理",
+      "path": "愉悦",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/%E7%88%BB%E5%85%89"
+    }
+  ],
+  "lightCones": [
+    {
+      "name": "明日に捧げる色",
+      "path": "愉悦",
+      "sourceUrl": "https://game8.jp/houkaistarrail/817653"
+    },
+    {
+      "name": "波しぶきが躍る夏へ",
+      "path": "愉悦",
+      "sourceUrl": "https://gamewith.jp/houkaistarrail/article/show/572740",
+      "secondarySourceUrl": "https://game8.jp/houkaistarrail/813876"
+    },
+    {
+      "name": "立ち上がり高らかな歌を",
+      "path": "記憶",
+      "sourceUrl": "https://game8.jp/houkaistarrail/808918"
+    },
+    {
+      "name": "静かに瞬く小さな火",
+      "path": "知恵",
+      "sourceUrl": "https://game8.jp/houkaistarrail/799953"
+    },
+    {
+      "name": "在るがままの我",
+      "path": "壊滅",
+      "sourceUrl": "https://game8.jp/houkaistarrail/799951"
+    },
+    {
+      "name": "夜を照らす導きの星",
+      "path": "知恵",
+      "sourceUrl": "https://game8.jp/houkaistarrail/796182"
+    },
+    {
+      "name": "煉獄に焼かれし新身",
+      "path": "虚無",
+      "sourceUrl": "https://game8.jp/houkaistarrail/785628"
+    },
+    {
+      "name": "再び花が咲く季節に",
+      "path": "愉悦",
+      "sourceUrl": "https://game8.jp/houkaistarrail/783566"
+    },
+    {
+      "name": "銀河シティへようこそ",
+      "path": "愉悦",
+      "sourceUrl": "https://game8.jp/houkaistarrail/779846"
+    },
+    {
+      "name": "愉悦溢れる祝福",
+      "path": "愉悦",
+      "sourceUrl": "https://game8.jp/houkaistarrail/775636"
+    },
+    {
+      "name": "或る嘘の終幕",
+      "path": "巡狩",
+      "sourceUrl": "https://game8.jp/houkaistarrail/774164"
+    },
+    {
+      "name": "きらびやかな世界",
+      "path": "愉悦",
+      "sourceUrl": "https://game8.jp/houkaistarrail/760855"
+    },
+    {
+      "name": "彼女が視ると決めた時",
+      "path": "愉悦",
+      "sourceUrl": "https://game8.jp/houkaistarrail/760840"
+    },
+    {
+      "name": "彼女の炎を忘れずに",
+      "path": "虚無",
+      "sourceUrl": "https://game8.jp/houkaistarrail/748769"
+    },
+    {
+      "name": "愛はいま永遠に",
+      "path": "記憶",
+      "sourceUrl": "https://game8.jp/houkaistarrail/734302"
+    },
+    {
+      "name": "万里の山河を越えて",
+      "path": "存護",
+      "sourceUrl": "https://game8.jp/houkaistarrail/727325"
+    },
+    {
+      "name": "長き夜に輝く星へ",
+      "path": "記憶",
+      "sourceUrl": "https://game8.jp/houkaistarrail/721354"
+    },
+    {
+      "name": "黄金の血で刻む時代",
+      "path": "調和",
+      "sourceUrl": "https://game8.jp/houkaistarrail/712851"
+    },
+    {
+      "name": "海の歌は何がため",
+      "path": "虚無",
+      "sourceUrl": "https://game8.jp/houkaistarrail/709507"
+    },
+    {
+      "name": "報われぬ戴冠",
+      "path": "壊滅",
+      "sourceUrl": "https://game8.jp/houkaistarrail/705011"
+    },
+    {
+      "name": "理想を焼く奈落で",
+      "path": "巡狩",
+      "sourceUrl": "https://game8.jp/houkaistarrail/704552"
+    },
+    {
+      "name": "燃え盛る黎明のように",
+      "path": "壊滅",
+      "sourceUrl": "https://game8.jp/houkaistarrail/700309"
+    },
+    {
+      "name": "風に揺蕩う虚言",
+      "path": "虚無",
+      "sourceUrl": "https://game8.jp/houkaistarrail/694473"
+    },
+    {
+      "name": "空の虹が消えぬように",
+      "path": "記憶",
+      "sourceUrl": "https://game8.jp/houkaistarrail/687605"
+    },
+    {
+      "name": "生命、焼滅すべし",
+      "path": "知恵",
+      "sourceUrl": "https://game8.jp/houkaistarrail/684458"
+    },
+    {
+      "name": "永訣よ美しくあれ",
+      "path": "記憶",
+      "sourceUrl": "https://game8.jp/houkaistarrail/680427"
+    },
+    {
+      "name": "尽きぬ追憶",
+      "path": "記憶",
+      "sourceUrl": "https://game8.jp/houkaistarrail/671361"
+    },
+    {
+      "name": "前途燃やす血の如き炎",
+      "path": "壊滅",
+      "sourceUrl": "https://game8.jp/houkaistarrail/676190"
+    },
+    {
+      "name": "もしも時が花だったら",
+      "path": "調和",
+      "sourceUrl": "https://game8.jp/houkaistarrail/669591"
+    },
+    {
+      "name": "光陰を織り黄金と成す",
+      "path": "記憶",
+      "sourceUrl": "https://game8.jp/houkaistarrail/666392"
+    },
+    {
+      "name": "触れてはならぬ領域へ",
+      "path": "知恵",
+      "sourceUrl": "https://game8.jp/houkaistarrail/662890"
+    },
+    {
+      "name": "長途はやがて帰途へと続く",
+      "path": "虚無",
+      "sourceUrl": "https://game8.jp/houkaistarrail/659014"
+    },
+    {
+      "name": "大地より天を目指して",
+      "path": "調和",
+      "sourceUrl": "https://game8.jp/houkaistarrail/655182"
+    },
+    {
+      "name": "忍法帖・繚乱破魔",
+      "path": "知恵",
+      "sourceUrl": "https://game8.jp/houkaistarrail/644977"
+    },
+    {
+      "name": "昔日の香りは今も猶",
+      "path": "豊穣",
+      "sourceUrl": "https://game8.jp/houkaistarrail/640425"
+    },
+    {
+      "name": "我が征く巡狩の道",
+      "path": "巡狩",
+      "sourceUrl": "https://game8.jp/houkaistarrail/637937"
+    },
+    {
+      "name": "幾度目かの春",
+      "path": "虚無",
+      "sourceUrl": "https://game8.jp/houkaistarrail/632971"
+    },
+    {
+      "name": "夕日に舞う",
+      "path": "壊滅",
+      "sourceUrl": "https://game8.jp/houkaistarrail/629121"
+    },
+    {
+      "name": "絶え間ない演算",
+      "path": "知恵",
+      "sourceUrl": "https://game8.jp/houkaistarrail/615376"
+    },
+    {
+      "name": "されど希望の銘は無価",
+      "path": "知恵",
+      "sourceUrl": "https://game8.jp/houkaistarrail/622457"
+    },
+    {
+      "name": "夢が帰り着く場所",
+      "path": "壊滅",
+      "sourceUrl": "https://game8.jp/houkaistarrail/614761"
+    },
+    {
+      "name": "二度目の生に向かって",
+      "path": "巡狩",
+      "sourceUrl": "https://game8.jp/houkaistarrail/610648"
+    },
+    {
+      "name": "光あふれる夜",
+      "path": "調和",
+      "sourceUrl": "https://game8.jp/houkaistarrail/606936"
+    },
+    {
+      "name": "運命は常に不公平",
+      "path": "存護",
+      "sourceUrl": "https://game8.jp/houkaistarrail/603640"
+    },
+    {
+      "name": "流れ逝く岸を歩いて",
+      "path": "虚無",
+      "sourceUrl": "https://game8.jp/houkaistarrail/600115"
+    },
+    {
+      "name": "人生は遊び",
+      "path": "調和",
+      "sourceUrl": "https://game8.jp/houkaistarrail/595765"
+    },
+    {
+      "name": "時間の記憶を再構築して",
+      "path": "虚無",
+      "sourceUrl": "https://game8.jp/houkaistarrail/593177"
+    },
+    {
+      "name": "純粋なる思惟の洗礼",
+      "path": "巡狩",
+      "sourceUrl": "https://game8.jp/houkaistarrail/587069"
+    },
+    {
+      "name": "鏡の中の私",
+      "path": "調和",
+      "sourceUrl": "https://game8.jp/houkaistarrail/584213"
+    },
+    {
+      "name": "その一刻、目に焼き付けて",
+      "path": "知恵",
+      "sourceUrl": "https://game8.jp/houkaistarrail/580584"
+    },
+    {
+      "name": "驚魂の夜",
+      "path": "豊穣",
+      "sourceUrl": "https://game8.jp/houkaistarrail/574581"
+    },
+    {
+      "name": "悩んで笑って",
+      "path": "巡狩",
+      "sourceUrl": "https://game8.jp/houkaistarrail/564286"
+    },
+    {
+      "name": "この身は剣なり",
+      "path": "壊滅",
+      "sourceUrl": "https://game8.jp/houkaistarrail/560225"
+    },
+    {
+      "name": "閉ざした瞳",
+      "path": "存護",
+      "sourceUrl": "https://game8.jp/houkaistarrail/551839"
+    },
+    {
+      "name": "陽光より輝くもの",
+      "path": "壊滅",
+      "sourceUrl": "https://game8.jp/houkaistarrail/547101"
+    },
+    {
+      "name": "孤独の癒やし",
+      "path": "虚無",
+      "sourceUrl": "https://game8.jp/houkaistarrail/546915"
+    },
+    {
+      "name": "待つのみ",
+      "path": "虚無",
+      "sourceUrl": "https://game8.jp/houkaistarrail/544126"
+    },
+    {
+      "name": "着かない彼岸",
+      "path": "壊滅",
+      "sourceUrl": "https://game8.jp/houkaistarrail/541166"
+    },
+    {
+      "name": "棺のこだま",
+      "path": "豊穣",
+      "sourceUrl": "https://game8.jp/houkaistarrail/529924"
+    },
+    {
+      "name": "降りやまぬ雨",
+      "path": "虚無",
+      "sourceUrl": "https://game8.jp/houkaistarrail/529923"
+    },
+    {
+      "name": "記憶の素材",
+      "path": "存護",
+      "sourceUrl": "https://game8.jp/houkaistarrail/524806"
+    },
+    {
+      "name": "星海巡航",
+      "path": "巡狩",
+      "sourceUrl": "https://game8.jp/houkaistarrail/524813"
+    },
+    {
+      "name": "とある星神の殞落を記す",
+      "path": "壊滅",
+      "sourceUrl": "https://game8.jp/houkaistarrail/524821"
+    },
+    {
+      "name": "時節は居らず",
+      "path": "豊穣",
+      "sourceUrl": "https://game8.jp/houkaistarrail/524829"
+    },
+    {
+      "name": "泥の如き眠り",
+      "path": "巡狩",
+      "sourceUrl": "https://game8.jp/houkaistarrail/524814"
+    },
+    {
+      "name": "夜明け前",
+      "path": "知恵",
+      "sourceUrl": "https://game8.jp/houkaistarrail/524835"
+    },
+    {
+      "name": "勝利の刹那",
+      "path": "存護",
+      "sourceUrl": "https://game8.jp/houkaistarrail/524807"
+    },
+    {
+      "name": "世界の名を以て",
+      "path": "虚無",
+      "sourceUrl": "https://game8.jp/houkaistarrail/524843"
+    },
+    {
+      "name": "だが戦争は終わらない",
+      "path": "調和",
+      "sourceUrl": "https://game8.jp/houkaistarrail/524850"
+    },
+    {
+      "name": "かけがえのないもの",
+      "path": "壊滅",
+      "sourceUrl": "https://game8.jp/houkaistarrail/524822"
+    },
+    {
+      "name": "夜の帳の中で",
+      "path": "巡狩",
+      "sourceUrl": "https://game8.jp/houkaistarrail/524815"
+    },
+    {
+      "name": "銀河鉄道の夜",
+      "path": "知恵",
+      "sourceUrl": "https://game8.jp/houkaistarrail/524836"
+    },
+    {
+      "name": "地平線のゴールへ",
+      "path": "巡狩",
+      "sourceUrl": "https://game8.jp/houkaistarrail/811878"
+    },
+    {
+      "name": "バカンスのひと時",
+      "path": "愉悦",
+      "sourceUrl": "https://game8.jp/houkaistarrail/808919"
+    },
+    {
+      "name": "みんなで一緒に未来へ",
+      "path": "愉悦",
+      "sourceUrl": "https://game8.jp/houkaistarrail/783399"
+    },
+    {
+      "name": "今日は好運",
+      "path": "愉悦",
+      "sourceUrl": "https://game8.jp/houkaistarrail/760881"
+    },
+    {
+      "name": "タケタケ冒険記",
+      "path": "愉悦",
+      "sourceUrl": "https://game8.jp/houkaistarrail/760878"
+    },
+    {
+      "name": "ピンク色の明日へ",
+      "path": "記憶",
+      "sourceUrl": "https://game8.jp/houkaistarrail/734313"
+    },
+    {
+      "name": "永遠の迷境ごはん",
+      "path": "調和",
+      "sourceUrl": "https://game8.jp/houkaistarrail/710882"
+    },
+    {
+      "name": "麦の香り漂う夢",
+      "path": "知恵",
+      "sourceUrl": "https://game8.jp/houkaistarrail/700535"
+    },
+    {
+      "name": "風を追う時",
+      "path": "調和",
+      "sourceUrl": "https://game8.jp/houkaistarrail/700536"
+    },
+    {
+      "name": "休日のバルネア大冒険",
+      "path": "虚無",
+      "sourceUrl": "https://game8.jp/houkaistarrail/700537"
+    },
+    {
+      "name": "終点でまた会おう",
+      "path": "巡狩",
+      "sourceUrl": "https://game8.jp/houkaistarrail/700538"
+    },
+    {
+      "name": "花は忘れない",
+      "path": "記憶",
+      "sourceUrl": "https://game8.jp/houkaistarrail/700539"
+    },
+    {
+      "name": "古より受け継がれる血",
+      "path": "壊滅",
+      "sourceUrl": "https://game8.jp/houkaistarrail/700540"
+    },
+    {
+      "name": "明日の明日まで",
+      "path": "豊穣",
+      "sourceUrl": "https://game8.jp/houkaistarrail/700541"
+    },
+    {
+      "name": "旅が平穏であるように",
+      "path": "存護",
+      "sourceUrl": "https://game8.jp/houkaistarrail/700532"
+    },
+    {
+      "name": "物語をめくって",
+      "path": "記憶",
+      "sourceUrl": "https://game8.jp/houkaistarrail/700315"
+    },
+    {
+      "name": "宇宙一の大商い！",
+      "path": "知恵",
+      "sourceUrl": "https://game8.jp/houkaistarrail/681364"
+    },
+    {
+      "name": "天才たちの「挨拶」",
+      "path": "記憶",
+      "sourceUrl": "https://game8.jp/houkaistarrail/663498"
+    },
+    {
+      "name": "流すなら涙より汗",
+      "path": "記憶",
+      "sourceUrl": "https://game8.jp/houkaistarrail/663499"
+    },
+    {
+      "name": "瞬刻の勝機",
+      "path": "記憶",
+      "sourceUrl": "https://game8.jp/houkaistarrail/663500"
+    },
+    {
+      "name": "忍事録・音律狩猟",
+      "path": "壊滅",
+      "sourceUrl": "https://game8.jp/houkaistarrail/649138"
+    },
+    {
+      "name": "夢のモンタージュ",
+      "path": "豊穣",
+      "sourceUrl": "https://game8.jp/houkaistarrail/647179"
+    },
+    {
+      "name": "夜は影のように付き纏う",
+      "path": "巡狩",
+      "sourceUrl": "https://game8.jp/houkaistarrail/640424"
+    },
+    {
+      "name": "美しき華よ今咲かん",
+      "path": "調和",
+      "sourceUrl": "https://game8.jp/houkaistarrail/632970"
+    },
+    {
+      "name": "調和が沈黙した後",
+      "path": "知恵",
+      "sourceUrl": "https://game8.jp/houkaistarrail/622459"
+    },
+    {
+      "name": "明日のための旅",
+      "path": "調和",
+      "sourceUrl": "https://game8.jp/houkaistarrail/607555"
+    },
+    {
+      "name": "終わりなき舞踏",
+      "path": "虚無",
+      "sourceUrl": "https://game8.jp/houkaistarrail/606939"
+    },
+    {
+      "name": "二人だけのコンサート",
+      "path": "存護",
+      "sourceUrl": "https://game8.jp/houkaistarrail/603639"
+    },
+    {
+      "name": "心に刻まれた約束",
+      "path": "壊滅",
+      "sourceUrl": "https://game8.jp/houkaistarrail/592653"
+    },
+    {
+      "name": "ショーの始まり",
+      "path": "虚無",
+      "sourceUrl": "https://game8.jp/houkaistarrail/593137"
+    },
+    {
+      "name": "銀河が陥落した日",
+      "path": "知恵",
+      "sourceUrl": "https://game8.jp/houkaistarrail/593134"
+    },
+    {
+      "name": "烈火の彼方",
+      "path": "壊滅",
+      "sourceUrl": "https://game8.jp/houkaistarrail/593131"
+    },
+    {
+      "name": "最後の勝者",
+      "path": "巡狩",
+      "sourceUrl": "https://game8.jp/houkaistarrail/593130"
+    },
+    {
+      "name": "ドリームタウンの大冒険",
+      "path": "調和",
+      "sourceUrl": "https://game8.jp/houkaistarrail/593138"
+    },
+    {
+      "name": "運命を紡ぐ糸",
+      "path": "存護",
+      "sourceUrl": "https://game8.jp/houkaistarrail/593125"
+    },
+    {
+      "name": "何が真か",
+      "path": "豊穣",
+      "sourceUrl": "https://game8.jp/houkaistarrail/593132"
+    },
+    {
+      "name": "よぉ、ここにいるぜ",
+      "path": "豊穣",
+      "sourceUrl": "https://game8.jp/houkaistarrail/574605"
+    },
+    {
+      "name": "初めてのクエストの前に",
+      "path": "虚無",
+      "sourceUrl": "https://game8.jp/houkaistarrail/529925"
+    },
+    {
+      "name": "我ら地炎",
+      "path": "存護",
+      "sourceUrl": "https://game8.jp/houkaistarrail/525076"
+    },
+    {
+      "name": "フェルマータ",
+      "path": "虚無",
+      "sourceUrl": "https://game8.jp/houkaistarrail/525202"
+    },
+    {
+      "name": "等価交換",
+      "path": "豊穣",
+      "sourceUrl": "https://game8.jp/houkaistarrail/525077"
+    },
+    {
+      "name": "過去と未来",
+      "path": "調和",
+      "sourceUrl": "https://game8.jp/houkaistarrail/525704"
+    },
+    {
+      "name": "春水に初生する",
+      "path": "巡狩",
+      "sourceUrl": "https://game8.jp/houkaistarrail/525041"
+    },
+    {
+      "name": "天才たちの休息",
+      "path": "知恵",
+      "sourceUrl": "https://game8.jp/houkaistarrail/525059"
+    },
+    {
+      "name": "青空の下で",
+      "path": "壊滅",
+      "sourceUrl": "https://game8.jp/houkaistarrail/524968"
+    },
+    {
+      "name": "ダンス！ダンス！ダンス！",
+      "path": "調和",
+      "sourceUrl": "https://game8.jp/houkaistarrail/524977"
+    },
+    {
+      "name": "フォローして！",
+      "path": "巡狩",
+      "sourceUrl": "https://game8.jp/houkaistarrail/524971"
+    },
+    {
+      "name": "星間市場のトレンド",
+      "path": "存護",
+      "sourceUrl": "https://game8.jp/houkaistarrail/524970"
+    },
+    {
+      "name": "決意は汗のように輝く",
+      "path": "虚無",
+      "sourceUrl": "https://game8.jp/houkaistarrail/524975"
+    },
+    {
+      "name": "今が丁度",
+      "path": "豊穣",
+      "sourceUrl": "https://game8.jp/houkaistarrail/524980"
+    },
+    {
+      "name": "今日も平和な一日",
+      "path": "知恵",
+      "sourceUrl": "https://game8.jp/houkaistarrail/524837"
+    },
+    {
+      "name": "逃げ場なし",
+      "path": "壊滅",
+      "sourceUrl": "https://game8.jp/houkaistarrail/524823"
+    },
+    {
+      "name": "彫月裁雲の意",
+      "path": "調和",
+      "sourceUrl": "https://game8.jp/houkaistarrail/524851"
+    },
+    {
+      "name": "幽冥に帰す",
+      "path": "巡狩",
+      "sourceUrl": "https://game8.jp/houkaistarrail/524816"
+    },
+    {
+      "name": "これがウチだよ！",
+      "path": "存護",
+      "sourceUrl": "https://game8.jp/houkaistarrail/524808"
+    },
+    {
+      "name": "またお会いしましょう",
+      "path": "虚無",
+      "sourceUrl": "https://game8.jp/houkaistarrail/524844"
+    },
+    {
+      "name": "暖かい夜は長くない",
+      "path": "豊穣",
+      "sourceUrl": "https://game8.jp/houkaistarrail/524830"
+    },
+    {
+      "name": "朝食の儀式感",
+      "path": "知恵",
+      "sourceUrl": "https://game8.jp/houkaistarrail/524838"
+    },
+    {
+      "name": "ワン！散歩の時間！",
+      "path": "壊滅",
+      "sourceUrl": "https://game8.jp/houkaistarrail/524824"
+    },
+    {
+      "name": "この世界に喧噪を",
+      "path": "知恵",
+      "sourceUrl": "https://game8.jp/houkaistarrail/524839"
+    },
+    {
+      "name": "秘密の誓い",
+      "path": "壊滅",
+      "sourceUrl": "https://game8.jp/houkaistarrail/524825"
+    },
+    {
+      "name": "惑星との出会い",
+      "path": "調和",
+      "sourceUrl": "https://game8.jp/houkaistarrail/524852"
+    },
+    {
+      "name": "論剣",
+      "path": "巡狩",
+      "sourceUrl": "https://game8.jp/houkaistarrail/524817"
+    },
+    {
+      "name": "ランドゥーの選択",
+      "path": "存護",
+      "sourceUrl": "https://game8.jp/houkaistarrail/524809"
+    },
+    {
+      "name": "獲物の視線",
+      "path": "虚無",
+      "sourceUrl": "https://game8.jp/houkaistarrail/524845"
+    },
+    {
+      "name": "同じ気持ち",
+      "path": "豊穣",
+      "sourceUrl": "https://game8.jp/houkaistarrail/524831"
+    },
+    {
+      "name": "「私」の誕生",
+      "path": "知恵",
+      "sourceUrl": "https://game8.jp/houkaistarrail/524840"
+    },
+    {
+      "name": "モグラ党へようこそ",
+      "path": "壊滅",
+      "sourceUrl": "https://game8.jp/houkaistarrail/524826"
+    },
+    {
+      "name": "記憶の中の姿",
+      "path": "調和",
+      "sourceUrl": "https://game8.jp/houkaistarrail/524853"
+    },
+    {
+      "name": "沈黙のみ",
+      "path": "巡狩",
+      "sourceUrl": "https://game8.jp/houkaistarrail/524818"
+    },
+    {
+      "name": "余生の初日",
+      "path": "存護",
+      "sourceUrl": "https://game8.jp/houkaistarrail/524810"
+    },
+    {
+      "name": "おやすみなさいと寝顔",
+      "path": "虚無",
+      "sourceUrl": "https://game8.jp/houkaistarrail/524846"
+    },
+    {
+      "name": "手術後の会話",
+      "path": "豊穣",
+      "sourceUrl": "https://game8.jp/houkaistarrail/524832"
+    },
+    {
+      "name": "残涙",
+      "path": "愉悦",
+      "sourceUrl": "https://game8.jp/houkaistarrail/760879"
+    },
+    {
+      "name": "嗤笑",
+      "path": "愉悦",
+      "sourceUrl": "https://game8.jp/houkaistarrail/760880"
+    },
+    {
+      "name": "辿る記憶",
+      "path": "記憶",
+      "sourceUrl": "https://game8.jp/houkaistarrail/663501"
+    },
+    {
+      "name": "燃ゆる影",
+      "path": "記憶",
+      "sourceUrl": "https://game8.jp/houkaistarrail/663502"
+    },
+    {
+      "name": "見識",
+      "path": "知恵",
+      "sourceUrl": "https://game8.jp/houkaistarrail/524973"
+    },
+    {
+      "name": "同調",
+      "path": "調和",
+      "sourceUrl": "https://game8.jp/houkaistarrail/524978"
+    },
+    {
+      "name": "匿影",
+      "path": "虚無",
+      "sourceUrl": "https://game8.jp/houkaistarrail/524976"
+    },
+    {
+      "name": "新天地",
+      "path": "存護",
+      "sourceUrl": "https://game8.jp/houkaistarrail/524969"
+    },
+    {
+      "name": "倶歿",
+      "path": "壊滅",
+      "sourceUrl": "https://gamewith.jp/houkaistarrail/article/show/396325",
+      "secondarySourceUrl": "https://game8.jp/houkaistarrail/524974"
+    },
+    {
+      "name": "蕃殖",
+      "path": "豊穣",
+      "sourceUrl": "https://game8.jp/houkaistarrail/524979"
+    },
+    {
+      "name": "相抗",
+      "path": "巡狩",
+      "sourceUrl": "https://game8.jp/houkaistarrail/524972"
+    },
+    {
+      "name": "霊鍵",
+      "path": "知恵",
+      "sourceUrl": "https://game8.jp/houkaistarrail/524841"
+    },
+    {
+      "name": "輪契",
+      "path": "調和",
+      "sourceUrl": "https://game8.jp/houkaistarrail/524854"
+    },
+    {
+      "name": "淵環",
+      "path": "虚無",
+      "sourceUrl": "https://game8.jp/houkaistarrail/524847"
+    },
+    {
+      "name": "防衛",
+      "path": "存護",
+      "sourceUrl": "https://game8.jp/houkaistarrail/524811"
+    },
+    {
+      "name": "楽壊",
+      "path": "壊滅",
+      "sourceUrl": "https://game8.jp/houkaistarrail/524827"
+    },
+    {
+      "name": "嘉果",
+      "path": "豊穣",
+      "sourceUrl": "https://game8.jp/houkaistarrail/524833"
+    },
+    {
+      "name": "離弦",
+      "path": "巡狩",
+      "sourceUrl": "https://game8.jp/houkaistarrail/524819"
+    },
+    {
+      "name": "アーカイブ",
+      "path": "知恵",
+      "sourceUrl": "https://game8.jp/houkaistarrail/524842"
+    },
+    {
+      "name": "斉頌",
+      "path": "調和",
+      "sourceUrl": "https://game8.jp/houkaistarrail/524855"
+    },
+    {
+      "name": "幽邃",
+      "path": "虚無",
+      "sourceUrl": "https://game8.jp/houkaistarrail/524848"
+    },
+    {
+      "name": "琥珀",
+      "path": "存護",
+      "sourceUrl": "https://game8.jp/houkaistarrail/524812"
+    },
+    {
+      "name": "天傾",
+      "path": "壊滅",
+      "sourceUrl": "https://game8.jp/houkaistarrail/524828"
+    },
+    {
+      "name": "物穣",
+      "path": "豊穣",
+      "sourceUrl": "https://game8.jp/houkaistarrail/524834"
+    },
+    {
+      "name": "矢じり",
+      "path": "巡狩",
+      "sourceUrl": "https://game8.jp/houkaistarrail/524820"
+    }
+  ],
+  "tunnelRelics": [
+    {
+      "name": "流雲無痕の過客",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/遺物/セット効果/トンネル遺物#gff46a1b"
+    },
+    {
+      "name": "草の穂ガンマン",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/遺物/セット効果/トンネル遺物#l8ba1ff6"
+    },
+    {
+      "name": "純庭教会の聖騎士",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/遺物/セット効果/トンネル遺物#k28919d4"
+    },
+    {
+      "name": "雪の密林の狩人",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/遺物/セット効果/トンネル遺物#j33b4422"
+    },
+    {
+      "name": "成り上がりチャンピオン",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/遺物/セット効果/トンネル遺物#bf310232"
+    },
+    {
+      "name": "吹雪と対峙する兵士",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/遺物/セット効果/トンネル遺物#icbfc5a7"
+    },
+    {
+      "name": "溶岩で鍛造する火匠",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/遺物/セット効果/トンネル遺物#k8c37c05"
+    },
+    {
+      "name": "星の如く輝く天才",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/遺物/セット効果/トンネル遺物#s35cf402"
+    },
+    {
+      "name": "雷鳴轟くバンド",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/遺物/セット効果/トンネル遺物#eb9fbfd0"
+    },
+    {
+      "name": "昼夜の狭間を翔ける鷹",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/遺物/セット効果/トンネル遺物#xfb4bc2f"
+    },
+    {
+      "name": "流星の跡を追う怪盗",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/遺物/セット効果/トンネル遺物#h94fa4fd"
+    },
+    {
+      "name": "荒地で盗みを働く廃土客",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/遺物/セット効果/トンネル遺物#q3353889"
+    },
+    {
+      "name": "宝命長存の蒔者",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/遺物/セット効果/トンネル遺物#h1209afd"
+    },
+    {
+      "name": "仮想空間を漫遊するメッセンジャー",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/遺物/セット効果/トンネル遺物#ve94aa68"
+    },
+    {
+      "name": "灰燼を燃やし尽くす大公",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/遺物/セット効果/トンネル遺物#i0573353"
+    },
+    {
+      "name": "深い牢獄の囚人",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/遺物/セット効果/トンネル遺物#a91f991d"
+    },
+    {
+      "name": "死水に潜る先駆者",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/遺物/セット効果/トンネル遺物#pd29efc9"
+    },
+    {
+      "name": "夢を弄ぶ時計屋",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/遺物/セット効果/トンネル遺物#jda22600"
+    },
+    {
+      "name": "蝗害を一掃せし鉄騎",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/遺物/セット効果/トンネル遺物#o687a1e7"
+    },
+    {
+      "name": "風雲を薙ぎ払う勇烈",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/遺物/セット効果/トンネル遺物#m49a29e2"
+    },
+    {
+      "name": "再び苦難の道を歩む司祭",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/遺物/セット効果/トンネル遺物#de12a907"
+    },
+    {
+      "name": "知識の海に溺れる学者",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/遺物/セット効果/トンネル遺物#p6ef1003"
+    },
+    {
+      "name": "凱歌を揚げる英雄",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/遺物/セット効果/トンネル遺物#heroset"
+    },
+    {
+      "name": "亡国の悲哀を詠う詩人",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/遺物/セット効果/トンネル遺物#poetsset"
+    },
+    {
+      "name": "烈陽と雷鳴の武神",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/遺物/セット効果/トンネル遺物#l71a3f5f"
+    },
+    {
+      "name": "荒海を越える船長",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/遺物/セット効果/トンネル遺物#ide94975"
+    },
+    {
+      "name": "天地再創の救世主",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/遺物/セット効果/トンネル遺物#za7c70f0"
+    },
+    {
+      "name": "星の光を隠した隠者",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/遺物/セット効果/トンネル遺物#raf0e6f8"
+    },
+    {
+      "name": "功績輝く魔法少女",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/遺物/セット効果/トンネル遺物#rd425eb0"
+    },
+    {
+      "name": "天命に従う旅の卜者",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/遺物/セット効果/トンネル遺物#b1ce5216"
+    },
+    {
+      "name": "星巡るナビゲーター「シケン」",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/遺物/セット効果/トンネル遺物#c66dfa5b"
+    },
+    {
+      "name": "神業を探求する名匠",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/遺物/セット効果/トンネル遺物#j3a79090"
+    },
+    {
+      "name": "星灯す夢芝居の伶人",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/遺物/セット効果/トンネル遺物#a773fd01"
+    },
+    {
+      "name": "禁断の果実を貪る異端者",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/遺物/セット効果/トンネル遺物#gb8cd9ac"
+    }
+  ],
+  "ornaments": [
+    {
+      "name": "宇宙封印ステーション",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/遺物/セット効果/次元界オーナメント#o06384a1"
+    },
+    {
+      "name": "老いぬ者の仙舟",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/遺物/セット効果/次元界オーナメント#hbfa36b1"
+    },
+    {
+      "name": "汎銀河商事会社",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/遺物/セット効果/次元界オーナメント#d79f1bba"
+    },
+    {
+      "name": "建創者のベロブルグ",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/遺物/セット効果/次元界オーナメント#geca2d3f"
+    },
+    {
+      "name": "天体階差機関",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/遺物/セット効果/次元界オーナメント#s25f9e18"
+    },
+    {
+      "name": "自転が止まったサルソット",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/遺物/セット効果/次元界オーナメント#z7382ee0"
+    },
+    {
+      "name": "盗賊公国タリア",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/遺物/セット効果/次元界オーナメント#hc93ede8"
+    },
+    {
+      "name": "生命のウェンワーク",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/遺物/セット効果/次元界オーナメント#e6e45b28"
+    },
+    {
+      "name": "星々の競技場",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/遺物/セット効果/次元界オーナメント#x7b9fe0c"
+    },
+    {
+      "name": "折れた竜骨",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/遺物/セット効果/次元界オーナメント#yd152f91"
+    },
+    {
+      "name": "蒼穹戦線グラモス",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/遺物/セット効果/次元界オーナメント#h2ddff35"
+    },
+    {
+      "name": "夢の地ピノコニー",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/遺物/セット効果/次元界オーナメント#m39751f0"
+    },
+    {
+      "name": "顕世の出雲と高天の神国",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/遺物/セット効果/次元界オーナメント#p93f20e2"
+    },
+    {
+      "name": "荒涼の惑星ツガンニヤ",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/遺物/セット効果/次元界オーナメント#t4902ab9"
+    },
+    {
+      "name": "奔狼の都藍王朝",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/遺物/セット効果/次元界オーナメント#e9ffc80a"
+    },
+    {
+      "name": "劫火と蓮灯の鋳煉宮",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/遺物/セット効果/次元界オーナメント#zae870f9"
+    },
+    {
+      "name": "海に沈んだルサカ",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/遺物/セット効果/次元界オーナメント#x98adca2"
+    },
+    {
+      "name": "奇想天外のバナダイス",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/遺物/セット効果/次元界オーナメント#p4dd965f"
+    },
+    {
+      "name": "静謐な拾骨地",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/遺物/セット効果/次元界オーナメント#he42372c"
+    },
+    {
+      "name": "深慮に浸る巨樹",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/遺物/セット効果/次元界オーナメント#eaa694f9"
+    },
+    {
+      "name": "夢を紡ぐ妖精の楽園",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/遺物/セット効果/次元界オーナメント#m796b181"
+    },
+    {
+      "name": "酩酊の海域",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/遺物/セット効果/次元界オーナメント#lb282558"
+    },
+    {
+      "name": "永遠の地オンパロス",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/遺物/セット効果/次元界オーナメント#v3409882"
+    },
+    {
+      "name": "天国@配信ルーム",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/遺物/セット効果/次元界オーナメント#a88bf6df"
+    },
+    {
+      "name": "ステージゼロ：パンクロード",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/遺物/セット効果/次元界オーナメント#z00c1646"
+    },
+    {
+      "name": "千の星が集う街",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/遺物/セット効果/次元界オーナメント#j6d57223"
+    },
+    {
+      "name": "墜星の出航地",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/遺物/セット効果/次元界オーナメント#a08e4e3f"
+    },
+    {
+      "name": "宇宙生命科学研究院",
+      "sourceUrl": "https://wikiwiki.jp/star-rail/遺物/セット効果/次元界オーナメント#t531cf1f"
+    }
+  ],
+  "legacyOnly": [
+    {
+      "id": "hsr-cone-38",
+      "name": "瞬間を記憶に留めて",
+      "category": "lightCones",
+      "reason": "実在する光円錐と同一性を確認できない。別の光円錐へ置換しない。"
+    },
+    {
+      "id": "hsr-ornament-19",
+      "name": "悠久の地アムフォレウス",
+      "category": "ornaments",
+      "reason": "実在するオーナメントと同一性を確認できない。3.7追加の永遠の地オンパロスへ置換しない。"
+    }
+  ]
+}
